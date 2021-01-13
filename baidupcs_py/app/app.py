@@ -2,6 +2,7 @@ from typing import Optional
 
 import click
 
+from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
 from baidupcs_py.commands.sifter import IncludeSifter, ExcludeSifter, IsFileSifter, IsDirSifter
@@ -62,10 +63,23 @@ class AliasedGroup(click.Group):
         return click.Group.get_command(self, ctx, normal_cmd_name)
 
 
-@click.group(cls=AliasedGroup, help='-------')
+_APP_DOC = f"""BaiduPCS App v{__version__}
+
+    \b
+    如果第一次使用，你需要运行 `BaiduPCS-Py useradd` 添加 `bduss` 和 `cookies`。
+    如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#useradd
+    用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
+
+_ALIAS_DOC = 'Command Alias:\n\n\b\n' + '\n'.join(
+    [f'{alias: >3} : {cmd}' for alias, cmd in sorted(ALIAS.items(), key=lambda x: x[1])]
+)
+
+
+@click.group(cls=AliasedGroup, help=_APP_DOC, epilog=_ALIAS_DOC)
 @click.option('--account-data', type=str, default=DEFAULT_DATA_PATH, help='Account data file')
 @click.pass_context
 def app(ctx, account_data):
+
     ctx.obj.account_manager = AccountManager.load_data(account_data)
 
 
@@ -156,22 +170,22 @@ def recent_api(ctx) -> Optional[BaiduPCSApi]:
 
 @app.command()
 @click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--desc', is_flag=True)
-@click.option('--name', is_flag=True)
-@click.option('--time', is_flag=True)
-@click.option('--size', is_flag=True)
-@click.option('-R', '--recursive', is_flag=True)
-@click.option('--include', type=str)
-@click.option('--include-regex', type=str)
-@click.option('--exclude', type=str)
-@click.option('--exclude-regex', type=str)
-@click.option('--is-file', is_flag=True)
-@click.option('--is-dir', is_flag=True)
-@click.option('--highlight', is_flag=True, default=True)
-@click.option('--show-size', is_flag=True)
-@click.option('--show-date', is_flag=True)
-@click.option('--show-md5', is_flag=True)
-@click.option('--show-absolute-path', is_flag=True)
+@click.option('--desc', '-r', is_flag=True)
+@click.option('--name', '-n', is_flag=True)
+@click.option('--time', '-t', is_flag=True)
+@click.option('--size', '-s', is_flag=True)
+@click.option('--recursive', '-R', is_flag=True)
+@click.option('--include', '-I', type=str)
+@click.option('--include-regex', '--IR', type=str)
+@click.option('--exclude', '-E', type=str)
+@click.option('--exclude-regex', '--ER', type=str)
+@click.option('--is-file', '-f', is_flag=True)
+@click.option('--is-dir', '-d', is_flag=True)
+@click.option('--no-highlight', '--NH', is_flag=True)
+@click.option('--show-size', '-S', is_flag=True)
+@click.option('--show-date', '-D', is_flag=True)
+@click.option('--show-md5', '-M', is_flag=True)
+@click.option('--show-absolute-path', '-A', is_flag=True)
 @click.pass_context
 def ls(
     ctx,
@@ -187,7 +201,7 @@ def ls(
     exclude_regex,
     is_file,
     is_dir,
-    highlight,
+    no_highlight,
     show_size,
     show_date,
     show_md5,
@@ -220,7 +234,7 @@ def ls(
         size=size,
         recursive=recursive,
         sifters=sifters,
-        highlight=highlight,
+        highlight=not no_highlight,
         show_size=show_size,
         show_date=show_date,
         show_md5=show_md5,
@@ -231,17 +245,17 @@ def ls(
 @app.command()
 @click.argument('keyword', nargs=1, type=str)
 @click.argument('remotedir', nargs=1, type=str, default='/')
-@click.option('-R', '--recursive', is_flag=True)
-@click.option('--include', type=str)
-@click.option('--include-regex', type=str)
-@click.option('--exclude', type=str)
-@click.option('--exclude-regex', type=str)
-@click.option('--is-file', is_flag=True)
-@click.option('--is-dir', is_flag=True)
-@click.option('--highlight', is_flag=True, default=True)
-@click.option('--show-size', is_flag=True)
-@click.option('--show-date', is_flag=True)
-@click.option('--show-md5', is_flag=True)
+@click.option('--recursive', '-R', is_flag=True)
+@click.option('--include', '-I', type=str)
+@click.option('--include-regex', '--IR', type=str)
+@click.option('--exclude', '-E', type=str)
+@click.option('--exclude-regex', '--ER', type=str)
+@click.option('--is-file', '-f', is_flag=True)
+@click.option('--is-dir', '-d', is_flag=True)
+@click.option('--no-highlight', '--NH', is_flag=True)
+@click.option('--show-size', '-S', is_flag=True)
+@click.option('--show-date', '-D', is_flag=True)
+@click.option('--show-md5', '-M', is_flag=True)
 @click.pass_context
 def search(
     ctx,
@@ -254,7 +268,7 @@ def search(
     exclude_regex,
     is_file,
     is_dir,
-    highlight,
+    no_highlight,
     show_size,
     show_date,
     show_md5,
@@ -283,7 +297,7 @@ def search(
         remotedir,
         recursive=recursive,
         sifters=sifters,
-        highlight=highlight,
+        highlight=not no_highlight,
         show_size=show_size,
         show_date=show_date,
         show_md5=show_md5,
@@ -292,7 +306,7 @@ def search(
 
 @app.command()
 @click.argument('remotedirs', nargs=-1, type=str)
-@click.option('--show', is_flag=True)
+@click.option('--show', '-S', is_flag=True)
 @click.pass_context
 def mkdir(ctx, remotedirs, show):
     api = recent_api(ctx)
@@ -304,7 +318,7 @@ def mkdir(ctx, remotedirs, show):
 
 @app.command()
 @click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--show', is_flag=True)
+@click.option('--show', '-S', is_flag=True)
 @click.pass_context
 def move(ctx, remotepaths, show):
     api = recent_api(ctx)
@@ -319,7 +333,7 @@ def move(ctx, remotepaths, show):
 @app.command()
 @click.argument('source', nargs=1, type=str)
 @click.argument('dest', nargs=1, type=str)
-@click.option('--show', is_flag=True)
+@click.option('--show', '-S', is_flag=True)
 @click.pass_context
 def rename(ctx, source, dest, show):
     api = recent_api(ctx)
@@ -331,7 +345,7 @@ def rename(ctx, source, dest, show):
 
 @app.command()
 @click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--show', is_flag=True)
+@click.option('--show', '-S', is_flag=True)
 @click.pass_context
 def copy(ctx, remotepaths, show):
     api = recent_api(ctx)
@@ -356,27 +370,29 @@ def remove(ctx, remotepaths):
 
 @app.command()
 @click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--dir', nargs=1, type=str, default='.')
-@click.option('-R', '--recursive', is_flag=True)
-@click.option('--include', type=str)
-@click.option('--include-regex', type=str)
-@click.option('--exclude', type=str)
-@click.option('--exclude-regex', type=str)
+@click.option('--outdir', '-o', nargs=1, type=str, default='.')
+@click.option('--recursive', '-R', is_flag=True)
+@click.option('--from-index', '-f', type=int, default=0)
+@click.option('--include', '-I', type=str)
+@click.option('--include-regex', '--IR', type=str)
+@click.option('--exclude', '-E', type=str)
+@click.option('--exclude-regex', '--ER', type=str)
 @click.option(
     '-d',
     '--downloader',
     type=click.Choice([d.name for d in Downloader]),
     default=DEFAULT_DOWNLOADER.name
 )
-@click.option('-s', '--concurrency', type=int, default=DEFAULT_CONCURRENCY)
-@click.option('-k', '--chunk-size', type=str, default=DEFAULT_CHUNK_SIZE)
-@click.option('-q', '--quiet', is_flag=True)
+@click.option('--concurrency', '-s', type=int, default=DEFAULT_CONCURRENCY)
+@click.option('--chunk-size', '-k', type=str, default=DEFAULT_CHUNK_SIZE)
+@click.option('--quiet', '-q', is_flag=True)
 @click.pass_context
 def download(
     ctx,
     remotepaths,
-    dir,
+    outdir,
     recursive,
+    from_index,
     include,
     include_regex,
     exclude,
@@ -403,9 +419,10 @@ def download(
     _download(
         api,
         remotepaths,
-        dir,
+        outdir,
         sifters=sifters,
         recursive=recursive,
+        from_index=from_index,
         downloader=getattr(Downloader, downloader),
         downloadparams=DownloadParams(concurrency=concurrency, chunk_size=chunk_size, quiet=quiet)
     )
@@ -414,9 +431,9 @@ def download(
 @app.command()
 @click.argument('localpaths', nargs=-1, type=str)
 @click.argument('remotedir', nargs=1, type=str)
-@click.option('-s', '--max-workers', type=int, default=CPU_NUM)
-@click.option('--no-ignore-existing', is_flag=True)
-@click.option('--no-show-progress', is_flag=True)
+@click.option('--max-workers', '-w', type=int, default=CPU_NUM)
+@click.option('--no-ignore-existing', '--NI', is_flag=True)
+@click.option('--no-show-progress', '--NP', is_flag=True)
 @click.pass_context
 def upload(ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_progress):
     api = recent_api(ctx)
@@ -440,9 +457,11 @@ def upload(ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_
 # {{{
 @app.command()
 @click.argument('remotepaths', nargs=-1, type=str)
-@click.option('-p', '--password', type=str)
+@click.option('--password', '-p', type=str)
 @click.pass_context
 def share(ctx, remotepaths, password):
+    assert not password or len(password) == 4, '`password` must be 4 letters'
+
     api = recent_api(ctx)
     if not api:
         return
@@ -451,7 +470,7 @@ def share(ctx, remotepaths, password):
 
 
 @app.command()
-@click.option('--show-all', is_flag=True)
+@click.option('--show-all', '-S', is_flag=True)
 @click.pass_context
 def shared(ctx, show_all):
     api = recent_api(ctx)
@@ -475,10 +494,12 @@ def cancelshared(ctx, share_ids):
 @app.command()
 @click.argument('shared_url', nargs=1, type=str)
 @click.argument('remotedir', nargs=1, type=str)
-@click.option('-p', '--password', type=str)
-@click.option('--no-show-vcode', is_flag=True)
+@click.option('--password', '-p', type=str)
+@click.option('--no-show-vcode', '--NV', is_flag=True)
 @click.pass_context
 def save(ctx, shared_url, remotedir, password, no_show_vcode):
+    assert not password or len(password) == 4, '`password` must be 4 letters'
+
     api = recent_api(ctx)
     if not api:
         return
