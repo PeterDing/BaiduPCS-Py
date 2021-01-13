@@ -193,12 +193,13 @@ def download_dir(
     localdir: str,
     sifters: List[Sifter] = [],
     recursive: bool = False,
+    from_index: int = 0,
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams=DEFAULT_DOWNLOADPARAMS
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
-    for rp in remotepaths:
+    for rp in remotepaths[from_index:]:
         if rp.is_file:
             download_file(api, rp.path, localdir, downloader, downloadparams=downloadparams)
         else:  # is_dir
@@ -209,6 +210,7 @@ def download_dir(
                 str(_localdir),
                 sifters=sifters,
                 recursive=recursive,
+                from_index=from_index,
                 downloader=downloader,
                 downloadparams=downloadparams
             )
@@ -220,9 +222,16 @@ def download(
     localdir: str,
     sifters: List[Sifter] = [],
     recursive: bool = False,
+    from_index: int = 0,
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
 ):
+    """Download `remotepaths` to the `localdir`
+
+    Args:
+        `from_index` (int): The start index of downloading entries from EACH remote directory
+    """
+
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths:
         if not api.exists(rp):
@@ -232,12 +241,14 @@ def download(
         if api.is_file(rp):
             download_file(api, rp, localdir, downloader=downloader, downloadparams=downloadparams)
         else:
+            _localdir = str(Path(localdir) / os.path.basename(rp))
             download_dir(
                 api,
                 rp,
-                localdir,
+                _localdir,
                 sifters=sifters,
                 recursive=recursive,
+                from_index=from_index,
                 downloader=downloader,
                 downloadparams=downloadparams
             )
