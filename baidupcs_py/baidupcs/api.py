@@ -20,6 +20,7 @@ from requests_toolbelt import MultipartEncoderMonitor
 from PIL import Image
 
 from rich import print
+from rich.prompt import Prompt
 
 
 class BaiduPCSApi:
@@ -206,7 +207,7 @@ class BaiduPCSApi:
                     img_buf.seek(0, 0)
                     img = Image.open(img_buf)
                     img.show()
-                    vcode = input('input vcode: ')
+                    vcode = Prompt.ask('input vcode')
                 else:
                     raise err
 
