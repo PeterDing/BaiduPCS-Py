@@ -1,9 +1,8 @@
 from typing import Optional
-
-import click
+from functools import wraps
 
 from baidupcs_py import __version__
-from baidupcs_py.baidupcs import BaiduPCSApi
+from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
@@ -24,11 +23,30 @@ from baidupcs_py.commands.download import (
     DEFAULT_CONCURRENCY,
     DEFAULT_CHUNK_SIZE,
 )
+from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
 from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
 from baidupcs_py.commands import share as _share
 
+import click
+
 from rich import print
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
+
+
+def handle_error(func):
+    """Handle command error wrapper"""
+
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except BaiduPCSError as err:
+            print(f"[bold red]ERROR[/bold red]: BaiduPCSError: {err}")
+        except Exception as err:
+            print(f"[bold red]System ERROR[/bold red]: {err}")
+
+    return wrap
+
 
 ALIAS = {
     "w": "who",
@@ -44,6 +62,7 @@ ALIAS = {
     "cp": "copy",
     "rm": "remove",
     "d": "download",
+    "p": "play",
     "u": "upload",
     "S": "share",
     "sl": "shared",
@@ -89,7 +108,6 @@ _ALIAS_DOC = "Command Alias:\n\n\b\n" + "\n".join(
 )
 @click.pass_context
 def app(ctx, account_data):
-
     ctx.obj.account_manager = AccountManager.load_data(account_data)
 
 
@@ -100,7 +118,13 @@ def app(ctx, account_data):
 @app.command()
 @click.argument("user_id", type=int, default=None, required=False)
 @click.pass_context
+@handle_error
 def who(ctx, user_id):
+    """显示当前用户的信息
+
+    也可指定 `user_id`
+    """
+
     am = ctx.obj.account_manager
     account = am.who(user_id)
     if account:
@@ -111,7 +135,10 @@ def who(ctx, user_id):
 
 @app.command()
 @click.pass_context
+@handle_error
 def su(ctx):
+    """切换当前用户"""
+
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
     display_user_infos(*ls)
@@ -125,17 +152,23 @@ def su(ctx):
 
 @app.command()
 @click.pass_context
+@handle_error
 def userlist(ctx):
+    """显示所有用户"""
+
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
     display_user_infos(*ls)
 
 
 @app.command()
-@click.option("--bduss", prompt="bduss", hide_input=True)
-@click.option("--cookies", prompt="cookies", hide_input=True)
+@click.option("--bduss", prompt="bduss", hide_input=True, help="用户 bduss")
+@click.option("--cookies", prompt="cookies", hide_input=True, help="用户 cookies")
 @click.pass_context
+@handle_error
 def useradd(ctx, bduss, cookies):
+    """添加一个用户并设置为当前用户"""
+
     cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
     account = Account.from_bduss(bduss, cookies=cookies)
     am = ctx.obj.account_manager
@@ -146,7 +179,10 @@ def useradd(ctx, bduss, cookies):
 
 @app.command()
 @click.pass_context
+@handle_error
 def userdel(ctx):
+    """删除一个用户"""
+
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
     display_user_infos(*ls)
@@ -164,6 +200,8 @@ def userdel(ctx):
 
 
 def recent_api(ctx) -> Optional[BaiduPCSApi]:
+    """Return recent user's `BaiduPCSApi`"""
+
     am = ctx.obj.account_manager
     account = am.who()
     if not account:
@@ -180,23 +218,24 @@ def recent_api(ctx) -> Optional[BaiduPCSApi]:
 
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--desc", "-r", is_flag=True)
-@click.option("--name", "-n", is_flag=True)
-@click.option("--time", "-t", is_flag=True)
-@click.option("--size", "-s", is_flag=True)
-@click.option("--recursive", "-R", is_flag=True)
-@click.option("--include", "-I", type=str)
-@click.option("--include-regex", "--IR", type=str)
-@click.option("--exclude", "-E", type=str)
-@click.option("--exclude-regex", "--ER", type=str)
-@click.option("--is-file", "-f", is_flag=True)
-@click.option("--is-dir", "-d", is_flag=True)
-@click.option("--no-highlight", "--NH", is_flag=True)
-@click.option("--show-size", "-S", is_flag=True)
-@click.option("--show-date", "-D", is_flag=True)
-@click.option("--show-md5", "-M", is_flag=True)
-@click.option("--show-absolute-path", "-A", is_flag=True)
+@click.option("--desc", "-r", is_flag=True, help="逆序排列文件")
+@click.option("--name", "-n", is_flag=True, help="依名字排序")
+@click.option("--time", "-t", is_flag=True, help="依时间排序")
+@click.option("--size", "-s", is_flag=True, help="依文件大小排序")
+@click.option("--recursive", "-R", is_flag=True, help="递归列出文件")
+@click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
+@click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
+@click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
+@click.option("--exclude-regex", "--ER", type=str, help="筛选 不 包含这个正则表达式的文件")
+@click.option("--is-file", "-f", is_flag=True, help="筛选 非 目录文件")
+@click.option("--is-dir", "-d", is_flag=True, help="筛选目录文件")
+@click.option("--no-highlight", "--NH", is_flag=True, help="取消匹配高亮")
+@click.option("--show-size", "-S", is_flag=True, help="显示文件大小")
+@click.option("--show-date", "-D", is_flag=True, help="显示文件创建时间")
+@click.option("--show-md5", "-M", is_flag=True, help="显示文件md5")
+@click.option("--show-absolute-path", "-A", is_flag=True, help="显示文件绝对路径")
 @click.pass_context
+@handle_error
 def ls(
     ctx,
     remotepaths,
@@ -217,6 +256,8 @@ def ls(
     show_md5,
     show_absolute_path,
 ):
+    """列出网盘路径下的文件"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -255,18 +296,19 @@ def ls(
 @app.command()
 @click.argument("keyword", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str, default="/")
-@click.option("--recursive", "-R", is_flag=True)
-@click.option("--include", "-I", type=str)
-@click.option("--include-regex", "--IR", type=str)
-@click.option("--exclude", "-E", type=str)
-@click.option("--exclude-regex", "--ER", type=str)
-@click.option("--is-file", "-f", is_flag=True)
-@click.option("--is-dir", "-d", is_flag=True)
-@click.option("--no-highlight", "--NH", is_flag=True)
-@click.option("--show-size", "-S", is_flag=True)
-@click.option("--show-date", "-D", is_flag=True)
-@click.option("--show-md5", "-M", is_flag=True)
+@click.option("--recursive", "-R", is_flag=True, help="递归搜索文件")
+@click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
+@click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
+@click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
+@click.option("--exclude-regex", "--ER", type=str, help="筛选 不 包含这个正则表达式的文件")
+@click.option("--is-file", "-f", is_flag=True, help="筛选 非 目录文件")
+@click.option("--is-dir", "-d", is_flag=True, help="筛选目录文件")
+@click.option("--no-highlight", "--NH", is_flag=True, help="取消匹配高亮")
+@click.option("--show-size", "-S", is_flag=True, help="显示文件大小")
+@click.option("--show-date", "-D", is_flag=True, help="显示文件创建时间")
+@click.option("--show-md5", "-M", is_flag=True, help="显示文件md5")
 @click.pass_context
+@handle_error
 def search(
     ctx,
     keyword,
@@ -283,6 +325,8 @@ def search(
     show_date,
     show_md5,
 ):
+    """搜索包含 `keyword` 的文件"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -316,9 +360,12 @@ def search(
 
 @app.command()
 @click.argument("remotedirs", nargs=-1, type=str)
-@click.option("--show", "-S", is_flag=True)
+@click.option("--show", "-S", is_flag=True, help="显示目录")
 @click.pass_context
+@handle_error
 def mkdir(ctx, remotedirs, show):
+    """创建目录"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -328,9 +375,17 @@ def mkdir(ctx, remotedirs, show):
 
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--show", "-S", is_flag=True)
+@click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
+@handle_error
 def move(ctx, remotepaths, show):
+    """移动文件
+
+    \b
+    examples:
+        move /file1 /file2 /to/dir
+    """
+
     api = recent_api(ctx)
     if not api:
         return
@@ -343,9 +398,17 @@ def move(ctx, remotepaths, show):
 @app.command()
 @click.argument("source", nargs=1, type=str)
 @click.argument("dest", nargs=1, type=str)
-@click.option("--show", "-S", is_flag=True)
+@click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
+@handle_error
 def rename(ctx, source, dest, show):
+    """文件重命名
+
+    \b
+    examples:
+        rename /path/to/far /to/here/foo
+    """
+
     api = recent_api(ctx)
     if not api:
         return
@@ -355,9 +418,17 @@ def rename(ctx, source, dest, show):
 
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--show", "-S", is_flag=True)
+@click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
+@handle_error
 def copy(ctx, remotepaths, show):
+    """拷贝文件
+
+    \b
+    examples:
+        copy /file1 /file2 /to/dir
+    """
+
     api = recent_api(ctx)
     if not api:
         return
@@ -370,7 +441,10 @@ def copy(ctx, remotepaths, show):
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.pass_context
+@handle_error
 def remove(ctx, remotepaths):
+    """删除文件"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -380,23 +454,40 @@ def remove(ctx, remotepaths):
 
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--outdir", "-o", nargs=1, type=str, default=".")
-@click.option("--recursive", "-R", is_flag=True)
-@click.option("--from-index", "-f", type=int, default=0)
-@click.option("--include", "-I", type=str)
-@click.option("--include-regex", "--IR", type=str)
-@click.option("--exclude", "-E", type=str)
-@click.option("--exclude-regex", "--ER", type=str)
+@click.option("--outdir", "-o", nargs=1, type=str, default=".", help="指定下载本地目录，默认为当前目录")
+@click.option("--recursive", "-R", is_flag=True, help="递归下载")
+@click.option(
+    "--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始下载，默认为0（第一个）"
+)
+@click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
+@click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
+@click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
+@click.option("--exclude-regex", "--ER", type=str, help="筛选 不 包含这个正则表达式的文件")
 @click.option(
     "-d",
     "--downloader",
     type=click.Choice([d.name for d in Downloader]),
     default=DEFAULT_DOWNLOADER.name,
+    help="""指定第三方下载应用
+
+    \b
+    默认为 aget_py (https://github.com/PeterDing/aget),
+    推荐用 aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)
+    """,
 )
-@click.option("--concurrency", "-s", type=int, default=DEFAULT_CONCURRENCY)
-@click.option("--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE)
-@click.option("--quiet", "-q", is_flag=True)
+@click.option(
+    "--concurrency",
+    "-s",
+    type=int,
+    default=DEFAULT_CONCURRENCY,
+    help="下载同步链接数，默认为5。数子越大下载速度越快，但是容易被百度封锁",
+)
+@click.option(
+    "--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE, help="同步链接分块大小"
+)
+@click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
 @click.pass_context
+@handle_error
 def download(
     ctx,
     remotepaths,
@@ -412,6 +503,8 @@ def download(
     chunk_size,
     quiet,
 ):
+    """下载文件"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -441,15 +534,84 @@ def download(
 
 
 @app.command()
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--recursive", "-R", is_flag=True, help="递归播放")
+@click.option(
+    "--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始播放，默认为0（第一个）"
+)
+@click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
+@click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
+@click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
+@click.option("--exclude-regex", "--ER", type=str, help="筛选 不 包含这个正则表达式的文件")
+@click.option(
+    "-p",
+    "--player",
+    type=click.Choice([d.name for d in Player]),
+    default=DEFAULT_PLAYER.name,
+    help="""指定第三方播放器
+
+    \b
+    默认为 mpv (https://mpv.io),
+    """,
+)
+@click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
+@click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
+@click.pass_context
+@handle_error
+def play(
+    ctx,
+    remotepaths,
+    recursive,
+    from_index,
+    include,
+    include_regex,
+    exclude,
+    exclude_regex,
+    player,
+    m3u8,
+    quiet,
+):
+    """下载文件"""
+
+    api = recent_api(ctx)
+    if not api:
+        return
+
+    sifters = []
+    if include:
+        sifters.append(IncludeSifter(include, regex=False))
+    if include_regex:
+        sifters.append(IncludeSifter(include, regex=True))
+    if exclude:
+        sifters.append(ExcludeSifter(exclude, regex=False))
+    if exclude_regex:
+        sifters.append(ExcludeSifter(exclude_regex, regex=True))
+
+    _play(
+        api,
+        remotepaths,
+        sifters=sifters,
+        recursive=recursive,
+        from_index=from_index,
+        player=getattr(Player, player),
+        m3u8=m3u8,
+        quiet=quiet,
+    )
+
+
+@app.command()
 @click.argument("localpaths", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--max-workers", "-w", type=int, default=CPU_NUM)
-@click.option("--no-ignore-existing", "--NI", is_flag=True)
-@click.option("--no-show-progress", "--NP", is_flag=True)
+@click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
+@click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传已经存在的文件")
+@click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.pass_context
+@handle_error
 def upload(
     ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_progress
 ):
+    """上传文件"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -471,9 +633,16 @@ def upload(
 # {{{
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--password", "-p", type=str)
+@click.option("--password", "-p", type=str, help="设置秘密，4个字符。默认没有秘密")
 @click.pass_context
+@handle_error
 def share(ctx, remotepaths, password):
+    """分享文件
+
+    \b
+    examples:
+        share /path1 path2
+    """
     assert not password or len(password) == 4, "`password` must be 4 letters"
 
     api = recent_api(ctx)
@@ -484,9 +653,12 @@ def share(ctx, remotepaths, password):
 
 
 @app.command()
-@click.option("--show-all", "-S", is_flag=True)
+@click.option("--show-all", "-S", is_flag=True, help="显示所有分享的链接，默认只显示有效的分享链接")
 @click.pass_context
+@handle_error
 def shared(ctx, show_all):
+    """列出分享链接"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -497,7 +669,10 @@ def shared(ctx, show_all):
 @app.command()
 @click.argument("share_ids", nargs=-1, type=int)
 @click.pass_context
+@handle_error
 def cancelshared(ctx, share_ids):
+    """取消分享链接"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -508,10 +683,13 @@ def cancelshared(ctx, share_ids):
 @app.command()
 @click.argument("shared_url", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--password", "-p", type=str)
+@click.option("--password", "-p", type=str, help="链接密码，如果没有不用设置")
 @click.option("--no-show-vcode", "--NV", is_flag=True)
 @click.pass_context
+@handle_error
 def save(ctx, shared_url, remotedir, password, no_show_vcode):
+    """保存其他用户分享的链接"""
+
     assert not password or len(password) == 4, "`password` must be 4 letters"
 
     api = recent_api(ctx)
@@ -537,7 +715,10 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 @click.argument("task_urls", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
 @click.pass_context
+@handle_error
 def add(ctx, task_urls, remotedir):
+    """添加离线下载任务"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -549,7 +730,10 @@ def add(ctx, task_urls, remotedir):
 @app.command()
 @click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
+@handle_error
 def tasks(ctx, task_ids):
+    """列出离线下载任务。也可列出给定id的任务"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -562,7 +746,10 @@ def tasks(ctx, task_ids):
 
 @app.command()
 @click.pass_context
+@handle_error
 def cleartasks(ctx):
+    """清除已经下载完和下载失败的任务"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -573,7 +760,10 @@ def cleartasks(ctx):
 @app.command()
 @click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
+@handle_error
 def canceltasks(ctx, task_ids):
+    """取消下载任务"""
+
     api = recent_api(ctx)
     if not api:
         return
@@ -583,12 +773,19 @@ def canceltasks(ctx, task_ids):
 
 
 @app.command()
+@click.option("--yes", is_flag=True, help="确定直接运行")
 @click.pass_context
-def purgetasks(ctx):
+@handle_error
+def purgetasks(ctx, yes):
+    """删除所有离线下载任务"""
+
     api = recent_api(ctx)
     if not api:
         return
 
+    if not yes:
+        if not Confirm.ask("确定删除[i red]所有的[/i red]离线下载任务?", default=False):
+            return
     _cloud.purge_all_tasks(api)
 
 
