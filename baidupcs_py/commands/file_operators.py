@@ -9,7 +9,7 @@ def makedir(api: BaiduPCSApi, *remotedirs: str, show: bool = False):
         pcs_files.append(pcs_file)
 
     if show:
-        display_files(pcs_files, '/', show_absolute_path=True)
+        display_files(pcs_files, "/", show_absolute_path=True)
 
 
 def move(api: BaiduPCSApi, *remotepaths: str, show: bool = False):

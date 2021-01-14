@@ -8,7 +8,7 @@ from baidupcs_py.commands.sifter import Sifter, IncludeSifter
 def search(
     api: BaiduPCSApi,
     keyword: str,
-    remotedir: str = '/',
+    remotedir: str = "/",
     recursive: bool = False,
     sifters: Optional[List[Sifter]] = None,
     highlight: bool = False,

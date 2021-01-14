@@ -15,7 +15,6 @@ from rich.style import Style
 
 
 class Highlighter(RichHighlighter):
-
     def __init__(self, patterns: List[Union[Pattern, str]], style: Union[str, Style]):
         super().__init__()
         self.patterns = patterns
@@ -54,36 +53,40 @@ def display_files(
     table = Table(box=SIMPLE, padding=0, show_edge=False)
     table.add_column()
     if show_size:
-        table.add_column('Size', justify='right')
+        table.add_column("Size", justify="right")
     if show_date:
-        table.add_column('Modified Time', justify='center')
+        table.add_column("Modified Time", justify="center")
     if show_md5:
-        table.add_column('md5', justify='left')
-    table.add_column('Path', justify='left', overflow='fold')
+        table.add_column("md5", justify="left")
+    table.add_column("Path", justify="left", overflow="fold")
 
     for pcs_file in pcs_files:
         row: List[Union[str, Text]] = []
-        tp = Text('-', style='bold red')
+        tp = Text("-", style="bold red")
         row.append(tp)
         if show_size:
-            size = human_size(pcs_file.size) if pcs_file.size else ''
+            size = human_size(pcs_file.size) if pcs_file.size else ""
             row.append(size)
         if show_date:
-            date = format_date(pcs_file.mtime) if pcs_file.mtime else ''
+            date = format_date(pcs_file.mtime) if pcs_file.mtime else ""
             row.append(date)
         if show_md5:
-            md5 = pcs_file.md5 or ''
+            md5 = pcs_file.md5 or ""
             row.append(md5)
 
         path = pcs_file.path if show_absolute_path else Path(pcs_file.path).name
         background = Text()
         if pcs_file.is_dir:
-            tp._text = ['d']
-            background.style = 'blue'
+            tp._text = ["d"]
+            background.style = "blue"
 
         if highlight and sifters:
-            pats = list(filter(None, [sifter.pattern() for sifter in sifters if sifter.include()]))
-            highlighter = Highlighter(pats, 'yellow')
+            pats = list(
+                filter(
+                    None, [sifter.pattern() for sifter in sifters if sifter.include()]
+                )
+            )
+            highlighter = Highlighter(pats, "yellow")
             _path = highlighter(path)
         else:
             _path = Text(path)
@@ -94,7 +97,7 @@ def display_files(
 
     console = Console()
     if remotepath:
-        title = Text(remotepath, style='italic green')
+        title = Text(remotepath, style="italic green")
         console.print(title)
     console.print(table)
 
@@ -104,8 +107,8 @@ def display_from_to(*from_to_list: FromTo):
         return
 
     table = Table(box=SIMPLE, padding=0, show_edge=False)
-    table.add_column('From', justify='left', overflow='fold')
-    table.add_column('To', justify='left', overflow='fold')
+    table.add_column("From", justify="left", overflow="fold")
+    table.add_column("To", justify="left", overflow="fold")
 
     for from_to in from_to_list:
         table.add_row(from_to.from_, from_to.to_)
@@ -115,13 +118,13 @@ def display_from_to(*from_to_list: FromTo):
 
 
 _TASK_FORMAT = (
-    'task_id: [bold white]{task_id}[/bold white]\n'
-    'task name: [bold green]{task_name}[/bold green]\n'
-    'source_url: [bold]{source_url}[/bold]\n'
-    'remotepath: {path}\n'
-    'status: [red]{status}[/red]\n'
-    '[bold white]{percent}[/bold white]  '
-    '[bold yellow]{finished_size}/{size}[/bold yellow]'
+    "task_id: [bold white]{task_id}[/bold white]\n"
+    "task name: [bold green]{task_name}[/bold green]\n"
+    "source_url: [bold]{source_url}[/bold]\n"
+    "remotepath: {path}\n"
+    "status: [red]{status}[/red]\n"
+    "[bold white]{percent}[/bold white]  "
+    "[bold yellow]{finished_size}/{size}[/bold yellow]"
 )
 
 
@@ -131,13 +134,13 @@ def display_tasks(*tasks: CloudTask):
         status = task.status_mean()
         size = human_size(task.size)
         finished_size = human_size(task.finished_size)
-        percent = f'{task.finished_size / task.size * 100:.1f}%'
+        percent = f"{task.finished_size / task.size * 100:.1f}%"
 
         info = task._asdict()
-        info['status'] = status
-        info['percent'] = percent
-        info['finished_size'] = finished_size
-        info['size'] = size
+        info["status"] = status
+        info["percent"] = percent
+        info["finished_size"] = finished_size
+        info["size"] = size
 
         panel = Panel(_TASK_FORMAT.format(**info), highlight=True)
         panels.append(panel)
@@ -147,10 +150,10 @@ def display_tasks(*tasks: CloudTask):
 
 
 _SHARED_LINK_FORMAT = (
-    'share id: {share_id}\n'
-    'shared url: [bold]{url}[/bold]\n'
-    'password: [bold red]{password}[/bold red]\n'
-    'paths: {paths}'
+    "share id: {share_id}\n"
+    "shared url: [bold]{url}[/bold]\n"
+    "password: [bold red]{password}[/bold red]\n"
+    "paths: {paths}"
 )
 
 
@@ -159,12 +162,14 @@ def display_shared_links(*shared_links: PcsSharedLink):
     for shared_link in shared_links:
         share_id = shared_link.share_id
         url = shared_link.url
-        password = shared_link.password or ''
-        paths = '\n       '.join(shared_link.paths or [])
+        password = shared_link.password or ""
+        paths = "\n       ".join(shared_link.paths or [])
 
         panel = Panel(
-            _SHARED_LINK_FORMAT.format(share_id=share_id, url=url, password=password, paths=paths),
-            highlight=True
+            _SHARED_LINK_FORMAT.format(
+                share_id=share_id, url=url, password=password, paths=paths
+            ),
+            highlight=True,
         )
         panels.append(panel)
 
@@ -175,23 +180,23 @@ def display_shared_links(*shared_links: PcsSharedLink):
 def display_user_info(user_info: PcsUser):
     user_id, user_name, auth, age, sex, quota, products = user_info
     bduss = auth and auth.bduss
-    quota_str = ''
+    quota_str = ""
     if quota:
-        quota_str = human_size(quota.used) + '/' + human_size(quota.quota)
+        quota_str = human_size(quota.used) + "/" + human_size(quota.quota)
 
-    products_str = ''
+    products_str = ""
     if products:
-        products_str = '\n    '.join([f'{k}: {v}' for k, v in products.items()])
+        products_str = "\n    ".join([f"{k}: {v}" for k, v in products.items()])
 
     _tempt = (
-        f'user id: {user_id}\n'
-        f'user name: {user_name}\n'
-        f'bduss: {bduss}\n'
-        f'age: {age}\n'
-        f'sex: {sex}\n'
-        f'quota: {quota_str}\n'
-        f'products:\n'
-        f'    {products_str}\n'
+        f"user id: {user_id}\n"
+        f"user name: {user_name}\n"
+        f"bduss: {bduss}\n"
+        f"age: {age}\n"
+        f"sex: {sex}\n"
+        f"quota: {quota_str}\n"
+        f"products:\n"
+        f"    {products_str}\n"
     )
 
     console = Console()
@@ -200,28 +205,28 @@ def display_user_info(user_info: PcsUser):
 
 def display_user_infos(*user_infos: PcsUser):
     table = Table(box=SIMPLE, show_edge=False, highlight=True)
-    table.add_column('User Id', justify='left')
-    table.add_column('User Name', justify='left')
-    table.add_column('Quota', justify='left')
-    table.add_column('SVIP', justify='left', style='bold red')
-    table.add_column('VIP', justify='left', style='bold red')
+    table.add_column("User Id", justify="left")
+    table.add_column("User Name", justify="left")
+    table.add_column("Quota", justify="left")
+    table.add_column("SVIP", justify="left", style="bold red")
+    table.add_column("VIP", justify="left", style="bold red")
 
     for user_info in user_infos:
         user_id, user_name, auth, age, sex, quota, products = user_info
-        quota_str = ''
+        quota_str = ""
         if quota:
-            quota_str = human_size(quota.used) + '/' + human_size(quota.quota)
+            quota_str = human_size(quota.used) + "/" + human_size(quota.quota)
 
-        svip = '✘'
-        vip = '✘'
+        svip = "✘"
+        vip = "✘"
 
         assert products
         for pn in products.keys():
-            if pn.startswith('svip2_nd'):
-                svip = '✔'
+            if pn.startswith("svip2_nd"):
+                svip = "✔"
                 continue
-            if pn.startswith('contentvip_nd'):
-                vip = '✔'
+            if pn.startswith("contentvip_nd"):
+                vip = "✔"
                 continue
 
         table.add_row(str(user_id), user_name, quota_str, svip, vip)

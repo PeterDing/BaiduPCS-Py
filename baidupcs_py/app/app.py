@@ -5,15 +5,24 @@ import click
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
-from baidupcs_py.commands.sifter import IncludeSifter, ExcludeSifter, IsFileSifter, IsDirSifter
+from baidupcs_py.commands.sifter import (
+    IncludeSifter,
+    ExcludeSifter,
+    IsFileSifter,
+    IsDirSifter,
+)
 from baidupcs_py.commands.display import display_user_info, display_user_infos
 from baidupcs_py.commands.list_files import list_files
 from baidupcs_py.commands import file_operators
 from baidupcs_py.commands.search import search as _search
 from baidupcs_py.commands import cloud as _cloud
 from baidupcs_py.commands.download import (
-    download as _download, Downloader, DownloadParams, DEFAULT_DOWNLOADER, DEFAULT_CONCURRENCY,
-    DEFAULT_CHUNK_SIZE
+    download as _download,
+    Downloader,
+    DownloadParams,
+    DEFAULT_DOWNLOADER,
+    DEFAULT_CONCURRENCY,
+    DEFAULT_CHUNK_SIZE,
 )
 from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
 from baidupcs_py.commands import share as _share
@@ -22,33 +31,32 @@ from rich import print
 from rich.prompt import Prompt
 
 ALIAS = {
-    'w': 'who',
-    'su': 'su',
-    'ul': 'userlist',
-    'ua': 'useradd',
-    'ud': 'userdel',
-    'l': 'ls',
-    'f': 'search',
-    'md': 'mkdir',
-    'mv': 'move',
-    'rn': 'rename',
-    'cp': 'copy',
-    'rm': 'remove',
-    'd': 'download',
-    'u': 'upload',
-    'S': 'share',
-    'sl': 'shared',
-    'cs': 'cancelshared',
-    's': 'save',
-    'a': 'add',
-    't': 'tasks',
-    'ct': 'cleartasks',
-    'cct': 'canceltasks',
+    "w": "who",
+    "su": "su",
+    "ul": "userlist",
+    "ua": "useradd",
+    "ud": "userdel",
+    "l": "ls",
+    "f": "search",
+    "md": "mkdir",
+    "mv": "move",
+    "rn": "rename",
+    "cp": "copy",
+    "rm": "remove",
+    "d": "download",
+    "u": "upload",
+    "S": "share",
+    "sl": "shared",
+    "cs": "cancelshared",
+    "s": "save",
+    "a": "add",
+    "t": "tasks",
+    "ct": "cleartasks",
+    "cct": "canceltasks",
 }
 
 
 class AliasedGroup(click.Group):
-
     def get_command(self, ctx, cmd_name):
         # As normal command name
         rv = click.Group.get_command(self, ctx, cmd_name)
@@ -57,7 +65,7 @@ class AliasedGroup(click.Group):
 
         # Check alias command name
         if cmd_name not in ALIAS:
-            ctx.fail(f'No command: {cmd_name}')
+            ctx.fail(f"No command: {cmd_name}")
 
         normal_cmd_name = ALIAS[cmd_name]
         return click.Group.get_command(self, ctx, normal_cmd_name)
@@ -70,13 +78,15 @@ _APP_DOC = f"""BaiduPCS App v{__version__}
     如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#useradd
     用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
 
-_ALIAS_DOC = 'Command Alias:\n\n\b\n' + '\n'.join(
-    [f'{alias: >3} : {cmd}' for alias, cmd in sorted(ALIAS.items(), key=lambda x: x[1])]
+_ALIAS_DOC = "Command Alias:\n\n\b\n" + "\n".join(
+    [f"{alias: >3} : {cmd}" for alias, cmd in sorted(ALIAS.items(), key=lambda x: x[1])]
 )
 
 
 @click.group(cls=AliasedGroup, help=_APP_DOC, epilog=_ALIAS_DOC)
-@click.option('--account-data', type=str, default=DEFAULT_DATA_PATH, help='Account data file')
+@click.option(
+    "--account-data", type=str, default=DEFAULT_DATA_PATH, help="Account data file"
+)
 @click.pass_context
 def app(ctx, account_data):
 
@@ -88,7 +98,7 @@ def app(ctx, account_data):
 
 
 @app.command()
-@click.argument('user_id', type=int, default=None, required=False)
+@click.argument("user_id", type=int, default=None, required=False)
 @click.pass_context
 def who(ctx, user_id):
     am = ctx.obj.account_manager
@@ -96,7 +106,7 @@ def who(ctx, user_id):
     if account:
         display_user_info(account.user)
     else:
-        print('[italic red]No recent user, please adding or selecting one[/]')
+        print("[italic red]No recent user, please adding or selecting one[/]")
 
 
 @app.command()
@@ -106,7 +116,7 @@ def su(ctx):
     ls = sorted([a.user for a in am.accounts])
     display_user_infos(*ls)
 
-    user_ids = [str(u.user_id) for u in ls] + ['']
+    user_ids = [str(u.user_id) for u in ls] + [""]
     i = Prompt.ask("Select an user", choices=user_ids)
     user_id = int(i)
     am.su(user_id)
@@ -122,11 +132,11 @@ def userlist(ctx):
 
 
 @app.command()
-@click.option('--bduss', prompt='bduss', hide_input=True)
-@click.option('--cookies', prompt='cookies', hide_input=True)
+@click.option("--bduss", prompt="bduss", hide_input=True)
+@click.option("--cookies", prompt="cookies", hide_input=True)
 @click.pass_context
 def useradd(ctx, bduss, cookies):
-    cookies = dict([c.split('=', 1) for c in cookies.split('; ')])
+    cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
     account = Account.from_bduss(bduss, cookies=cookies)
     am = ctx.obj.account_manager
     am.useradd(account.user)
@@ -141,7 +151,7 @@ def userdel(ctx):
     ls = sorted([a.user for a in am.accounts])
     display_user_infos(*ls)
 
-    user_ids = [str(u.user_id) for u in ls] + ['']
+    user_ids = [str(u.user_id) for u in ls] + [""]
     i = Prompt.ask("Delete an user", choices=user_ids)
     if not i:
         return
@@ -150,14 +160,14 @@ def userdel(ctx):
     am.userdel(user_id)
     am.save()
 
-    print(f'Delete user {user_id}')
+    print(f"Delete user {user_id}")
 
 
 def recent_api(ctx) -> Optional[BaiduPCSApi]:
     am = ctx.obj.account_manager
     account = am.who()
     if not account:
-        print('[italic red]No recent user, please adding or selecting one[/]')
+        print("[italic red]No recent user, please adding or selecting one[/]")
         return None
     return account.pcsapi()
 
@@ -169,23 +179,23 @@ def recent_api(ctx) -> Optional[BaiduPCSApi]:
 
 
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--desc', '-r', is_flag=True)
-@click.option('--name', '-n', is_flag=True)
-@click.option('--time', '-t', is_flag=True)
-@click.option('--size', '-s', is_flag=True)
-@click.option('--recursive', '-R', is_flag=True)
-@click.option('--include', '-I', type=str)
-@click.option('--include-regex', '--IR', type=str)
-@click.option('--exclude', '-E', type=str)
-@click.option('--exclude-regex', '--ER', type=str)
-@click.option('--is-file', '-f', is_flag=True)
-@click.option('--is-dir', '-d', is_flag=True)
-@click.option('--no-highlight', '--NH', is_flag=True)
-@click.option('--show-size', '-S', is_flag=True)
-@click.option('--show-date', '-D', is_flag=True)
-@click.option('--show-md5', '-M', is_flag=True)
-@click.option('--show-absolute-path', '-A', is_flag=True)
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--desc", "-r", is_flag=True)
+@click.option("--name", "-n", is_flag=True)
+@click.option("--time", "-t", is_flag=True)
+@click.option("--size", "-s", is_flag=True)
+@click.option("--recursive", "-R", is_flag=True)
+@click.option("--include", "-I", type=str)
+@click.option("--include-regex", "--IR", type=str)
+@click.option("--exclude", "-E", type=str)
+@click.option("--exclude-regex", "--ER", type=str)
+@click.option("--is-file", "-f", is_flag=True)
+@click.option("--is-dir", "-d", is_flag=True)
+@click.option("--no-highlight", "--NH", is_flag=True)
+@click.option("--show-size", "-S", is_flag=True)
+@click.option("--show-date", "-D", is_flag=True)
+@click.option("--show-md5", "-M", is_flag=True)
+@click.option("--show-absolute-path", "-A", is_flag=True)
 @click.pass_context
 def ls(
     ctx,
@@ -243,19 +253,19 @@ def ls(
 
 
 @app.command()
-@click.argument('keyword', nargs=1, type=str)
-@click.argument('remotedir', nargs=1, type=str, default='/')
-@click.option('--recursive', '-R', is_flag=True)
-@click.option('--include', '-I', type=str)
-@click.option('--include-regex', '--IR', type=str)
-@click.option('--exclude', '-E', type=str)
-@click.option('--exclude-regex', '--ER', type=str)
-@click.option('--is-file', '-f', is_flag=True)
-@click.option('--is-dir', '-d', is_flag=True)
-@click.option('--no-highlight', '--NH', is_flag=True)
-@click.option('--show-size', '-S', is_flag=True)
-@click.option('--show-date', '-D', is_flag=True)
-@click.option('--show-md5', '-M', is_flag=True)
+@click.argument("keyword", nargs=1, type=str)
+@click.argument("remotedir", nargs=1, type=str, default="/")
+@click.option("--recursive", "-R", is_flag=True)
+@click.option("--include", "-I", type=str)
+@click.option("--include-regex", "--IR", type=str)
+@click.option("--exclude", "-E", type=str)
+@click.option("--exclude-regex", "--ER", type=str)
+@click.option("--is-file", "-f", is_flag=True)
+@click.option("--is-dir", "-d", is_flag=True)
+@click.option("--no-highlight", "--NH", is_flag=True)
+@click.option("--show-size", "-S", is_flag=True)
+@click.option("--show-date", "-D", is_flag=True)
+@click.option("--show-md5", "-M", is_flag=True)
 @click.pass_context
 def search(
     ctx,
@@ -305,8 +315,8 @@ def search(
 
 
 @app.command()
-@click.argument('remotedirs', nargs=-1, type=str)
-@click.option('--show', '-S', is_flag=True)
+@click.argument("remotedirs", nargs=-1, type=str)
+@click.option("--show", "-S", is_flag=True)
 @click.pass_context
 def mkdir(ctx, remotedirs, show):
     api = recent_api(ctx)
@@ -317,8 +327,8 @@ def mkdir(ctx, remotedirs, show):
 
 
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--show', '-S', is_flag=True)
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--show", "-S", is_flag=True)
 @click.pass_context
 def move(ctx, remotepaths, show):
     api = recent_api(ctx)
@@ -326,14 +336,14 @@ def move(ctx, remotepaths, show):
         return
 
     if len(remotepaths) < 2:
-        ctx.fail('remote paths < 2')
+        ctx.fail("remote paths < 2")
     file_operators.move(api, *remotepaths, show=show)
 
 
 @app.command()
-@click.argument('source', nargs=1, type=str)
-@click.argument('dest', nargs=1, type=str)
-@click.option('--show', '-S', is_flag=True)
+@click.argument("source", nargs=1, type=str)
+@click.argument("dest", nargs=1, type=str)
+@click.option("--show", "-S", is_flag=True)
 @click.pass_context
 def rename(ctx, source, dest, show):
     api = recent_api(ctx)
@@ -344,8 +354,8 @@ def rename(ctx, source, dest, show):
 
 
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--show', '-S', is_flag=True)
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--show", "-S", is_flag=True)
 @click.pass_context
 def copy(ctx, remotepaths, show):
     api = recent_api(ctx)
@@ -353,12 +363,12 @@ def copy(ctx, remotepaths, show):
         return
 
     if len(remotepaths) < 2:
-        ctx.fail('remote paths < 2')
+        ctx.fail("remote paths < 2")
     file_operators.copy(api, *remotepaths, show=show)
 
 
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
+@click.argument("remotepaths", nargs=-1, type=str)
 @click.pass_context
 def remove(ctx, remotepaths):
     api = recent_api(ctx)
@@ -369,23 +379,23 @@ def remove(ctx, remotepaths):
 
 
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--outdir', '-o', nargs=1, type=str, default='.')
-@click.option('--recursive', '-R', is_flag=True)
-@click.option('--from-index', '-f', type=int, default=0)
-@click.option('--include', '-I', type=str)
-@click.option('--include-regex', '--IR', type=str)
-@click.option('--exclude', '-E', type=str)
-@click.option('--exclude-regex', '--ER', type=str)
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--outdir", "-o", nargs=1, type=str, default=".")
+@click.option("--recursive", "-R", is_flag=True)
+@click.option("--from-index", "-f", type=int, default=0)
+@click.option("--include", "-I", type=str)
+@click.option("--include-regex", "--IR", type=str)
+@click.option("--exclude", "-E", type=str)
+@click.option("--exclude-regex", "--ER", type=str)
 @click.option(
-    '-d',
-    '--downloader',
+    "-d",
+    "--downloader",
     type=click.Choice([d.name for d in Downloader]),
-    default=DEFAULT_DOWNLOADER.name
+    default=DEFAULT_DOWNLOADER.name,
 )
-@click.option('--concurrency', '-s', type=int, default=DEFAULT_CONCURRENCY)
-@click.option('--chunk-size', '-k', type=str, default=DEFAULT_CHUNK_SIZE)
-@click.option('--quiet', '-q', is_flag=True)
+@click.option("--concurrency", "-s", type=int, default=DEFAULT_CONCURRENCY)
+@click.option("--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE)
+@click.option("--quiet", "-q", is_flag=True)
 @click.pass_context
 def download(
     ctx,
@@ -424,18 +434,22 @@ def download(
         recursive=recursive,
         from_index=from_index,
         downloader=getattr(Downloader, downloader),
-        downloadparams=DownloadParams(concurrency=concurrency, chunk_size=chunk_size, quiet=quiet)
+        downloadparams=DownloadParams(
+            concurrency=concurrency, chunk_size=chunk_size, quiet=quiet
+        ),
     )
 
 
 @app.command()
-@click.argument('localpaths', nargs=-1, type=str)
-@click.argument('remotedir', nargs=1, type=str)
-@click.option('--max-workers', '-w', type=int, default=CPU_NUM)
-@click.option('--no-ignore-existing', '--NI', is_flag=True)
-@click.option('--no-show-progress', '--NP', is_flag=True)
+@click.argument("localpaths", nargs=-1, type=str)
+@click.argument("remotedir", nargs=1, type=str)
+@click.option("--max-workers", "-w", type=int, default=CPU_NUM)
+@click.option("--no-ignore-existing", "--NI", is_flag=True)
+@click.option("--no-show-progress", "--NP", is_flag=True)
 @click.pass_context
-def upload(ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_progress):
+def upload(
+    ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_progress
+):
     api = recent_api(ctx)
     if not api:
         return
@@ -446,7 +460,7 @@ def upload(ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_
         from_to_list,
         max_workers=max_workers,
         ignore_existing=not no_ignore_existing,
-        show_progress=not no_show_progress
+        show_progress=not no_show_progress,
     )
 
 
@@ -456,11 +470,11 @@ def upload(ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_
 # Share
 # {{{
 @app.command()
-@click.argument('remotepaths', nargs=-1, type=str)
-@click.option('--password', '-p', type=str)
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--password", "-p", type=str)
 @click.pass_context
 def share(ctx, remotepaths, password):
-    assert not password or len(password) == 4, '`password` must be 4 letters'
+    assert not password or len(password) == 4, "`password` must be 4 letters"
 
     api = recent_api(ctx)
     if not api:
@@ -470,7 +484,7 @@ def share(ctx, remotepaths, password):
 
 
 @app.command()
-@click.option('--show-all', '-S', is_flag=True)
+@click.option("--show-all", "-S", is_flag=True)
 @click.pass_context
 def shared(ctx, show_all):
     api = recent_api(ctx)
@@ -481,7 +495,7 @@ def shared(ctx, show_all):
 
 
 @app.command()
-@click.argument('share_ids', nargs=-1, type=int)
+@click.argument("share_ids", nargs=-1, type=int)
 @click.pass_context
 def cancelshared(ctx, share_ids):
     api = recent_api(ctx)
@@ -492,13 +506,13 @@ def cancelshared(ctx, share_ids):
 
 
 @app.command()
-@click.argument('shared_url', nargs=1, type=str)
-@click.argument('remotedir', nargs=1, type=str)
-@click.option('--password', '-p', type=str)
-@click.option('--no-show-vcode', '--NV', is_flag=True)
+@click.argument("shared_url", nargs=1, type=str)
+@click.argument("remotedir", nargs=1, type=str)
+@click.option("--password", "-p", type=str)
+@click.option("--no-show-vcode", "--NV", is_flag=True)
 @click.pass_context
 def save(ctx, shared_url, remotedir, password, no_show_vcode):
-    assert not password or len(password) == 4, '`password` must be 4 letters'
+    assert not password or len(password) == 4, "`password` must be 4 letters"
 
     api = recent_api(ctx)
     if not api:
@@ -520,8 +534,8 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 
 
 @app.command()
-@click.argument('task_urls', nargs=-1, type=str)
-@click.argument('remotedir', nargs=1, type=str)
+@click.argument("task_urls", nargs=-1, type=str)
+@click.argument("remotedir", nargs=1, type=str)
 @click.pass_context
 def add(ctx, task_urls, remotedir):
     api = recent_api(ctx)
@@ -533,7 +547,7 @@ def add(ctx, task_urls, remotedir):
 
 
 @app.command()
-@click.argument('task_ids', nargs=-1, type=str)
+@click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
 def tasks(ctx, task_ids):
     api = recent_api(ctx)
@@ -557,7 +571,7 @@ def cleartasks(ctx):
 
 
 @app.command()
-@click.argument('task_ids', nargs=-1, type=str)
+@click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
 def canceltasks(ctx, task_ids):
     api = recent_api(ctx)

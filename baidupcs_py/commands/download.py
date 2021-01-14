@@ -12,7 +12,7 @@ from baidupcs_py.commands.sifter import Sifter, sift
 
 from rich import print
 
-USER_AGENT = 'netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android'
+USER_AGENT = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
 
 DEFAULT_CONCURRENCY = 5
 DEFAULT_CHUNK_SIZE = str(1 * common.OneM)
@@ -28,9 +28,9 @@ DEFAULT_DOWNLOADPARAMS = DownloadParams()
 
 
 class Downloader(Enum):
-    aget_py = 'aget'  # https://github.com/PeterDing/aget
-    aget_rs = 'ag'  # https://github.com/PeterDing/aget-rs
-    aria2 = 'aria2c'  # https://github.com/aria2/aria2
+    aget_py = "aget"  # https://github.com/PeterDing/aget
+    aget_rs = "ag"  # https://github.com/PeterDing/aget-rs
+    aria2 = "aria2c"  # https://github.com/aria2/aria2
 
     # No use axel. It Can't handle URLs of length over 1024
     # axel = 'axel'  # https://github.com/axel-download-accelerator/axel
@@ -45,13 +45,13 @@ class Downloader(Enum):
         url: str,
         localpath: str,
         cookies: Dict[str, Optional[str]],
-        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS
+        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
         global DEFAULT_DOWNLOADER
         if not self.which():
             self = DEFAULT_DOWNLOADER
 
-        localpath_tmp = localpath + '.tmp'
+        localpath_tmp = localpath + ".tmp"
 
         if self == Downloader.aget_py:
             cmd = self._aget_py_cmd(url, localpath_tmp, cookies, downloadparams)
@@ -64,7 +64,9 @@ class Downloader(Enum):
 
         returncode = self.spawn(cmd, downloadparams.quiet)
         if returncode != 0:
-            print(f'[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]')
+            print(
+                f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
+            )
         else:
             shutil.move(localpath_tmp, localpath)
 
@@ -77,25 +79,25 @@ class Downloader(Enum):
         url: str,
         localpath: str,
         cookies: Dict[str, Optional[str]],
-        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS
+        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = 'Cookie: ' + '; '.join(
+        _ck = "Cookie: " + "; ".join(
             [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
         )
         cmd = [
             self.which(),
             url,
-            '-o',
+            "-o",
             localpath,
-            '-H',
-            f'User-Agent: {USER_AGENT}',
-            '-H',
-            'Connection: Keep-Alive',
-            '-H',
+            "-H",
+            f"User-Agent: {USER_AGENT}",
+            "-H",
+            "Connection: Keep-Alive",
+            "-H",
             _ck,
-            '-s',
+            "-s",
             str(downloadparams.concurrency),
-            '-k',
+            "-k",
             downloadparams.chunk_size,
         ]
         return cmd
@@ -105,25 +107,25 @@ class Downloader(Enum):
         url: str,
         localpath: str,
         cookies: Dict[str, Optional[str]],
-        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS
+        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = 'Cookie: ' + '; '.join(
+        _ck = "Cookie: " + "; ".join(
             [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
         )
         cmd = [
             self.which(),
             url,
-            '-o',
+            "-o",
             localpath,
-            '-H',
-            f'User-Agent: {USER_AGENT}',
-            '-H',
-            'Connection: Keep-Alive',
-            '-H',
+            "-H",
+            f"User-Agent: {USER_AGENT}",
+            "-H",
+            "Connection: Keep-Alive",
+            "-H",
             _ck,
-            '-s',
+            "-s",
             str(downloadparams.concurrency),
-            '-k',
+            "-k",
             downloadparams.chunk_size,
         ]
         return cmd
@@ -133,28 +135,28 @@ class Downloader(Enum):
         url: str,
         localpath: str,
         cookies: Dict[str, Optional[str]],
-        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS
+        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = 'Cookie: ' + '; '.join(
+        _ck = "Cookie: " + "; ".join(
             [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
         )
         directory, filename = os.path.split(localpath)
         cmd = [
             self.which(),
-            '-c',
-            '--dir',
+            "-c",
+            "--dir",
             directory,
-            '-o',
+            "-o",
             filename,
-            '--header',
-            f'User-Agent: {USER_AGENT}',
-            '--header',
-            'Connection: Keep-Alive',
-            '--header',
+            "--header",
+            f"User-Agent: {USER_AGENT}",
+            "--header",
+            "Connection: Keep-Alive",
+            "--header",
             _ck,
-            '-s',
+            "-s",
             str(downloadparams.concurrency),
-            '-k',
+            "-k",
             downloadparams.chunk_size,
             url,
         ]
@@ -169,7 +171,7 @@ def download_file(
     remotepath: str,
     localdir: str,
     downloader: Downloader = DEFAULT_DOWNLOADER,
-    downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS
+    downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
 ):
     localpath = Path(localdir) / os.path.basename(remotepath)
 
@@ -178,13 +180,15 @@ def download_file(
         localpath.parent.mkdir(parents=True)
 
     if localpath.exists():
-        print(f'[yellow]{localpath}[/yellow] is ready existed.')
+        print(f"[yellow]{localpath}[/yellow] is ready existed.")
         return
 
     dlink = api.download_link(remotepath)
 
-    print(f'[italic blue]Download[/italic blue]: {remotepath} to {localpath}')
-    downloader.download(dlink, str(localpath), api.cookies, downloadparams=downloadparams)
+    print(f"[italic blue]Download[/italic blue]: {remotepath} to {localpath}")
+    downloader.download(
+        dlink, str(localpath), api.cookies, downloadparams=downloadparams
+    )
 
 
 def download_dir(
@@ -195,13 +199,15 @@ def download_dir(
     recursive: bool = False,
     from_index: int = 0,
     downloader: Downloader = DEFAULT_DOWNLOADER,
-    downloadparams=DEFAULT_DOWNLOADPARAMS
+    downloadparams=DEFAULT_DOWNLOADPARAMS,
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths[from_index:]:
         if rp.is_file:
-            download_file(api, rp.path, localdir, downloader, downloadparams=downloadparams)
+            download_file(
+                api, rp.path, localdir, downloader, downloadparams=downloadparams
+            )
         else:  # is_dir
             _localdir = Path(localdir) / os.path.basename(rp.path)
             download_dir(
@@ -212,7 +218,7 @@ def download_dir(
                 recursive=recursive,
                 from_index=from_index,
                 downloader=downloader,
-                downloadparams=downloadparams
+                downloadparams=downloadparams,
             )
 
 
@@ -235,11 +241,13 @@ def download(
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths:
         if not api.exists(rp):
-            print(f'[yellow]WARNING[/yellow]: `{rp}` does not exist.')
+            print(f"[yellow]WARNING[/yellow]: `{rp}` does not exist.")
             continue
 
         if api.is_file(rp):
-            download_file(api, rp, localdir, downloader=downloader, downloadparams=downloadparams)
+            download_file(
+                api, rp, localdir, downloader=downloader, downloadparams=downloadparams
+            )
         else:
             _localdir = str(Path(localdir) / os.path.basename(rp))
             download_dir(
@@ -250,5 +258,5 @@ def download(
                 recursive=recursive,
                 from_index=from_index,
                 downloader=downloader,
-                downloadparams=downloadparams
+                downloadparams=downloadparams,
             )

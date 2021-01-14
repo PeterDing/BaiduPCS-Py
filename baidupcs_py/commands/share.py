@@ -44,9 +44,9 @@ def save_shared(
     shared_url: str,
     remotedir: str,
     password=Optional[str],
-    show_vcode: bool = True
+    show_vcode: bool = True,
 ):
-    assert remotedir.startswith('/'), '`remotedir` must be an absolute path'
+    assert remotedir.startswith("/"), "`remotedir` must be an absolute path"
 
     # Vertify with password
     if password:
@@ -63,7 +63,11 @@ def save_shared(
 
     while shared_paths:
         shared_path = shared_paths.popleft()
-        uk, share_id, bdstoken = shared_path.uk, shared_path.share_id, shared_path.bdstoken
+        uk, share_id, bdstoken = (
+            shared_path.uk,
+            shared_path.share_id,
+            shared_path.bdstoken,
+        )
         assert uk
         assert share_id
         assert bdstoken
@@ -75,19 +79,21 @@ def save_shared(
 
         # rd = (Path(_remotedirs[shared_path]) / os.path.basename(shared_path.path)).as_posix()
         try:
-            api.transfer_shared_paths(rd, [shared_path.fs_id], uk, share_id, bdstoken, shared_url)
-            print(f'save: {shared_path.path} to {rd}')
+            api.transfer_shared_paths(
+                rd, [shared_path.fs_id], uk, share_id, bdstoken, shared_url
+            )
+            print(f"save: {shared_path.path} to {rd}")
             continue
         except BaiduPCSError as err:
             if err.error_code not in (12, -33):
                 raise err
 
             if err.error_code == 12:  # -33: '一次支持操作999个，减点试试吧'
-                print(f'[yellow]WARNING[/]: {shared_path.path} has be in {rd}')
+                print(f"[yellow]WARNING[/]: {shared_path.path} has be in {rd}")
             if err.error_code == -33:  # -33: '一次支持操作999个，减点试试吧'
                 print(
-                    f'[yellow]WARNING[/]: {shared_path.path} '
-                    'has more items and need to transfer one by one'
+                    f"[yellow]WARNING[/]: {shared_path.path} "
+                    "has more items and need to transfer one by one"
                 )
 
         sub_paths = api.list_shared_paths(shared_path.path, uk, share_id, bdstoken)

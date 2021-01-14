@@ -6,7 +6,7 @@ from zlib import crc32
 from hashlib import md5, sha1
 
 
-def calu_md5(buf: Union[str, bytes], encoding='utf-8') -> str:
+def calu_md5(buf: Union[str, bytes], encoding="utf-8") -> str:
     assert isinstance(buf, (str, bytes))
 
     if isinstance(buf, str):
@@ -24,10 +24,10 @@ def calu_crc32_and_md5(stream: IO[bytes], chunk_size: int) -> Tuple[int, str]:
             crc32_v = crc32(buf, crc32_v).conjugate()
         else:
             break
-    return crc32_v.conjugate() & 0xffffffff, md5_v.hexdigest()
+    return crc32_v.conjugate() & 0xFFFFFFFF, md5_v.hexdigest()
 
 
-def calu_sha1(buf: Union[str, bytes], encoding='utf-8') -> str:
+def calu_sha1(buf: Union[str, bytes], encoding="utf-8") -> str:
     assert isinstance(buf, (str, bytes))
 
     if isinstance(buf, str):
@@ -36,22 +36,22 @@ def calu_sha1(buf: Union[str, bytes], encoding='utf-8') -> str:
 
 
 def dump_json(obj) -> str:
-    return json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
+    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
 
 
 def format_date(timestramp: int) -> str:
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestramp))
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestramp))
 
 
 def human_size(size: int) -> str:
     s = float(size)
-    v = ''
-    t = ''
-    for t in ['B', 'KB', 'MB', 'GB', 'TB']:
+    v = ""
+    t = ""
+    for t in ["B", "KB", "MB", "GB", "TB"]:
         if s < 1024.0:
-            v = f'{s:3.1f}'
+            v = f"{s:3.1f}"
             break
         s /= 1024.0
-    if v.endswith('.0'):
+    if v.endswith(".0"):
         v = v[:-2]
-    return f'{v} {t}'
+    return f"{v} {t}"

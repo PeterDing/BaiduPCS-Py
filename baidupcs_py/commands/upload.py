@@ -12,8 +12,14 @@ from baidupcs_py.baidupcs.errors import BaiduPCSError
 from requests_toolbelt import MultipartEncoderMonitor
 
 from rich.progress import (
-    Progress, SpinnerColumn, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn,
-    TimeRemainingColumn, TaskID
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    DownloadColumn,
+    TransferSpeedColumn,
+    TimeRemainingColumn,
+    TaskID,
 )
 from rich.table import Table
 from rich.box import SIMPLE
@@ -42,8 +48,7 @@ def to_remotepath(sub_path: str, remotedir: str) -> str:
 
 
 def from_tos(localpaths: List[str], remotedir: str) -> List[FromTo]:
-    """Find all localpaths and their corresponded remotepath
-    """
+    """Find all localpaths and their corresponded remotepath"""
 
     ft: List[FromTo] = []
     for localpath in localpaths:
@@ -56,7 +61,7 @@ def from_tos(localpaths: List[str], remotedir: str) -> List[FromTo]:
         else:
             n = len(str(Path(localpath)))
             for sub_path in walk(localpath):
-                remotepath = to_remotepath(sub_path[n + 1:], remotedir)
+                remotepath = to_remotepath(sub_path[n + 1 :], remotedir)
                 ft.append(FromTo(sub_path, remotepath))
     return ft
 
@@ -65,7 +70,7 @@ def from_tos(localpaths: List[str], remotedir: str) -> List[FromTo]:
 def upload(
     api: BaiduPCSApi,
     from_to_list: List[FromTo],
-    ondup: str = 'overwrite',
+    ondup: str = "overwrite",
     max_workers: int = CPU_NUM,
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
@@ -89,7 +94,9 @@ def upload(
                 semaphore.acquire()
                 task_id = None
                 if show_progress:
-                    task_id = _progress.add_task('upload', start=False, localpath=from_to.from_)
+                    task_id = _progress.add_task(
+                        "upload", start=False, localpath=from_to.from_
+                    )
 
                 fut = executor.submit(
                     handle,
@@ -113,11 +120,11 @@ def upload(
     # Summary
     if excepts:
         table = Table(box=SIMPLE, padding=0, show_edge=False)
-        table.add_column('localpath', justify='right', overflow='fold')
-        table.add_column('error', justify='left')
+        table.add_column("localpath", justify="right", overflow="fold")
+        table.add_column("error", justify="left")
 
         for from_to, e in sorted(excepts.items()):
-            table.add_row(from_to.from_, Text(str(e), style='red'))
+            table.add_row(from_to.from_, Text(str(e), style="red"))
 
         _progress.console.print(table)
 
@@ -139,12 +146,12 @@ def upload_file(
 ):
     localpath, remotepath = from_to
 
-    assert exists(localpath), f'`{localpath}` does not exist'
+    assert exists(localpath), f"`{localpath}` does not exist"
 
     if ignore_existing:
         try:
             if api.exists(remotepath):
-                print(f'`{remotepath}` already exists.')
+                print(f"`{remotepath}` already exists.")
                 if task_id is not None:
                     _progress.remove_task(task_id)
                 return
@@ -190,7 +197,7 @@ def upload_file(
             api.upload_file(localpath, remotepath, ondup=ondup, callback=callback)
         else:
             slice_md5s = []
-            fd = open(localpath, 'rb')
+            fd = open(localpath, "rb")
             while True:
                 buf = fd.read(slice_size)
                 if not buf:

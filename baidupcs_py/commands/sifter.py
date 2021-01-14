@@ -6,7 +6,6 @@ from baidupcs_py.baidupcs import PcsFile
 
 
 class Sifter(ABC):
-
     def pattern(self) -> Union[Pattern, str, None]:
         """
         The regex pattern used to the sifter
@@ -52,7 +51,6 @@ class Sifter(ABC):
 
 
 class IncludeSifter(Sifter):
-
     def __init__(self, needle: Optional[str], regex: bool = False):
         _pattern: Union[Pattern, str, None] = None
         self._pattern = _pattern
@@ -67,7 +65,6 @@ class IncludeSifter(Sifter):
 
 
 class ExcludeSifter(IncludeSifter):
-
     def __init__(self, needle: Optional[str], regex: bool = False):
         super().__init__(needle, regex=regex)
 
@@ -76,20 +73,18 @@ class ExcludeSifter(IncludeSifter):
 
 
 class IsFileSifter(Sifter):
-
     def sift(self, obj: Union[PcsFile, str]) -> bool:
         assert isinstance(obj, PcsFile)
         return obj.is_file or not obj.is_dir
 
 
 class IsDirSifter(Sifter):
-
     def sift(self, obj: Union[PcsFile, str]) -> bool:
         assert isinstance(obj, PcsFile)
         return obj.is_dir or not obj.is_file
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def sift(objs: List[T], sifters: List[Sifter]) -> List[T]:

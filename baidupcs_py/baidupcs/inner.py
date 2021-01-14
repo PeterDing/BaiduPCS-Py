@@ -42,24 +42,24 @@ class PcsFile(NamedTuple):
     shared: Optional[bool] = None  # this file is shared if True
 
     @staticmethod
-    def from_(info) -> 'PcsFile':
+    def from_(info) -> "PcsFile":
         return PcsFile(
-            path=info.get('path'),
-            is_dir=info.get('isdir') == 1,
-            is_file=info.get('isdir') == 0,
-            fs_id=info.get('fs_id'),
-            size=info.get('size'),
-            md5=info.get('md5'),
-            block_list=info.get('block_list'),
-            category=info.get('category'),
-            user_id=info.get('user_id'),
-            ctime=info.get('ctime'),
-            mtime=info.get('mtime'),
-            local_ctime=info.get('local_ctime'),
-            local_mtime=info.get('local_mtime'),
-            server_ctime=info.get('server_ctime'),
-            server_mtime=info.get('server_mtime'),
-            shared=info.get('shared'),
+            path=info.get("path"),
+            is_dir=info.get("isdir") == 1,
+            is_file=info.get("isdir") == 0,
+            fs_id=info.get("fs_id"),
+            size=info.get("size"),
+            md5=info.get("md5"),
+            block_list=info.get("block_list"),
+            category=info.get("category"),
+            user_id=info.get("user_id"),
+            ctime=info.get("ctime"),
+            mtime=info.get("mtime"),
+            local_ctime=info.get("local_ctime"),
+            local_mtime=info.get("local_mtime"),
+            server_ctime=info.get("server_ctime"),
+            server_mtime=info.get("server_mtime"),
+            shared=info.get("shared"),
         )
 
 
@@ -75,8 +75,8 @@ class PcsMagnetFile(NamedTuple):
     size: Optional[int] = None
 
     @staticmethod
-    def from_(info) -> 'PcsMagnetFile':
-        return PcsMagnetFile(path=info.get('file_name'), size=info.get('size'))
+    def from_(info) -> "PcsMagnetFile":
+        return PcsMagnetFile(path=info.get("file_name"), size=info.get("size"))
 
 
 class PcsSharedLink(NamedTuple):
@@ -92,15 +92,15 @@ class PcsSharedLink(NamedTuple):
     ctime: Optional[int] = None
 
     @staticmethod
-    def from_(info) -> 'PcsSharedLink':
+    def from_(info) -> "PcsSharedLink":
         return PcsSharedLink(
-            url=info.get('link') or info.get('shortlink'),
-            paths=info.get('paths') or [info.get('typicalPath')],
-            fs_ids=info.get('fsIds'),
-            password=info.get('password'),
-            channel=info.get('channel'),
-            share_id=info.get('share_id') or info.get('shareId') or info.get('shareid'),
-            ctime=info.get('ctime'),
+            url=info.get("link") or info.get("shortlink"),
+            paths=info.get("paths") or [info.get("typicalPath")],
+            fs_ids=info.get("fsIds"),
+            password=info.get("password"),
+            channel=info.get("channel"),
+            share_id=info.get("share_id") or info.get("shareId") or info.get("shareid"),
+            ctime=info.get("ctime"),
         )
 
     def has_password(self) -> bool:
@@ -113,7 +113,7 @@ class PcsSharedLink(NamedTuple):
     def available(self) -> bool:
         if not self.paths:
             return False
-        if self.paths[0].startswith('/'):
+        if self.paths[0].startswith("/"):
             return True
         else:
             return False
@@ -143,25 +143,25 @@ class PcsSharedPath(NamedTuple):
     bdstoken: Optional[str] = None
 
     @staticmethod
-    def from_(info) -> 'PcsSharedPath':
+    def from_(info) -> "PcsSharedPath":
         return PcsSharedPath(
-            fs_id=info.get('fs_id'),
-            path=info.get('path'),
-            size=info.get('size'),
-            is_dir=info.get('isdir') == 1,
-            is_file=info.get('isdir') == 0,
-            md5=info.get('md5'),
-            local_ctime=info.get('local_ctime'),
-            local_mtime=info.get('local_mtime'),
-            server_ctime=info.get('server_ctime'),
-            server_mtime=info.get('server_mtime'),
-            uk=info.get('uk'),
-            share_id=info.get('share_id') or info.get('shareid'),
-            bdstoken=info.get('bdstoken'),
+            fs_id=info.get("fs_id"),
+            path=info.get("path"),
+            size=info.get("size"),
+            is_dir=info.get("isdir") == 1,
+            is_file=info.get("isdir") == 0,
+            md5=info.get("md5"),
+            local_ctime=info.get("local_ctime"),
+            local_mtime=info.get("local_mtime"),
+            server_ctime=info.get("server_ctime"),
+            server_mtime=info.get("server_mtime"),
+            uk=info.get("uk"),
+            share_id=info.get("share_id") or info.get("shareid"),
+            bdstoken=info.get("bdstoken"),
         )
 
 
-FromTo = namedtuple('FromTo', ['from_', 'to_'])
+FromTo = namedtuple("FromTo", ["from_", "to_"])
 
 
 class PcsQuota(NamedTuple):
@@ -187,15 +187,15 @@ class PcsUser(NamedTuple):
 
 
 TASK_STATUS_MSG = {
-    0: '下载成功',
-    1: '下载进行中',
-    2: '系统错误',
-    3: '资源不存在',
-    4: '下载超时',
-    5: '资源存在但下载失败',
-    6: '存储空间不足',
-    7: '目标地址数据已存在',
-    8: '任务取消',
+    0: "下载成功",
+    1: "下载进行中",
+    2: "系统错误",
+    3: "资源不存在",
+    4: "下载超时",
+    5: "资源存在但下载失败",
+    6: "存储空间不足",
+    7: "目标地址数据已存在",
+    8: "任务取消",
 }
 
 
@@ -216,25 +216,25 @@ class CloudTask(NamedTuple):
     ftime: int  # finished time
 
     @staticmethod
-    def from_(info) -> 'CloudTask':
-        size = info.get('size') or info.get('file_size')
+    def from_(info) -> "CloudTask":
+        size = info.get("size") or info.get("file_size")
         if size:
             size = int(size)
-        finished_size = info.get('finished_size')
+        finished_size = info.get("finished_size")
         if finished_size:
             finished_size = int(finished_size)
 
         return CloudTask(
-            task_id=str(info['task_id']),
-            source_url=info.get('source_url'),
-            task_name=info.get('task_name'),
-            path=info.get('save_path') or info.get('path'),
-            status=int(info.get('status', 3)),
+            task_id=str(info["task_id"]),
+            source_url=info.get("source_url"),
+            task_name=info.get("task_name"),
+            path=info.get("save_path") or info.get("path"),
+            status=int(info.get("status", 3)),
             size=size,
             finished_size=finished_size,
-            ctime=info.get('ctime'),
-            stime=info.get('stime'),
-            ftime=info.get('ftime'),
+            ctime=info.get("ctime"),
+            stime=info.get("stime"),
+            ftime=info.get("ftime"),
         )
 
     def status_mean(self) -> Optional[str]:

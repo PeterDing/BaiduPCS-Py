@@ -21,7 +21,7 @@ def list_tasks(api: BaiduPCSApi):
 
 def clear_tasks(api: BaiduPCSApi):
     n = api.clear_tasks()
-    print('clear tasks:', n)
+    print("clear tasks:", n)
 
 
 def cancel_task(api: BaiduPCSApi, task_id: str):

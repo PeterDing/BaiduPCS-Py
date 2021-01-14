@@ -1,4 +1,4 @@
-__all__ = ['BaiduPcs', 'BaiduPcsApi']
+__all__ = ["BaiduPcs", "BaiduPcsApi"]
 
 from .pcs import BaiduPCS
 from .api import BaiduPCSApi

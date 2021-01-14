@@ -5,7 +5,7 @@ import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
 
-DEFAULT_DATA_PATH = Path('~/.baidupcs-py/accounts.pk').expanduser()
+DEFAULT_DATA_PATH = Path("~/.baidupcs-py/accounts.pk").expanduser()
 
 
 class Account(NamedTuple):
@@ -13,17 +13,17 @@ class Account(NamedTuple):
 
     def pcsapi(self) -> BaiduPCSApi:
         auth = self.user.auth
-        assert auth, f'{self}.user.auth is None'
+        assert auth, f"{self}.user.auth is None"
         return BaiduPCSApi(
             bduss=auth.bduss,
             stoken=auth.stoken,
             ptoken=auth.ptoken,
             cookies=auth.cookies,
-            user_id=self.user.user_id
+            user_id=self.user.user_id,
         )
 
     @staticmethod
-    def from_bduss(bduss: str, cookies: Dict[str, Optional[str]] = {}) -> 'Account':
+    def from_bduss(bduss: str, cookies: Dict[str, Optional[str]] = {}) -> "Account":
         api = BaiduPCSApi(bduss=bduss, cookies=cookies)
         user = api.user_info()
         return Account(user=user)
@@ -41,9 +41,9 @@ class AccountManager:
         self._data_path = data_path
 
     @staticmethod
-    def load_data(data_path: PathLike) -> 'AccountManager':
+    def load_data(data_path: PathLike) -> "AccountManager":
         try:
-            return pickle.load(open(data_path, 'rb'))
+            return pickle.load(open(data_path, "rb"))
         except Exception:
             return AccountManager(data_path=data_path)
 
@@ -92,4 +92,4 @@ class AccountManager:
         if not data_path.parent.exists():
             data_path.parent.mkdir(parents=True)
 
-        pickle.dump(self, open(data_path, 'wb'))
+        pickle.dump(self, open(data_path, "wb"))
