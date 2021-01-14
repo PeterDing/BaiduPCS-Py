@@ -134,7 +134,10 @@ def display_tasks(*tasks: CloudTask):
         status = task.status_mean()
         size = human_size(task.size)
         finished_size = human_size(task.finished_size)
-        percent = f"{task.finished_size / task.size * 100:.1f}%"
+        if task.size != 0:
+            percent = f"{task.finished_size / task.size * 100:.1f}%"
+        else:
+            percent = "0%"
 
         info = task._asdict()
         info["status"] = status
