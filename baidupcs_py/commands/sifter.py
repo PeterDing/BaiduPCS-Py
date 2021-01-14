@@ -1,4 +1,4 @@
-from typing import TypeVar, Optional, List, Union, Pattern, Any
+from typing import TypeVar, Optional, List, Union, Pattern
 from abc import ABC
 import re
 
