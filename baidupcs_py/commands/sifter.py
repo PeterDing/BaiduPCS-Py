@@ -84,7 +84,7 @@ class IsDirSifter(Sifter):
         return obj.is_dir or not obj.is_file
 
 
-T = TypeVar("T")
+T = TypeVar("T", PcsFile, str)
 
 
 def sift(objs: List[T], sifters: List[Sifter]) -> List[T]:

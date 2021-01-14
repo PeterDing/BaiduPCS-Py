@@ -81,7 +81,7 @@ def display_files(
             background.style = "blue"
 
         if highlight and sifters:
-            pats = list(
+            pats: List[Union[Pattern, str]] = list(
                 filter(
                     None, [sifter.pattern() for sifter in sifters if sifter.include()]
                 )

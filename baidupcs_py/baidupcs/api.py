@@ -173,7 +173,9 @@ class BaiduPCSApi:
 
     def share(self, *remotepaths: str, password: Optional[str] = None) -> PcsSharedLink:
         info = self._baidupcs.share(*remotepaths, password=password)
-        link = PcsSharedLink.from_(info)._replace(paths=remotepaths, password=password)
+        link = PcsSharedLink.from_(info)._replace(
+            paths=list(remotepaths), password=password
+        )
         return link
 
     def list_shared(self, page: int = 1) -> List[PcsSharedLink]:
