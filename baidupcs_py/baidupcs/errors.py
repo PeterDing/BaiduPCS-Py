@@ -100,6 +100,9 @@ ERRORS = {
     31220: "流量超出限额",
     31298: "服务器返回值KEY非法",
     31299: "服务器返回值KEY不存在",
+    31341: "be transcoding, please wait and retry",
+    36032: "hit sexy spam",
+    36037: "source url not support",
 }
 
 UNKNOWN_ERROR = "未知错误"
