@@ -1,10 +1,6 @@
 name: BaiduPCS-Py Build & Test
 
-on:
-  push:
-    branches: [$default-branch]
-  pull_request:
-    branches: [$default-branch]
+on: [push, pull_request]
 
 jobs:
   build-test:
@@ -13,11 +9,9 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         python-version: [3.6, 3.7, 3.8, 3.9]
-
     defaults:
       run:
         shell: bash
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
