@@ -822,8 +822,10 @@ class BaiduPCS:
 
     # Playing the m3u8 file is needed add `--stream-lavf-o-append="protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"` for mpv
     # https://github.com/mpv-player/mpv/issues/6928#issuecomment-532198445
+    @assert_ok
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720"):
         """Get content of the m3u8 stream file"""
+
         url = self._form_url(PcsNode.File, domain=PCS_BAIDU_COM)
         params = {
             "method": "streaming",
@@ -832,4 +834,8 @@ class BaiduPCS:
         }
 
         resp = self._request(Method.Get, url, params=params)
-        return resp.text
+        cn = resp.text
+        if cn.startswith("{"):  # error
+            return resp.json()
+        else:
+            return {"m3u8_content": cn}

@@ -323,4 +323,8 @@ class BaiduPCSApi:
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:
         info = self._baidupcs.m3u8_stream(remotepath, type)
-        return info
+        if info.get("m3u8_content"):
+            return info["m3u8_content"]
+        else:
+            # Here should be a error
+            return ""
