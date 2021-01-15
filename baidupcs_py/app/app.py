@@ -1,12 +1,12 @@
 from typing import Optional
 from functools import wraps
 import os
-import sys
 import signal
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
+from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
     ExcludeSifter,
@@ -41,7 +41,12 @@ DEBUG = os.getenv("DEBUG")
 
 
 def handle_signal(sign_num, frame):
-    sys.exit(1)
+    if _progress._started:
+        # Stop _progress, otherwise terminal stdout will be contaminated
+        _progress.stop()
+
+    # No use sys.exit() which only exits the main thread
+    os._exit(1)
 
 
 signal.signal(signal.SIGINT, handle_signal)
@@ -186,13 +191,18 @@ def userlist(ctx):
 
 @app.command()
 @click.option("--bduss", prompt="bduss", hide_input=True, help="用户 bduss")
-@click.option("--cookies", prompt="cookies", hide_input=True, help="用户 cookies")
+@click.option(
+    "--cookies", prompt="cookies", hide_input=True, default="", help="用户 cookies"
+)
 @click.pass_context
 @handle_error
 def useradd(ctx, bduss, cookies):
     """添加一个用户并设置为当前用户"""
 
-    cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
+    if cookies:
+        cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
+    else:
+        cookies = {}
     account = Account.from_bduss(bduss, cookies=cookies)
     am = ctx.obj.account_manager
     am.useradd(account.user)
