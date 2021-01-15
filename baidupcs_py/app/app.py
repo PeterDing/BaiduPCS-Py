@@ -1,5 +1,8 @@
 from typing import Optional
 from functools import wraps
+import os
+import sys
+import signal
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
@@ -12,6 +15,7 @@ from baidupcs_py.commands.sifter import (
 )
 from baidupcs_py.commands.display import display_user_info, display_user_infos
 from baidupcs_py.commands.list_files import list_files
+from baidupcs_py.commands.cat import cat as _cat
 from baidupcs_py.commands import file_operators
 from baidupcs_py.commands.search import search as _search
 from baidupcs_py.commands import cloud as _cloud
@@ -31,6 +35,16 @@ import click
 
 from rich import print
 from rich.prompt import Prompt, Confirm
+from rich.console import Console
+
+DEBUG = os.getenv("DEBUG")
+
+
+def handle_signal(sign_num, frame):
+    sys.exit(1)
+
+
+signal.signal(signal.SIGINT, handle_signal)
 
 
 def handle_error(func):
@@ -42,8 +56,14 @@ def handle_error(func):
             return func(*args, **kwargs)
         except BaiduPCSError as err:
             print(f"[bold red]ERROR[/bold red]: BaiduPCSError: {err}")
+            if DEBUG:
+                console = Console()
+                console.print_exception()
         except Exception as err:
             print(f"[bold red]System ERROR[/bold red]: {err}")
+            if DEBUG:
+                console = Console()
+                console.print_exception()
 
     return wrap
 
@@ -359,6 +379,19 @@ def search(
 
 
 @app.command()
+@click.argument("remotepath", nargs=1, type=str)
+@click.option("--encoding", "-e", type=str, default="utf-8", help="文件编码，默认为 utf-8")
+@click.pass_context
+@handle_error
+def cat(ctx, remotepath):
+    api = recent_api(ctx)
+    if not api:
+        return
+
+    _cat(api, remotepath)
+
+
+@app.command()
 @click.argument("remotedirs", nargs=-1, type=str)
 @click.option("--show", "-S", is_flag=True, help="显示目录")
 @click.pass_context
@@ -468,11 +501,19 @@ def remove(ctx, remotepaths):
     "--downloader",
     type=click.Choice([d.name for d in Downloader]),
     default=DEFAULT_DOWNLOADER.name,
-    help="""指定第三方下载应用
+    help="""指定下载应用
 
     \b
-    默认为 aget_py (https://github.com/PeterDing/aget),
-    推荐用 aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)
+    默认为 me (BaiduPCS-Py 自己的下载器，不支持断续下载)
+        me 使用多文件并发下载。
+
+    除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。
+    如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。
+
+    \b
+    aget_py (https://github.com/PeterDing/aget) 默认安装
+    aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)
+    aria2 (下载 https://github.com/aria2/aria2/releases)
     """,
 )
 @click.option(
