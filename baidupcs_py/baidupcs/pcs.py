@@ -12,7 +12,8 @@ from urllib.parse import urlparse
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
-from baidupcs_py.baidupcs.common import OneM, OneK
+from baidupcs_py.common import constant
+from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.baidupcs.errors import BaiduPCSError, parse_errno
 from baidupcs_py.baidupcs.phone import get_phone_model, sum_IMEI
 from baidupcs_py.baidupcs.errors import assert_ok
@@ -297,9 +298,11 @@ class BaiduPCS:
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
 
         # Calucate file features
-        buf = localPath.open("rb").read(OneM)
-        slice_md5 = calu_md5(buf[: 256 * OneK])
-        content_crc32, content_md5 = calu_crc32_and_md5(localPath.open("rb"), OneM)
+        buf = localPath.open("rb").read(constant.OneM)
+        slice_md5 = calu_md5(buf[: 256 * constant.OneK])
+        content_crc32, content_md5 = calu_crc32_and_md5(
+            localPath.open("rb"), constant.OneM
+        )
 
         url = self._form_url(PcsNode.File)
         params = {
@@ -819,6 +822,29 @@ class BaiduPCS:
 
         resp = self._request(Method.Get, url, params=params)
         return resp.json()
+
+    def file_stream(
+        self,
+        remotepath: str,
+        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+        callback: Callable[[int], None] = None,
+    ) -> RangeRequestIO:
+        info = self.download_link(remotepath)
+        url = info["urls"][0]["url"]
+        headers = {
+            "Cookie": "; ".join(
+                [f"{k}={v if v is not None else ''}" for k, v in self._cookies.items()]
+            ),
+            "User-Agent": PCS_UA,
+            "Connection": "Keep-Alive",
+        }
+        return RangeRequestIO(
+            Method.Get.value,
+            url,
+            headers=headers,
+            max_chunk_size=max_chunk_size,
+            callback=callback,
+        )
 
     # Playing the m3u8 file is needed add `--stream-lavf-o-append="protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"` for mpv
     # https://github.com/mpv-player/mpv/issues/6928#issuecomment-532198445
