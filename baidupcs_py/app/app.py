@@ -311,7 +311,7 @@ def ls(
 
     list_files(
         api,
-        *remotepaths,
+        *(remotepaths or ("/",)),
         desc=desc,
         name=name,
         time=time,
