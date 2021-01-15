@@ -323,7 +323,7 @@ class BaiduPCSApi:
     def file_stream(
         self,
         remotepath: str,
-        callback: Callable[[int], None] = None,
+        callback: Callable[..., None] = None,
     ) -> RangeRequestIO:
         return self._baidupcs.file_stream(remotepath, callback=callback)
 

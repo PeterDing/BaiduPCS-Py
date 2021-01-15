@@ -19,6 +19,7 @@ from baidupcs_py.baidupcs.phone import get_phone_model, sum_IMEI
 from baidupcs_py.baidupcs.errors import assert_ok
 from baidupcs_py.utils import calu_md5, calu_crc32_and_md5, calu_sha1, dump_json
 
+
 PCS_BAIDU_COM = "https://pcs.baidu.com"
 # PCS_BAIDU_COM = 'http://127.0.0.1:8888'
 PAN_BAIDU_COM = "https://pan.baidu.com"
@@ -108,6 +109,7 @@ class BaiduPCS:
     @staticmethod
     def _app_id(url: str):
         """Select app_id based on `url`"""
+
         if PCS_BAIDU_COM in url:
             return PCS_APP_ID
         else:
@@ -116,6 +118,7 @@ class BaiduPCS:
     @staticmethod
     def _headers(url: str):
         """Select headers based on `url`"""
+
         if PCS_BAIDU_COM in url:
             return dict(PCS_HEADERS)
         else:
@@ -184,7 +187,7 @@ class BaiduPCS:
 
     @assert_ok
     def quota(self):
-        """Quota 空间信息"""
+        """Quota space information"""
 
         url = self._form_url(PcsNode.Quota)
         params = {"method": "info"}
@@ -388,6 +391,7 @@ class BaiduPCS:
 
         `dest` must be a directory
         """
+
         assert len(remotepaths) > 1 and all(
             [p.startswith("/") for p in remotepaths]
         ), "`sources`, `dest` must be absolute paths"
@@ -409,6 +413,7 @@ class BaiduPCS:
     @assert_ok
     def rename(self, source: str, dest: str):
         """Rename `source` to `dest`"""
+
         assert all(
             [p.startswith("/") for p in [source, dest]]
         ), "`source`, `dest` must be absolute paths"
@@ -425,6 +430,7 @@ class BaiduPCS:
 
         `dest` must be a directory
         """
+
         assert len(remotepaths) > 1 and all(
             [p.startswith("/") for p in remotepaths]
         ), "`sources`, `dest` must be absolute paths"
@@ -556,6 +562,7 @@ class BaiduPCS:
             - 0, no password
             - 4, with password
         """
+
         url = self._form_url(PcsNode.SharedRecord, domain=PAN_BAIDU_COM)
         params = {
             "page": str(page),
@@ -570,6 +577,7 @@ class BaiduPCS:
         """
         Only return password
         """
+
         url = self._form_url(PcsNode.SharedPassword, domain=PAN_BAIDU_COM)
         params = {
             "shareid": str(share_id),
@@ -827,7 +835,7 @@ class BaiduPCS:
         self,
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
-        callback: Callable[[int], None] = None,
+        callback: Callable[..., None] = None,
     ) -> RangeRequestIO:
         info = self.download_link(remotepath)
         url = info["urls"][0]["url"]

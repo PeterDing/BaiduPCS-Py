@@ -9,8 +9,6 @@ from baidupcs_py.common import constant
 import requests
 from requests import Response
 
-from rich.progress import TaskID
-
 READ_SIZE = 1 * constant.OneK
 DEFAULT_MAX_CHUNK_SIZE = 10 * constant.OneM
 
@@ -22,7 +20,7 @@ class RangeRequestIO(IOBase):
         url: str,
         headers: Optional[Dict[str, str]] = None,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
-        callback: Callable[[Optional[TaskID], int], None] = None,
+        callback: Callable[..., None] = None,
         **kwargs,
     ):
         kwargs["stream"] = True
