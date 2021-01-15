@@ -100,9 +100,10 @@ def upload(
 
     # Summary
     if excepts:
-        table = Table(box=SIMPLE, padding=0, show_edge=False)
-        table.add_column("localpath", justify="right", overflow="fold")
-        table.add_column("error", justify="left")
+        table = Table("Upload Error", box=SIMPLE, padding=0, show_edge=False)
+        table.add_column("From", justify="left", overflow="fold")
+        table.add_column("To", justify="left", overflow="fold")
+        table.add_column("Error", justify="left")
 
         for from_to, e in sorted(excepts.items()):
             table.add_row(from_to.from_, Text(str(e), style="red"))
