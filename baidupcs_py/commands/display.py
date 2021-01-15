@@ -206,8 +206,9 @@ def display_user_info(user_info: PcsUser):
     console.print(_tempt, highlight=True)
 
 
-def display_user_infos(*user_infos: PcsUser):
+def display_user_infos(*user_infos: PcsUser, recent_user_id: Optional[int] = None):
     table = Table(box=SIMPLE, show_edge=False, highlight=True)
+    table.add_column("Recent", justify="left")
     table.add_column("User Id", justify="left")
     table.add_column("User Name", justify="left")
     table.add_column("Quota", justify="left")
@@ -216,6 +217,9 @@ def display_user_infos(*user_infos: PcsUser):
 
     for user_info in user_infos:
         user_id, user_name, auth, age, sex, quota, products = user_info
+
+        is_recent = "[green]✔[/green]" if user_id == recent_user_id else ""
+
         quota_str = ""
         if quota:
             quota_str = human_size(quota.used) + "/" + human_size(quota.quota)
@@ -232,7 +236,7 @@ def display_user_infos(*user_infos: PcsUser):
                 vip = "[green]✔[/green]"
                 continue
 
-        table.add_row(str(user_id), user_name, quota_str, svip, vip)
+        table.add_row(is_recent, str(user_id), user_name, quota_str, svip, vip)
 
     console = Console()
     console.print(table)

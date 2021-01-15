@@ -161,10 +161,13 @@ def su(ctx):
 
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
-    display_user_infos(*ls)
+    display_user_infos(*ls, recent_user_id=am._who)
 
     user_ids = [str(u.user_id) for u in ls] + [""]
     i = Prompt.ask("Select an user", choices=user_ids)
+    if not i:
+        return
+
     user_id = int(i)
     am.su(user_id)
     am.save()
@@ -178,7 +181,7 @@ def userlist(ctx):
 
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
-    display_user_infos(*ls)
+    display_user_infos(*ls, recent_user_id=am._who)
 
 
 @app.command()
@@ -205,7 +208,7 @@ def userdel(ctx):
 
     am = ctx.obj.account_manager
     ls = sorted([a.user for a in am.accounts])
-    display_user_infos(*ls)
+    display_user_infos(*ls, recent_user_id=am._who)
 
     user_ids = [str(u.user_id) for u in ls] + [""]
     i = Prompt.ask("Delete an user", choices=user_ids)
