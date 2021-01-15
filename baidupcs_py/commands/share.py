@@ -52,7 +52,7 @@ def save_shared(
     if password:
         api.access_shared(shared_url, password, show_vcode=show_vcode)
 
-    shared_paths = deque(api.shared_paths(shared_url, password))
+    shared_paths = deque(api.shared_paths(shared_url))
 
     # Record the remotedir of each shared_path
     _remotedirs: Dict[PcsSharedPath, str] = {}
