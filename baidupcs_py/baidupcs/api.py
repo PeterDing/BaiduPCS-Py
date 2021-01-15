@@ -3,6 +3,7 @@ from typing import Optional, Dict, List, Tuple, Callable
 from io import BytesIO
 import datetime
 
+from baidupcs_py.common.io import RangeRequestIO
 from baidupcs_py.baidupcs.pcs import BaiduPCS, BaiduPCSError, M3u8Type
 from baidupcs_py.baidupcs.inner import (
     PcsFile,
@@ -231,10 +232,8 @@ class BaiduPCSApi:
     def get_vcode_img(self, vcode_img_url: str, shared_url: str) -> bytes:
         return self._baidupcs.get_vcode_img(vcode_img_url, shared_url)
 
-    def shared_paths(
-        self, shared_url: str, password: Optional[str] = None
-    ) -> List[PcsSharedPath]:
-        info = self._baidupcs.shared_paths(shared_url, password=password)
+    def shared_paths(self, shared_url: str) -> List[PcsSharedPath]:
+        info = self._baidupcs.shared_paths(shared_url)
         uk = info["uk"]
         share_id = info["shareid"]
         bdstoken = info["bdstoken"]
@@ -320,6 +319,13 @@ class BaiduPCSApi:
     def download_link(self, remotepath: str) -> str:
         info = self._baidupcs.download_link(remotepath)
         return info["urls"][0]["url"]
+
+    def file_stream(
+        self,
+        remotepath: str,
+        callback: Callable[[int], None] = None,
+    ) -> RangeRequestIO:
+        return self._baidupcs.file_stream(remotepath, callback=callback)
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:
         info = self._baidupcs.m3u8_stream(remotepath, type)
