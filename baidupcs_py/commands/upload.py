@@ -5,42 +5,23 @@ from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from baidupcs_py.baidupcs import BaiduPCSApi, FromTo, common
+from baidupcs_py.baidupcs import BaiduPCSApi, FromTo
 from baidupcs_py.common.path import is_file, exists, walk
+from baidupcs_py.common import constant
+from baidupcs_py.common.constant import CPU_NUM
+from baidupcs_py.common.concurrent import sure_release
+from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.baidupcs.errors import BaiduPCSError
 
 from requests_toolbelt import MultipartEncoderMonitor
 
-from rich.progress import (
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    BarColumn,
-    DownloadColumn,
-    TransferSpeedColumn,
-    TimeRemainingColumn,
-    TaskID,
-)
+from rich.progress import TaskID
 from rich.table import Table
 from rich.box import SIMPLE
 from rich.text import Text
 from rich import print
 
-CPU_NUM = os.cpu_count() or 1
-DEFAULT_SLICE_SIZE = 100 * common.OneM
-
-_progress = Progress(
-    SpinnerColumn(),
-    TextColumn("[bold blue]{task.fields[localpath]}", justify="right"),
-    BarColumn(bar_width=40),
-    "[progress.percentage]{task.percentage:>3.1f}%",
-    "•",
-    DownloadColumn(),
-    "•",
-    TransferSpeedColumn(),
-    "•",
-    TimeRemainingColumn(),
-)
+DEFAULT_SLICE_SIZE = 100 * constant.OneM
 
 
 def to_remotepath(sub_path: str, remotedir: str) -> str:
@@ -99,7 +80,7 @@ def upload(
                     )
 
                 fut = executor.submit(
-                    handle,
+                    sure_release,
                     semaphore,
                     upload_file,
                     api,
@@ -127,13 +108,6 @@ def upload(
             table.add_row(from_to.from_, Text(str(e), style="red"))
 
         _progress.console.print(table)
-
-
-def handle(semaphore: Semaphore, func, *args, **kwargs):
-    try:
-        func(*args, **kwargs)
-    finally:
-        semaphore.release()
 
 
 def upload_file(
@@ -176,7 +150,7 @@ def upload_file(
         if task_id is not None:
             _progress.update(task_id, completed=slice_completed + monitor.bytes_read)
 
-    if local_size > 256 * common.OneK:
+    if local_size > 256 * constant.OneK:
         try:
             api.rapid_upload_file(localpath, remotepath, ondup=ondup)
             if task_id is not None:
