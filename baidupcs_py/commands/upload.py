@@ -76,7 +76,7 @@ def upload(
                 task_id = None
                 if show_progress:
                     task_id = _progress.add_task(
-                        "upload", start=False, localpath=from_to.from_
+                        "upload", start=False, title=from_to.from_
                     )
 
                 fut = executor.submit(

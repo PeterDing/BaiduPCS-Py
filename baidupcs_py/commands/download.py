@@ -114,9 +114,7 @@ class Downloader(Enum):
         if not downloadparams.quiet:
             if not _progress._started:
                 _progress.start()
-            task_id = _progress.add_task(
-                "MeDownloader", start=False, localpath=localpath
-            )
+            task_id = _progress.add_task("MeDownloader", start=False, title=localpath)
 
         def _wrap_done_callback(fut: Future):
             if task_id is not None:
