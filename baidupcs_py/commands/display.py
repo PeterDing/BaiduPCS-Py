@@ -211,8 +211,8 @@ def display_user_infos(*user_infos: PcsUser):
     table.add_column("User Id", justify="left")
     table.add_column("User Name", justify="left")
     table.add_column("Quota", justify="left")
-    table.add_column("SVIP", justify="left", style="bold red")
-    table.add_column("VIP", justify="left", style="bold red")
+    table.add_column("SVIP", justify="left")
+    table.add_column("VIP", justify="left")
 
     for user_info in user_infos:
         user_id, user_name, auth, age, sex, quota, products = user_info
@@ -220,16 +220,16 @@ def display_user_infos(*user_infos: PcsUser):
         if quota:
             quota_str = human_size(quota.used) + "/" + human_size(quota.quota)
 
-        svip = "✘"
-        vip = "✘"
+        svip = "[red]✘[/red]"
+        vip = "[red]✘[/red]"
 
         assert products
         for pn in products.keys():
             if pn.startswith("svip2_nd"):
-                svip = "✔"
+                svip = "[green]✔[/green]"
                 continue
             if pn.startswith("contentvip_nd"):
-                vip = "✔"
+                vip = "[green]✔[/green]"
                 continue
 
         table.add_row(str(user_id), user_name, quota_str, svip, vip)
