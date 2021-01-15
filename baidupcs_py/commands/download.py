@@ -1,21 +1,25 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any, Callable, TypeVar
 from types import SimpleNamespace
 from enum import Enum
 from pathlib import Path
 import os
 import shutil
 import subprocess
+from concurrent.futures import Future
 
 from baidupcs_py.baidupcs import BaiduPCSApi
-from baidupcs_py.baidupcs import common
+from baidupcs_py.common import constant
+from baidupcs_py.common.downloader import MeDownloader
+from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.commands.sifter import Sifter, sift
 
 from rich import print
+from rich.progress import TaskID
 
 USER_AGENT = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
 
 DEFAULT_CONCURRENCY = 5
-DEFAULT_CHUNK_SIZE = str(1 * common.OneM)
+DEFAULT_CHUNK_SIZE = str(1 * constant.OneM)
 
 
 class DownloadParams(SimpleNamespace):
@@ -28,6 +32,7 @@ DEFAULT_DOWNLOADPARAMS = DownloadParams()
 
 
 class Downloader(Enum):
+    me = "me"
     aget_py = "aget"  # https://github.com/PeterDing/aget
     aget_rs = "ag"  # https://github.com/PeterDing/aget-rs
     aria2 = "aria2c"  # https://github.com/aria2/aria2
@@ -53,7 +58,22 @@ class Downloader(Enum):
 
         localpath_tmp = localpath + ".tmp"
 
-        if self == Downloader.aget_py:
+        def done_callback(fut: Future):
+            if not fut.exception():
+                shutil.move(localpath_tmp, localpath)
+
+        if self == Downloader.me:
+            if Path(localpath_tmp).exists():
+                os.remove(localpath_tmp)
+            self._me_download(
+                url,
+                localpath_tmp,
+                cookies=cookies,
+                downloadparams=downloadparams,
+                done_callback=done_callback,
+            )
+            return
+        elif self == Downloader.aget_py:
             cmd = self._aget_py_cmd(url, localpath_tmp, cookies, downloadparams)
         elif self == Downloader.aget_rs:
             cmd = self._aget_rs_cmd(url, localpath_tmp, cookies, downloadparams)
@@ -73,6 +93,57 @@ class Downloader(Enum):
     def spawn(self, cmd: List[str], quiet: bool = False):
         child = subprocess.run(cmd, stdout=subprocess.DEVNULL if quiet else None)
         return child.returncode
+
+    def _me_download(
+        self,
+        url: str,
+        localpath: str,
+        cookies: Dict[str, Optional[str]],
+        downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
+        done_callback: Optional[Callable[[Future], Any]] = None,
+    ):
+        headers = {
+            "Cookie ": "; ".join(
+                [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
+            ),
+            "User-Agent": USER_AGENT,
+            "Connection": "Keep-Alive",
+        }
+
+        task_id: Optional[TaskID] = None
+        if not downloadparams.quiet:
+            if not _progress._started:
+                _progress.start()
+            task_id = _progress.add_task(
+                "MeDownloader", start=False, localpath=localpath
+            )
+
+        def _wrap_done_callback(fut: Future):
+            if task_id is not None:
+                _progress.remove_task(task_id)
+            if done_callback:
+                done_callback(fut)
+
+        def monit_callback(task_id: Optional[TaskID], offset: int):
+            if task_id is not None:
+                _progress.update(task_id, completed=offset + 1)
+
+        meDownloader = MeDownloader(
+            "GET",
+            url,
+            headers=headers,
+            max_workers=downloadparams.concurrency,
+            callback=monit_callback,
+        )
+
+        if task_id is not None:
+            length = len(meDownloader)
+            _progress.update(task_id, total=length)
+            _progress.start_task(task_id)
+
+        meDownloader.download(
+            Path(localpath), task_id=task_id, done_callback=_wrap_done_callback
+        )
 
     def _aget_py_cmd(
         self,
@@ -163,7 +234,7 @@ class Downloader(Enum):
         return cmd
 
 
-DEFAULT_DOWNLOADER = Downloader.aget_py
+DEFAULT_DOWNLOADER = Downloader.me
 
 
 def download_file(
@@ -185,7 +256,8 @@ def download_file(
 
     dlink = api.download_link(remotepath)
 
-    print(f"[italic blue]Download[/italic blue]: {remotepath} to {localpath}")
+    if downloader != Downloader.me:
+        print(f"[italic blue]Download[/italic blue]: {remotepath} to {localpath}")
     downloader.download(
         dlink, str(localpath), api.cookies, downloadparams=downloadparams
     )
@@ -260,3 +332,8 @@ def download(
                 downloader=downloader,
                 downloadparams=downloadparams,
             )
+
+    if downloader == Downloader.me:
+        MeDownloader._exit_executor()
+
+    _progress.stop()
