@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Pattern
+from typing import Optional, List, Tuple, Union, Pattern
 from pathlib import Path
 
 from baidupcs_py.baidupcs import PcsFile, FromTo, CloudTask, PcsSharedLink, PcsUser
@@ -206,7 +206,14 @@ def display_user_info(user_info: PcsUser):
     console.print(_tempt, highlight=True)
 
 
-def display_user_infos(*user_infos: PcsUser, recent_user_id: Optional[int] = None):
+def display_user_infos(
+    *user_infos: Tuple[PcsUser, str], recent_user_id: Optional[int] = None
+):
+    """
+    Args:
+        user_infos (*Tuple[PcsUser, pwd: str])
+    """
+
     table = Table(box=SIMPLE, show_edge=False, highlight=True)
     table.add_column("Recent", justify="left")
     table.add_column("User Id", justify="left")
@@ -214,8 +221,9 @@ def display_user_infos(*user_infos: PcsUser, recent_user_id: Optional[int] = Non
     table.add_column("Quota", justify="left")
     table.add_column("SVIP", justify="left")
     table.add_column("VIP", justify="left")
+    table.add_column("pwd", justify="left")
 
-    for user_info in user_infos:
+    for user_info, pwd in user_infos:
         user_id, user_name, auth, age, sex, quota, products = user_info
 
         is_recent = "[green]✔[/green]" if user_id == recent_user_id else ""
@@ -236,7 +244,7 @@ def display_user_infos(*user_infos: PcsUser, recent_user_id: Optional[int] = Non
                 vip = "[green]✔[/green]"
                 continue
 
-        table.add_row(is_recent, str(user_id), user_name, quota_str, svip, vip)
+        table.add_row(is_recent, str(user_id), user_name, quota_str, svip, vip, pwd)
 
     console = Console()
     console.print(table)
