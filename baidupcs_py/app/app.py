@@ -76,8 +76,33 @@ def handle_error(func):
     return wrap
 
 
+def _recent_api(ctx) -> Optional[BaiduPCSApi]:
+    """Return recent user's `BaiduPCSApi`"""
+
+    am = ctx.obj.account_manager
+    account = am.who()
+    if not account:
+        print("[italic red]No recent user, please adding or selecting one[/]")
+        return None
+    return account.pcsapi()
+
+
+def _pwd(ctx) -> Path:
+    """Return recent user's pwd"""
+
+    am = ctx.obj.account_manager
+    return Path(am.pwd)
+
+
+def _join_path(source: PathLike, dest: PathLike) -> str:
+    if not isinstance(dest, Path):
+        dest = Path(dest)
+    return (source / dest).resolve().as_posix()
+
+
 ALIAS = {
     "w": "who",
+    "uu": "updateuser",
     "su": "su",
     "ul": "userlist",
     "ua": "useradd",
@@ -184,6 +209,28 @@ def who(ctx, user_id):
 
 
 @app.command()
+@click.argument("user_ids", type=int, nargs=-1, default=None, required=False)
+@click.pass_context
+@handle_error
+def updateuser(ctx, user_ids):
+    """更新用户信息 （默认更新当前用户信息）
+
+    也可指定多个 `user_id`
+    """
+
+    am = ctx.obj.account_manager
+    if not user_ids:
+        user_ids = [am._who]
+
+    for user_id in user_ids:
+        am.update(user_id)
+        account = am.who(user_id)
+        display_user_info(account.user)
+
+    am.save()
+
+
+@app.command()
 @click.pass_context
 @handle_error
 def su(ctx):
@@ -255,30 +302,6 @@ def userdel(ctx):
     am.save()
 
     print(f"Delete user {user_id}")
-
-
-def _recent_api(ctx) -> Optional[BaiduPCSApi]:
-    """Return recent user's `BaiduPCSApi`"""
-
-    am = ctx.obj.account_manager
-    account = am.who()
-    if not account:
-        print("[italic red]No recent user, please adding or selecting one[/]")
-        return None
-    return account.pcsapi()
-
-
-def _pwd(ctx) -> Path:
-    """Return recent user's pwd"""
-
-    am = ctx.obj.account_manager
-    return Path(am.pwd)
-
-
-def _join_path(source: PathLike, dest: PathLike) -> str:
-    if not isinstance(dest, Path):
-        dest = Path(dest)
-    return (source / dest).resolve().as_posix()
 
 
 # }}}
