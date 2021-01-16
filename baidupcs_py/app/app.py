@@ -2,6 +2,8 @@ from typing import Optional
 from functools import wraps
 import os
 import signal
+from pathlib import Path
+from os import PathLike
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
@@ -42,6 +44,7 @@ DEBUG = os.getenv("DEBUG")
 
 def handle_signal(sign_num, frame):
     if _progress._started:
+        print()
         # Stop _progress, otherwise terminal stdout will be contaminated
         _progress.stop()
 
@@ -141,6 +144,28 @@ def app(ctx, account_data):
 
 
 @app.command()
+@click.argument("remotedir", type=str, default="/", required=False)
+@click.pass_context
+@handle_error
+def cd(ctx, remotedir):
+    """切换工作目录"""
+
+    am = ctx.obj.account_manager
+    am.cd(remotedir)
+    am.save()
+
+
+@app.command()
+@click.pass_context
+@handle_error
+def pwd(ctx):
+    """显示工作目录"""
+
+    pwd = _pwd(ctx)
+    print(pwd)
+
+
+@app.command()
 @click.argument("user_id", type=int, default=None, required=False)
 @click.pass_context
 @handle_error
@@ -165,10 +190,10 @@ def su(ctx):
     """切换当前用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([a.user for a in am.accounts])
+    ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
-    user_ids = [str(u.user_id) for u in ls] + [""]
+    user_ids = [str(u.user_id) for u, _ in ls] + [""]
     i = Prompt.ask("Select an user", choices=user_ids)
     if not i:
         return
@@ -185,7 +210,7 @@ def userlist(ctx):
     """显示所有用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([a.user for a in am.accounts])
+    ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
 
@@ -217,10 +242,10 @@ def userdel(ctx):
     """删除一个用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([a.user for a in am.accounts])
+    ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
-    user_ids = [str(u.user_id) for u in ls] + [""]
+    user_ids = [str(u.user_id) for u, _ in ls] + [""]
     i = Prompt.ask("Delete an user", choices=user_ids)
     if not i:
         return
@@ -232,7 +257,7 @@ def userdel(ctx):
     print(f"Delete user {user_id}")
 
 
-def recent_api(ctx) -> Optional[BaiduPCSApi]:
+def _recent_api(ctx) -> Optional[BaiduPCSApi]:
     """Return recent user's `BaiduPCSApi`"""
 
     am = ctx.obj.account_manager
@@ -241,6 +266,19 @@ def recent_api(ctx) -> Optional[BaiduPCSApi]:
         print("[italic red]No recent user, please adding or selecting one[/]")
         return None
     return account.pcsapi()
+
+
+def _pwd(ctx) -> Path:
+    """Return recent user's pwd"""
+
+    am = ctx.obj.account_manager
+    return Path(am.pwd)
+
+
+def _join_path(source: PathLike, dest: PathLike) -> str:
+    if not isinstance(dest, Path):
+        dest = Path(dest)
+    return (source / dest).resolve().as_posix()
 
 
 # }}}
@@ -291,7 +329,7 @@ def ls(
 ):
     """列出网盘路径下的文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -309,9 +347,12 @@ def ls(
     if is_dir:
         sifters.append(IsDirSifter())
 
+    pwd = _pwd(ctx)
+    remotepaths = (_join_path(pwd, r) for r in list(remotepaths) or (pwd,))
+
     list_files(
         api,
-        *(remotepaths or ("/",)),
+        *remotepaths,
         desc=desc,
         name=name,
         time=time,
@@ -328,7 +369,7 @@ def ls(
 
 @app.command()
 @click.argument("keyword", nargs=1, type=str)
-@click.argument("remotedir", nargs=1, type=str, default="/")
+@click.argument("remotedir", nargs=1, type=str, default="")
 @click.option("--recursive", "-R", is_flag=True, help="递归搜索文件")
 @click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
 @click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
@@ -360,7 +401,7 @@ def search(
 ):
     """搜索包含 `keyword` 的文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -377,6 +418,9 @@ def search(
         sifters.append(IsFileSifter())
     if is_dir:
         sifters.append(IsDirSifter())
+
+    pwd = _pwd(ctx)
+    remotedir = _join_path(pwd, remotedir)
 
     _search(
         api,
@@ -397,9 +441,14 @@ def search(
 @click.pass_context
 @handle_error
 def cat(ctx, remotepath):
-    api = recent_api(ctx)
+    """显示文件内容"""
+
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotepath = _join_path(pwd, remotepath)
 
     _cat(api, remotepath)
 
@@ -412,9 +461,12 @@ def cat(ctx, remotepath):
 def mkdir(ctx, remotedirs, show):
     """创建目录"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotedirs = (_join_path(pwd, d) for d in remotedirs)
 
     file_operators.makedir(api, *remotedirs, show=show)
 
@@ -432,9 +484,12 @@ def move(ctx, remotepaths, show):
         move /file1 /file2 /to/dir
     """
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotepaths = [_join_path(pwd / r) for r in remotepaths]
 
     if len(remotepaths) < 2:
         ctx.fail("remote paths < 2")
@@ -455,9 +510,13 @@ def rename(ctx, source, dest, show):
         rename /path/to/far /to/here/foo
     """
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    source = _join_path(pwd, source)
+    dest = _join_path(pwd, dest)
 
     file_operators.rename(api, source, dest, show=show)
 
@@ -475,9 +534,12 @@ def copy(ctx, remotepaths, show):
         copy /file1 /file2 /to/dir
     """
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotepaths = [_join_path(pwd, r) for r in remotepaths]
 
     if len(remotepaths) < 2:
         ctx.fail("remote paths < 2")
@@ -491,9 +553,12 @@ def copy(ctx, remotepaths, show):
 def remove(ctx, remotepaths):
     """删除文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotepaths = (_join_path(pwd, r) for r in remotepaths)
 
     file_operators.remove(api, *remotepaths)
 
@@ -559,7 +624,7 @@ def download(
 ):
     """下载文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -572,6 +637,9 @@ def download(
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
         sifters.append(ExcludeSifter(exclude_regex, regex=True))
+
+    pwd = _pwd(ctx)
+    remotepaths = [_join_path(pwd, r) for r in remotepaths]
 
     _download(
         api,
@@ -627,7 +695,7 @@ def play(
 ):
     """下载文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -640,6 +708,9 @@ def play(
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
         sifters.append(ExcludeSifter(exclude_regex, regex=True))
+
+    pwd = _pwd(ctx)
+    remotepaths = [_join_path(pwd, r) for r in remotepaths]
 
     _play(
         api,
@@ -666,9 +737,12 @@ def upload(
 ):
     """上传文件"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotedir = _join_path(pwd, remotedir)
 
     from_to_list = from_tos(localpaths, remotedir)
     _upload(
@@ -699,9 +773,12 @@ def share(ctx, remotepaths, password):
     """
     assert not password or len(password) == 4, "`password` must be 4 letters"
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotepaths = (_join_path(pwd, r) for r in remotepaths)
 
     _share.share_files(api, *remotepaths, password=password)
 
@@ -713,7 +790,7 @@ def share(ctx, remotepaths, password):
 def shared(ctx, show_all):
     """列出分享链接"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -727,7 +804,7 @@ def shared(ctx, show_all):
 def cancelshared(ctx, share_ids):
     """取消分享链接"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -746,9 +823,12 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 
     assert not password or len(password) == 4, "`password` must be 4 letters"
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotedir = _join_path(pwd, remotedir)
 
     _share.save_shared(
         api,
@@ -773,9 +853,12 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 def add(ctx, task_urls, remotedir):
     """添加离线下载任务"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
+
+    pwd = _pwd(ctx)
+    remotedir = _join_path(pwd, remotedir)
 
     for url in task_urls:
         _cloud.add_task(api, url, remotedir)
@@ -788,7 +871,7 @@ def add(ctx, task_urls, remotedir):
 def tasks(ctx, task_ids):
     """列出离线下载任务。也可列出给定id的任务"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -804,7 +887,7 @@ def tasks(ctx, task_ids):
 def cleartasks(ctx):
     """清除已经下载完和下载失败的任务"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -818,7 +901,7 @@ def cleartasks(ctx):
 def canceltasks(ctx, task_ids):
     """取消下载任务"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
@@ -833,7 +916,7 @@ def canceltasks(ctx, task_ids):
 def purgetasks(ctx, yes):
     """删除所有离线下载任务"""
 
-    api = recent_api(ctx)
+    api = _recent_api(ctx)
     if not api:
         return
 
