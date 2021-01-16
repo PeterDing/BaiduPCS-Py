@@ -94,6 +94,19 @@ class AccountManager:
         else:
             return None
 
+    def update(self, user_id: Optional[int] = None):
+        """Update user_info"""
+
+        user_id = user_id or self._who
+        if user_id:
+            account = self._accounts.get(user_id)
+            if not account:
+                return None
+
+            api = account.pcsapi()
+            user = api.user_info()
+            self._accounts[user_id] = account._replace(user=user)
+
     def su(self, user_id: int):
         """Change recent user with `PcsUser.user_id`
 
