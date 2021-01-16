@@ -437,10 +437,10 @@ def search(
 
 @app.command()
 @click.argument("remotepath", nargs=1, type=str)
-@click.option("--encoding", "-e", type=str, default="utf-8", help="文件编码，默认为 utf-8")
+@click.option("--encoding", "-e", type=str, help="文件编码，默认自动解码")
 @click.pass_context
 @handle_error
-def cat(ctx, remotepath):
+def cat(ctx, remotepath, encoding):
     """显示文件内容"""
 
     api = _recent_api(ctx)
@@ -450,7 +450,7 @@ def cat(ctx, remotepath):
     pwd = _pwd(ctx)
     remotepath = _join_path(pwd, remotepath)
 
-    _cat(api, remotepath)
+    _cat(api, remotepath, encoding=encoding)
 
 
 @app.command()
