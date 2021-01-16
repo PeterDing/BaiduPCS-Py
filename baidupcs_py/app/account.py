@@ -5,11 +5,14 @@ import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
 
-DEFAULT_DATA_PATH = Path("~/.baidupcs-py/accounts.pk").expanduser()
+DEFAULT_DATA_PATH = Path("~").expanduser() / ".baidupcs-py" / "accounts.pk"
 
 
 class Account(NamedTuple):
     user: PcsUser
+
+    # current working directory
+    pwd: str = "/"
 
     def pcsapi(self) -> BaiduPCSApi:
         auth = self.user.auth
@@ -45,11 +48,41 @@ class AccountManager:
         try:
             return pickle.load(open(data_path, "rb"))
         except Exception:
+            from rich.console import Console
+            c = Console()
+            c.print_exception()
             return AccountManager(data_path=data_path)
 
     @property
     def accounts(self) -> List[Account]:
+        """All accounts"""
+
         return list(self._accounts.values())
+
+    def cd(self, remotedir: str = "/"):
+        """Change current working directory"""
+
+        assert self._who, "No recent user"
+
+        account = self._accounts.get(self._who)
+
+        assert account
+
+        pwd = Path(account.pwd) / remotedir
+        account = account._replace(pwd=pwd.resolve().as_posix())
+        self._accounts[self._who] = account
+
+    @property
+    def pwd(self) -> str:
+        """Current working directory of recent user"""
+
+        assert self._who, "No recent user"
+
+        account = self._accounts.get(self._who)
+
+        assert account
+
+        return account.pwd
 
     def who(self, user_id: Optional[int] = None) -> Optional[Account]:
         """Return recent `Account`"""
@@ -67,10 +100,13 @@ class AccountManager:
             who (int): `PcsUser.user_id`
         """
 
+        assert user_id in self._accounts, f"No user {user_id}"
+
         self._who = user_id
 
     def useradd(self, user: PcsUser):
         """Add an user to data"""
+
         self._accounts[user.user_id] = Account(user=user)
 
     def userdel(self, user_id: int):
@@ -79,14 +115,17 @@ class AccountManager:
         Args:
             who (int): `PcsUser.user_id`
         """
+
         if user_id in self._accounts:
             del self._accounts[user_id]
         if user_id == self._who:
             self._who = None
 
     def save(self, data_path: Optional[PathLike] = None):
+        """Serialize to local path"""
+
         data_path = data_path or self._data_path
-        assert data_path
+        assert data_path, "No data path"
 
         data_path = Path(data_path)
         if not data_path.parent.exists():
