@@ -1,4 +1,5 @@
 from typing import Optional
+from collections import OrderedDict
 from functools import wraps
 import os
 import signal
@@ -100,32 +101,34 @@ def _join_path(source: PathLike, dest: PathLike) -> str:
     return (source / dest).resolve().as_posix()
 
 
-ALIAS = {
-    "w": "who",
-    "uu": "updateuser",
-    "su": "su",
-    "ul": "userlist",
-    "ua": "useradd",
-    "ud": "userdel",
-    "l": "ls",
-    "f": "search",
-    "md": "mkdir",
-    "mv": "move",
-    "rn": "rename",
-    "cp": "copy",
-    "rm": "remove",
-    "d": "download",
-    "p": "play",
-    "u": "upload",
-    "S": "share",
-    "sl": "shared",
-    "cs": "cancelshared",
-    "s": "save",
-    "a": "add",
-    "t": "tasks",
-    "ct": "cleartasks",
-    "cct": "canceltasks",
-}
+ALIAS = OrderedDict(
+    **{
+        "w": "who",
+        "uu": "updateuser",
+        "su": "su",
+        "ul": "userlist",
+        "ua": "useradd",
+        "ud": "userdel",
+        "l": "ls",
+        "f": "search",
+        "md": "mkdir",
+        "mv": "move",
+        "rn": "rename",
+        "cp": "copy",
+        "rm": "remove",
+        "d": "download",
+        "p": "play",
+        "u": "upload",
+        "S": "share",
+        "sl": "shared",
+        "cs": "cancelshared",
+        "s": "save",
+        "a": "add",
+        "t": "tasks",
+        "ct": "cleartasks",
+        "cct": "canceltasks",
+    }
+)
 
 
 class AliasedGroup(click.Group):
@@ -142,6 +145,9 @@ class AliasedGroup(click.Group):
         normal_cmd_name = ALIAS[cmd_name]
         return click.Group.get_command(self, ctx, normal_cmd_name)
 
+    def list_commands(self, ctx):
+        return self.commands
+
 
 _APP_DOC = f"""BaiduPCS App v{__version__}
 
@@ -151,7 +157,7 @@ _APP_DOC = f"""BaiduPCS App v{__version__}
     用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
 
 _ALIAS_DOC = "Command Alias:\n\n\b\n" + "\n".join(
-    [f"{alias: >3} : {cmd}" for alias, cmd in sorted(ALIAS.items(), key=lambda x: x[1])]
+    [f"{alias: >3} : {cmd}" for alias, cmd in ALIAS.items()]
 )
 
 
@@ -699,6 +705,7 @@ def download(
     默认为 mpv (https://mpv.io),
     """,
 )
+@click.option("--player-params", "--PP", multiple=True, type=str, help="第三方播放器参数")
 @click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
 @click.pass_context
@@ -713,6 +720,7 @@ def play(
     exclude,
     exclude_regex,
     player,
+    player_params,
     m3u8,
     quiet,
 ):
@@ -742,6 +750,7 @@ def play(
         recursive=recursive,
         from_index=from_index,
         player=getattr(Player, player),
+        player_params=player_params,
         m3u8=m3u8,
         quiet=quiet,
     )

@@ -79,6 +79,7 @@ class Player(Enum):
         cookies: Dict[str, Optional[str]],
         m3u8: bool = False,
         quiet: bool = False,
+        player_params: List[str] = [],
     ):
         global DEFAULT_PLAYER
         if not self.which():
@@ -90,9 +91,21 @@ class Player(Enum):
             raise CommandError(f"No player: {self.name}")
 
         if self == Player.mpv:
-            cmd = self._mpv_cmd(url, cookies, m3u8=m3u8, quiet=quiet)
+            cmd = self._mpv_cmd(
+                url,
+                cookies,
+                m3u8=m3u8,
+                quiet=quiet,
+                player_params=player_params,
+            )
         else:
-            cmd = self._mpv_cmd(url, cookies, m3u8=m3u8, quiet=quiet)
+            cmd = self._mpv_cmd(
+                url,
+                cookies,
+                m3u8=m3u8,
+                quiet=quiet,
+                player_params=player_params,
+            )
 
         returncode = self.spawn(cmd)
         if returncode != 0:
@@ -100,7 +113,12 @@ class Player(Enum):
                 f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
             )
 
-    def spawn(self, cmd: List[str], quiet: bool = False):
+    def spawn(
+        self,
+        cmd: List[str],
+        quiet: bool = False,
+        player_params: List[str] = [],
+    ):
         child = subprocess.run(
             cmd,
             stdout=subprocess.DEVNULL if quiet else None,
@@ -113,6 +131,7 @@ class Player(Enum):
         cookies: Dict[str, Optional[str]],
         m3u8: bool = False,
         quiet: bool = False,
+        player_params: List[str] = [],
     ):
         _ck = "Cookie: " + "; ".join(
             [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
@@ -123,6 +142,7 @@ class Player(Enum):
             "--no-ytdl",
             "--http-header-fields="
             f'"User-Agent: {USER_AGENT}","{_ck}","Connection: Keep-Alive"',
+            *player_params,
         ]
         if m3u8:
             cmd.append(
@@ -142,13 +162,14 @@ def play_file(
     api: BaiduPCSApi,
     remotepath: str,
     player: Player = DEFAULT_PLAYER,
+    player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
 ):
     if not _with_media_ext(remotepath):
         return
 
-    print(f"[italic blue]Play[/italic blue]: {remotepath}" + " (m3u8)" if m3u8 else "")
+    print(f"[italic blue]Play[/italic blue]: {remotepath} {'(m3u8)' if m3u8 else ''}")
 
     if m3u8:
         m3u8_cn = api.m3u8_stream(remotepath)
@@ -158,7 +179,13 @@ def play_file(
     else:
         url = api.download_link(remotepath)
 
-    player.play(url, api.cookies, m3u8=m3u8, quiet=quiet)
+    player.play(
+        url,
+        api.cookies,
+        m3u8=m3u8,
+        quiet=quiet,
+        player_params=player_params,
+    )
 
 
 def play_dir(
@@ -168,6 +195,7 @@ def play_dir(
     recursive: bool = False,
     from_index: int = 0,
     player: Player = DEFAULT_PLAYER,
+    player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
 ):
@@ -175,7 +203,14 @@ def play_dir(
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths[from_index:]:
         if rp.is_file:
-            play_file(api, rp.path, player, quiet=quiet)
+            play_file(
+                api,
+                rp.path,
+                player,
+                player_params=player_params,
+                m3u8=m3u8,
+                quiet=quiet,
+            )
         else:  # is_dir
             play_dir(
                 api,
@@ -184,6 +219,8 @@ def play_dir(
                 recursive=recursive,
                 from_index=from_index,
                 player=player,
+                player_params=player_params,
+                m3u8=m3u8,
                 quiet=quiet,
             )
 
@@ -195,6 +232,7 @@ def play(
     recursive: bool = False,
     from_index: int = 0,
     player: Player = DEFAULT_PLAYER,
+    player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
 ):
@@ -211,7 +249,14 @@ def play(
             continue
 
         if api.is_file(rp):
-            play_file(api, rp, player=player, m3u8=m3u8, quiet=quiet)
+            play_file(
+                api,
+                rp,
+                player=player,
+                player_params=player_params,
+                m3u8=m3u8,
+                quiet=quiet,
+            )
         else:
             play_dir(
                 api,
@@ -220,6 +265,7 @@ def play(
                 recursive=recursive,
                 from_index=from_index,
                 player=player,
+                player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
             )
