@@ -27,6 +27,7 @@ Pillow = "^8.1.0"
 click = "^7.1.2"
 typing-extensions = "^3.7.4"
 aget = "^0.1.17"
+chardet = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"

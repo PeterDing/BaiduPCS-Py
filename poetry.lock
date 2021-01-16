@@ -385,7 +385,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "5cfd2afc3b52c3ae51c5dc985278019176ddfceadda28df874360c1b41908cd4"
+content-hash = "5c9c8754898d08a923582b80169788ec66e0039a5f86e86e654c2e744a207287"
 
 [metadata.files]
 aget = [
