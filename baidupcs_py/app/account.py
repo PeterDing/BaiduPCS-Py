@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Union, NamedTuple
+from typing import Optional, List, Dict, NamedTuple
 from os import PathLike
 from pathlib import Path
 import pickle
@@ -49,6 +49,7 @@ class AccountManager:
             return pickle.load(open(data_path, "rb"))
         except Exception:
             from rich.console import Console
+
             c = Console()
             c.print_exception()
             return AccountManager(data_path=data_path)
