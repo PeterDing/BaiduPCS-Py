@@ -10,6 +10,8 @@ from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.download import USER_AGENT
 from baidupcs_py.commands.errors import CommandError
 
+_print = print
+
 from rich import print
 
 
@@ -80,6 +82,7 @@ class Player(Enum):
         m3u8: bool = False,
         quiet: bool = False,
         player_params: List[str] = [],
+        out_cmd: bool = False,
     ):
         global DEFAULT_PLAYER
         if not self.which():
@@ -106,6 +109,11 @@ class Player(Enum):
                 quiet=quiet,
                 player_params=player_params,
             )
+
+        # Print out command
+        if out_cmd:
+            _print(" ".join((repr(c) for c in cmd)))
+            return
 
         returncode = self.spawn(cmd)
         if returncode != 0:
@@ -165,6 +173,7 @@ def play_file(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    out_cmd: bool = False,
 ):
     if not _with_media_ext(remotepath):
         return
@@ -185,6 +194,7 @@ def play_file(
         m3u8=m3u8,
         quiet=quiet,
         player_params=player_params,
+        out_cmd=out_cmd,
     )
 
 
@@ -198,6 +208,7 @@ def play_dir(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    out_cmd: bool = False,
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
@@ -210,6 +221,7 @@ def play_dir(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                out_cmd=out_cmd,
             )
         else:  # is_dir
             play_dir(
@@ -222,6 +234,7 @@ def play_dir(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                out_cmd=out_cmd,
             )
 
 
@@ -235,6 +248,7 @@ def play(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    out_cmd: bool = False,
 ):
     """Play media file in `remotepaths`
 
@@ -256,6 +270,7 @@ def play(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                out_cmd=out_cmd,
             )
         else:
             play_dir(
@@ -268,4 +283,5 @@ def play(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                out_cmd=out_cmd,
             )

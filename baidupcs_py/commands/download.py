@@ -13,6 +13,8 @@ from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.commands.sifter import Sifter, sift
 
+_print = print
+
 from rich import print
 from rich.progress import TaskID
 
@@ -51,6 +53,7 @@ class Downloader(Enum):
         localpath: str,
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
+        out_cmd: bool = False,
     ):
         global DEFAULT_DOWNLOADER
         if not self.which():
@@ -81,6 +84,11 @@ class Downloader(Enum):
             cmd = self._aria2_cmd(url, localpath_tmp, cookies, downloadparams)
         else:
             cmd = self._aget_py_cmd(url, localpath_tmp, cookies, downloadparams)
+
+        # Print out command
+        if out_cmd:
+            _print(" ".join((repr(c) for c in cmd)))
+            return
 
         returncode = self.spawn(cmd, downloadparams.quiet)
         if returncode != 0:
@@ -241,6 +249,7 @@ def download_file(
     localdir: str,
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
+    out_cmd: bool = False,
 ):
     localpath = Path(localdir) / os.path.basename(remotepath)
 
@@ -248,7 +257,7 @@ def download_file(
     if not localpath.parent.exists():
         localpath.parent.mkdir(parents=True)
 
-    if localpath.exists():
+    if not out_cmd and localpath.exists():
         print(f"[yellow]{localpath}[/yellow] is ready existed.")
         return
 
@@ -257,7 +266,11 @@ def download_file(
     if downloader != Downloader.me:
         print(f"[italic blue]Download[/italic blue]: {remotepath} to {localpath}")
     downloader.download(
-        dlink, str(localpath), api.cookies, downloadparams=downloadparams
+        dlink,
+        str(localpath),
+        api.cookies,
+        downloadparams=downloadparams,
+        out_cmd=out_cmd,
     )
 
 
@@ -270,13 +283,19 @@ def download_dir(
     from_index: int = 0,
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams=DEFAULT_DOWNLOADPARAMS,
+    out_cmd: bool = False,
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths[from_index:]:
         if rp.is_file:
             download_file(
-                api, rp.path, localdir, downloader, downloadparams=downloadparams
+                api,
+                rp.path,
+                localdir,
+                downloader,
+                downloadparams=downloadparams,
+                out_cmd=out_cmd,
             )
         else:  # is_dir
             _localdir = Path(localdir) / os.path.basename(rp.path)
@@ -289,6 +308,7 @@ def download_dir(
                 from_index=from_index,
                 downloader=downloader,
                 downloadparams=downloadparams,
+                out_cmd=out_cmd,
             )
 
 
@@ -301,6 +321,7 @@ def download(
     from_index: int = 0,
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
+    out_cmd: bool = False,
 ):
     """Download `remotepaths` to the `localdir`
 
@@ -316,7 +337,12 @@ def download(
 
         if api.is_file(rp):
             download_file(
-                api, rp, localdir, downloader=downloader, downloadparams=downloadparams
+                api,
+                rp,
+                localdir,
+                downloader=downloader,
+                downloadparams=downloadparams,
+                out_cmd=out_cmd,
             )
         else:
             _localdir = str(Path(localdir) / os.path.basename(rp))
@@ -329,6 +355,7 @@ def download(
                 from_index=from_index,
                 downloader=downloader,
                 downloadparams=downloadparams,
+                out_cmd=out_cmd,
             )
 
     if downloader == Downloader.me:

@@ -634,6 +634,7 @@ def remove(ctx, remotepaths):
     "--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE, help="同步链接分块大小"
 )
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
+@click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方下载应用命令")
 @click.pass_context
 @handle_error
 def download(
@@ -650,8 +651,12 @@ def download(
     concurrency,
     chunk_size,
     quiet,
+    out_cmd,
 ):
     """下载文件"""
+
+    if out_cmd:
+        assert downloader != Downloader.me.name, "输出命令只能用于第三方下载应用"
 
     api = _recent_api(ctx)
     if not api:
@@ -681,6 +686,7 @@ def download(
         downloadparams=DownloadParams(
             concurrency=concurrency, chunk_size=chunk_size, quiet=quiet
         ),
+        out_cmd=out_cmd,
     )
 
 
@@ -708,6 +714,7 @@ def download(
 @click.option("--player-params", "--PP", multiple=True, type=str, help="第三方播放器参数")
 @click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
+@click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方播放器命令")
 @click.pass_context
 @handle_error
 def play(
@@ -723,6 +730,7 @@ def play(
     player_params,
     m3u8,
     quiet,
+    out_cmd,
 ):
     """播放媒体文件"""
 
@@ -753,6 +761,7 @@ def play(
         player_params=player_params,
         m3u8=m3u8,
         quiet=quiet,
+        out_cmd=out_cmd,
     )
 
 
