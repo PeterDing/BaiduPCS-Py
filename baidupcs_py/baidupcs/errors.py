@@ -102,6 +102,7 @@ ERRORS = {
     31299: "服务器返回值KEY不存在",
     31304: "file type is not supported",
     31341: "be transcoding, please wait and retry",
+    36001: "离线下载错误",
     36032: "hit sexy spam",
     36037: "source url not support",
 }
