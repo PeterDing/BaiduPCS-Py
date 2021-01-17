@@ -518,7 +518,7 @@ def move(ctx, remotepaths, show):
         return
 
     pwd = _pwd(ctx)
-    remotepaths = [_join_path(pwd / r) for r in remotepaths]
+    remotepaths = [_join_path(pwd, r) for r in remotepaths]
 
     if len(remotepaths) < 2:
         ctx.fail("remote paths < 2")
