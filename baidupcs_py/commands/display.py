@@ -215,6 +215,7 @@ def display_user_infos(
     """
 
     table = Table(box=SIMPLE, show_edge=False, highlight=True)
+    table.add_column("Index", justify="left")
     table.add_column("Recent", justify="left")
     table.add_column("User Id", justify="left")
     table.add_column("User Name", justify="left")
@@ -223,7 +224,7 @@ def display_user_infos(
     table.add_column("VIP", justify="left")
     table.add_column("pwd", justify="left")
 
-    for user_info, pwd in user_infos:
+    for idx, (user_info, pwd) in enumerate(user_infos, 1):
         user_id, user_name, auth, age, sex, quota, products = user_info
 
         is_recent = "[green]✔[/green]" if user_id == recent_user_id else ""
@@ -244,7 +245,9 @@ def display_user_infos(
                 vip = "[green]✔[/green]"
                 continue
 
-        table.add_row(is_recent, str(user_id), user_name, quota_str, svip, vip, pwd)
+        table.add_row(
+            str(idx), is_recent, str(user_id), user_name, quota_str, svip, vip, pwd
+        )
 
     console = Console()
     console.print(table)
