@@ -156,7 +156,7 @@ _APP_DOC = f"""BaiduPCS App v{__version__}
     如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#useradd
     用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
 
-_ALIAS_DOC = "Command Alias:\n\n\b\n" + "\n".join(
+_ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
     [f"{alias: >3} : {cmd}" for alias, cmd in ALIAS.items()]
 )
 
@@ -246,12 +246,12 @@ def su(ctx):
     ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
-    user_ids = [str(u.user_id) for u, _ in ls] + [""]
-    i = Prompt.ask("Select an user", choices=user_ids)
+    indexes = list(str(idx) for idx in range(1, len(ls) + 1))
+    i = Prompt.ask("Select an user index", choices=indexes, default="")
     if not i:
         return
 
-    user_id = int(i)
+    user_id = ls[int(i) - 1][0].user_id
     am.su(user_id)
     am.save()
 
@@ -298,12 +298,12 @@ def userdel(ctx):
     ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
-    user_ids = [str(u.user_id) for u, _ in ls] + [""]
-    i = Prompt.ask("Delete an user", choices=user_ids)
+    indexes = list(str(idx) for idx in range(1, len(ls) + 1))
+    i = Prompt.ask("Delete an user index", choices=indexes, default="")
     if not i:
         return
 
-    user_id = int(i)
+    user_id = ls[int(i) - 1][0].user_id
     am.userdel(user_id)
     am.save()
 
@@ -724,7 +724,7 @@ def play(
     m3u8,
     quiet,
 ):
-    """下载文件"""
+    """播放媒体文件"""
 
     api = _recent_api(ctx)
     if not api:
