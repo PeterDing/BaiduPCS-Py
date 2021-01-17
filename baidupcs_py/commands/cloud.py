@@ -10,6 +10,9 @@ def add_task(api: BaiduPCSApi, task_url: str, remotedir: str):
 
 
 def tasks(api: BaiduPCSApi, *task_ids: str):
+    if not task_ids:
+        return
+
     cloud_tasks = api.tasks(*task_ids)
     display_tasks(*cloud_tasks)
 
