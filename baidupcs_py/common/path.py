@@ -24,3 +24,11 @@ def walk(localpath: PathLike) -> Iterator[str]:
         r = Path(root)
         for fl in files:
             yield (r / fl).as_posix()
+
+
+def join_path(source: PathLike, dest: PathLike) -> str:
+    if not isinstance(source, Path):
+        source = Path(source)
+    if not isinstance(dest, Path):
+        dest = Path(dest)
+    return (source / dest).resolve().as_posix()
