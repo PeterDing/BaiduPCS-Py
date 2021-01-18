@@ -4,12 +4,12 @@ from functools import wraps
 import os
 import signal
 from pathlib import Path
-from os import PathLike
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
 from baidupcs_py.common.progress_bar import _progress
+from baidupcs_py.common.path import join_path
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
     ExcludeSifter,
@@ -32,6 +32,7 @@ from baidupcs_py.commands.download import (
 )
 from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
 from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
+from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
 
 import click
@@ -95,12 +96,6 @@ def _pwd(ctx) -> Path:
     return Path(am.pwd)
 
 
-def _join_path(source: PathLike, dest: PathLike) -> str:
-    if not isinstance(dest, Path):
-        dest = Path(dest)
-    return (source / dest).resolve().as_posix()
-
-
 ALIAS = OrderedDict(
     **{
         "w": "who",
@@ -119,6 +114,7 @@ ALIAS = OrderedDict(
         "d": "download",
         "p": "play",
         "u": "upload",
+        "sn": "sync",
         "S": "share",
         "sl": "shared",
         "cs": "cancelshared",
@@ -377,7 +373,7 @@ def ls(
         sifters.append(IsDirSifter())
 
     pwd = _pwd(ctx)
-    remotepaths = (_join_path(pwd, r) for r in list(remotepaths) or (pwd,))
+    remotepaths = (join_path(pwd, r) for r in list(remotepaths) or (pwd,))
 
     list_files(
         api,
@@ -449,7 +445,7 @@ def search(
         sifters.append(IsDirSifter())
 
     pwd = _pwd(ctx)
-    remotedir = _join_path(pwd, remotedir)
+    remotedir = join_path(pwd, remotedir)
 
     _search(
         api,
@@ -477,7 +473,7 @@ def cat(ctx, remotepath, encoding):
         return
 
     pwd = _pwd(ctx)
-    remotepath = _join_path(pwd, remotepath)
+    remotepath = join_path(pwd, remotepath)
 
     _cat(api, remotepath, encoding=encoding)
 
@@ -495,7 +491,7 @@ def mkdir(ctx, remotedirs, show):
         return
 
     pwd = _pwd(ctx)
-    remotedirs = (_join_path(pwd, d) for d in remotedirs)
+    remotedirs = (join_path(pwd, d) for d in remotedirs)
 
     file_operators.makedir(api, *remotedirs, show=show)
 
@@ -518,7 +514,7 @@ def move(ctx, remotepaths, show):
         return
 
     pwd = _pwd(ctx)
-    remotepaths = [_join_path(pwd, r) for r in remotepaths]
+    remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     if len(remotepaths) < 2:
         ctx.fail("remote paths < 2")
@@ -544,8 +540,8 @@ def rename(ctx, source, dest, show):
         return
 
     pwd = _pwd(ctx)
-    source = _join_path(pwd, source)
-    dest = _join_path(pwd, dest)
+    source = join_path(pwd, source)
+    dest = join_path(pwd, dest)
 
     file_operators.rename(api, source, dest, show=show)
 
@@ -568,7 +564,7 @@ def copy(ctx, remotepaths, show):
         return
 
     pwd = _pwd(ctx)
-    remotepaths = [_join_path(pwd, r) for r in remotepaths]
+    remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     if len(remotepaths) < 2:
         ctx.fail("remote paths < 2")
@@ -587,7 +583,7 @@ def remove(ctx, remotepaths):
         return
 
     pwd = _pwd(ctx)
-    remotepaths = (_join_path(pwd, r) for r in remotepaths)
+    remotepaths = (join_path(pwd, r) for r in remotepaths)
 
     file_operators.remove(api, *remotepaths)
 
@@ -673,7 +669,7 @@ def download(
         sifters.append(ExcludeSifter(exclude_regex, regex=True))
 
     pwd = _pwd(ctx)
-    remotepaths = [_join_path(pwd, r) for r in remotepaths]
+    remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     _download(
         api,
@@ -749,7 +745,7 @@ def play(
         sifters.append(ExcludeSifter(exclude_regex, regex=True))
 
     pwd = _pwd(ctx)
-    remotepaths = [_join_path(pwd, r) for r in remotepaths]
+    remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     _play(
         api,
@@ -783,7 +779,7 @@ def upload(
         return
 
     pwd = _pwd(ctx)
-    remotedir = _join_path(pwd, remotedir)
+    remotedir = join_path(pwd, remotedir)
 
     from_to_list = from_tos(localpaths, remotedir)
     _upload(
@@ -791,6 +787,32 @@ def upload(
         from_to_list,
         max_workers=max_workers,
         ignore_existing=not no_ignore_existing,
+        show_progress=not no_show_progress,
+    )
+
+
+@app.command()
+@click.argument("localdir", nargs=1, type=str)
+@click.argument("remotedir", nargs=1, type=str)
+@click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
+@click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
+@click.pass_context
+@handle_error
+def sync(ctx, localdir, remotedir, max_workers, no_show_progress):
+    """同步本地目录到远端"""
+
+    api = _recent_api(ctx)
+    if not api:
+        return
+
+    pwd = _pwd(ctx)
+    remotedir = join_path(pwd, remotedir)
+
+    _sync(
+        api,
+        localdir,
+        remotedir,
+        max_workers=max_workers,
         show_progress=not no_show_progress,
     )
 
@@ -819,7 +841,7 @@ def share(ctx, remotepaths, password):
         return
 
     pwd = _pwd(ctx)
-    remotepaths = (_join_path(pwd, r) for r in remotepaths)
+    remotepaths = (join_path(pwd, r) for r in remotepaths)
 
     _share.share_files(api, *remotepaths, password=password)
 
@@ -869,7 +891,7 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
         return
 
     pwd = _pwd(ctx)
-    remotedir = _join_path(pwd, remotedir)
+    remotedir = join_path(pwd, remotedir)
 
     _share.save_shared(
         api,
@@ -899,7 +921,7 @@ def add(ctx, task_urls, remotedir):
         return
 
     pwd = _pwd(ctx)
-    remotedir = _join_path(pwd, remotedir)
+    remotedir = join_path(pwd, remotedir)
 
     for url in task_urls:
         _cloud.add_task(api, url, remotedir)
