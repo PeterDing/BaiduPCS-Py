@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.commands.sifter import Sifter
