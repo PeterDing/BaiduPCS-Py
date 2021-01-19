@@ -48,10 +48,6 @@ class AccountManager:
         try:
             return pickle.load(open(data_path, "rb"))
         except Exception:
-            from rich.console import Console
-
-            c = Console()
-            c.print_exception()
             return AccountManager(data_path=data_path)
 
     @property
