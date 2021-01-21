@@ -171,28 +171,6 @@ def app(ctx, account_data):
 
 
 @app.command()
-@click.argument("remotedir", type=str, default="/", required=False)
-@click.pass_context
-@handle_error
-def cd(ctx, remotedir):
-    """切换工作目录"""
-
-    am = ctx.obj.account_manager
-    am.cd(remotedir)
-    am.save()
-
-
-@app.command()
-@click.pass_context
-@handle_error
-def pwd(ctx):
-    """显示工作目录"""
-
-    pwd = _pwd(ctx)
-    print(pwd)
-
-
-@app.command()
 @click.argument("user_id", type=int, default=None, required=False)
 @click.pass_context
 @handle_error
@@ -304,6 +282,28 @@ def userdel(ctx):
     am.save()
 
     print(f"Delete user {user_id}")
+
+
+@app.command()
+@click.argument("remotedir", type=str, default="/", required=False)
+@click.pass_context
+@handle_error
+def cd(ctx, remotedir):
+    """切换当前工作目录"""
+
+    am = ctx.obj.account_manager
+    am.cd(remotedir)
+    am.save()
+
+
+@app.command()
+@click.pass_context
+@handle_error
+def pwd(ctx):
+    """显示当前工作目录"""
+
+    pwd = _pwd(ctx)
+    print(pwd)
 
 
 # }}}
@@ -878,7 +878,7 @@ def cancelshared(ctx, share_ids):
 @click.argument("shared_url", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
 @click.option("--password", "-p", type=str, help="链接密码，如果没有不用设置")
-@click.option("--no-show-vcode", "--NV", is_flag=True)
+@click.option("--no-show-vcode", "--NV", is_flag=True, help="不显示验证码")
 @click.pass_context
 @handle_error
 def save(ctx, shared_url, remotedir, password, no_show_vcode):
