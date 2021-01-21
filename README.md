@@ -23,6 +23,36 @@ pip3 install BaiduPCS-Py
 BaiduPCS-Py --help
 ```
 
+## 命令别名
+
+| 别名 | 原名         |
+| ---- | ------------ |
+| w    | who          |
+| uu   | updateuser   |
+| su   | su           |
+| ul   | userlist     |
+| ua   | useradd      |
+| ud   | userdel      |
+| l    | ls           |
+| f    | search       |
+| md   | mkdir        |
+| mv   | move         |
+| rn   | rename       |
+| cp   | copy         |
+| rm   | remove       |
+| d    | download     |
+| p    | play         |
+| u    | upload       |
+| sn   | sync         |
+| S    | share        |
+| sl   | shared       |
+| cs   | cancelshared |
+| s    | save         |
+| a    | add          |
+| t    | tasks        |
+| ct   | cleartasks   |
+| cct  | canceltasks  |
+
 ## 添加用户
 
 BaiduPCS-Py 目前不支持用帐号登录。需要使用者在 pan.baidu.com 登录后获取 cookies 和其中的 bduss 值，并用命令 `useradd` 为 BaiduPCS-Py 添加一个用户。
