@@ -149,7 +149,7 @@ _APP_DOC = f"""BaiduPCS App v{__version__}
 
     \b
     如果第一次使用，你需要运行 `BaiduPCS-Py useradd` 添加 `bduss` 和 `cookies`。
-    如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#useradd
+    如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#%E6%B7%BB%E5%8A%A0%E7%94%A8%E6%88%B7
     用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
 
 _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
