@@ -45,8 +45,382 @@ BaiduPCS-Py 目前不支持用帐号登录。需要使用者在 pan.baidu.com �
 BaiduPCS-Py useradd
 ```
 
-或者直接添加:
+或者直接添加：
 
 ```
 BaiduPCS-Py useradd --cookies "cookies 值" --bduss "bduss 值"
 ```
+
+你也可以只添加 `bduss`，省去 `cookies`，但这会让你无发使用 `save` 命令来转存其他用法的分享文件。
+
+BaiduPCS-Py 支持多用户，你只需一直用 `useradd` 来添加用户即可。
+
+## 显示当前用户的信息
+
+```
+BaiduPCS-Py who
+```
+
+或者：
+
+```
+BaiduPCS-Py who user_id
+```
+
+指明显示用户 id 为 `user_id` 的用户信息。
+
+## 更新用户信息
+
+默认更新当前用户信息。
+
+```
+BaiduPCS-Py updateuser
+```
+
+也可指定多个 `user_id`
+
+```
+BaiduPCS-Py updateuser user_id
+```
+
+## 显示所有用户
+
+```
+BaiduPCS-Py userlist
+```
+
+## 切换当前用户
+
+```
+BaiduPCS-Py su
+```
+
+## 删除一个用户
+
+```
+BaiduPCS-Py userdel
+```
+
+## 文件操作
+
+BaiduPCS-Py 操作网盘中的文件可以使用文件的绝对路径或相对路径（相对与当前目录 pwd）。
+
+每一个用户都有自己的当前工作目录（pwd），默认为 `/` 根目录。
+
+使用者可以用 `cd` 命令来切换当前的工作目录（pwd）。
+
+下面所有涉及网盘路径的命令，其中如果网盘路径用的是相对路径，那么是相对于当前工作目录（pwd）的。
+如果是网盘路径用的是绝对路径，那么就是这个绝对路径。
+
+## 切换当前工作目录
+
+切换到绝对路径：
+
+```
+BaiduPCS-Py cd /to/some/path
+```
+
+切换到相对路径：
+
+```
+# 切换到 (pwd)/../path
+BaiduPCS-Py cd ../path
+```
+
+## 列出网盘路径下的文件
+
+```
+BaiduPCS-Py ls [OPTIONS] [REMOTEPATHS]...
+
+BaiduPCS-Py ls /absolute/path
+
+# or
+BaiduPCS-Py ls relative/path
+```
+
+### 选项
+
+| Option                     | Description                          |
+| -------------------------- | ------------------------------------ |
+| -r, --desc                 | 逆序排列文件                         |
+| -n, --name                 | 依名字排序                           |
+| -t, --time                 | 依时间排序                           |
+| -s, --size                 | 依文件大小排序                       |
+| -R, --recursive            | 递归列出文件                         |
+| -I, --include TEXT         | 筛选包含这个字符串的文件             |
+| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件         |
+| -E, --exclude TEXT         | 筛选 **不** 包含这个字符串的文件     |
+| --exclude-regex, --ER TEXT | 筛选 **不** 包含这个正则表达式的文件 |
+| -f, --is-file              | 筛选 **非** 目录文件                 |
+| -d, --is-dir               | 筛选目录文件                         |
+| --no-highlight, --NH       | 取消匹配高亮                         |
+| -S, --show-size            | 显示文件大小                         |
+| -D, --show-date            | 显示文件创建时间                     |
+| -M, --show-md5             | 显示文件 md5                         |
+| -A, --show-absolute-path   | 显示文件绝对路径                     |
+
+## 搜索文件
+
+搜索包含 `keyword` 的文件
+
+```
+BaiduPCS-Py search [OPTIONS] KEYWORD [REMOTEDIR]
+
+# 在当前工作目录中搜索
+BaiduPCS-Py search keyword
+
+# or
+BaiduPCS-Py search keyword /absolute/path
+
+# or
+BaiduPCS-Py search keyword relative/path
+```
+
+### 选项
+
+| Option                     | Description                          |
+| -------------------------- | ------------------------------------ |
+| -R, --recursive            | 递归搜索文件                         |
+| -I, --include TEXT         | 筛选包含这个字符串的文件             |
+| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件         |
+| -E, --exclude TEXT         | 筛选 **不** 包含这个字符串的文件     |
+| --exclude-regex, --ER TEXT | 筛选 **不** 包含这个正则表达式的文件 |
+| -f, --is-file              | 筛选 **非** 目录文件                 |
+| -d, --is-dir               | 筛选目录文件                         |
+| --no-highlight, --NH       | 取消匹配高亮                         |
+| -S, --show-size            | 显示文件大小                         |
+| -D, --show-date            | 显示文件创建时间                     |
+| -M, --show-md5             | 显示文件 md5                         |
+
+## 显示文件内容
+
+```
+BaiduPCS-Py cat [OPTIONS] REMOTEPATH
+```
+
+### 选项
+
+| Option              | Description            |
+| ------------------- | ---------------------- |
+| -e, --encoding TEXT | 文件编码，默认自动解码 |
+
+## 创建目录
+
+```
+BaiduPCS-Py mkdir [OPTIONS] [REMOTEDIRS]...
+```
+
+### 选项
+
+| Option     | Description |
+| ---------- | ----------- |
+| -S, --show | 显示目录    |
+
+## 移动文件
+
+移动一些文件到一个目录中。
+
+```
+BaiduPCS-Py move [OPTIONS] [REMOTEPATHS]... REMOTEDIR
+```
+
+### 选项
+
+| Option     | Description |
+| ---------- | ----------- |
+| -S, --show | 显示结果    |
+
+## 文件重命名
+
+```
+BaiduPCS-Py rename [OPTIONS] SOURCE DEST
+```
+
+### 选项
+
+| Option     | Description |
+| ---------- | ----------- |
+| -S, --show | 显示结果    |
+
+## 拷贝文件
+
+拷贝一些文件到一个目录中。
+
+```
+BaiduPCS-Py move [OPTIONS] [REMOTEPATHS]... REMOTEDIR
+```
+
+### 选项
+
+| Option     | Description |
+| ---------- | ----------- |
+| -S, --show | 显示结果    |
+
+## 删除文件
+
+```
+BaiduPCS-Py remove [OPTIONS] [REMOTEPATHS]...
+```
+
+## 下载文件
+
+```
+BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
+```
+
+### 选项
+
+| Option                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -o, --outdir TEXT                              | 指定下载本地目录，默认为当前目录                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -R, --recursive                                | 递归下载                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -f, --from-index INTEGER                       | 从所有目录中的第几个文件开始下载，默认为 0（第一个）                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -I, --include TEXT                             | 筛选包含这个字符串的文件                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --include-regex, --IR TEXT                     | 筛选包含这个正则表达式的文件                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -E, --exclude TEXT                             | 筛选 不 包含这个字符串的文件                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --exclude-regex, --ER TEXT                     | 筛选 不 包含这个正则表达式的文件                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -s, --concurrency INTEGER                      | 下载同步链接数，默认为 5。数子越大下载速度越快，但是容易被百度封锁                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -k, --chunk-size TEXT                          | 同步链接分块大小                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -q, --quiet                                    | 取消第三方下载应用输出                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --out-cmd, --OC                                | 输出第三方下载应用命令                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -d, --downloader [me\|aget_py\|aget_rs\|aria2] | 指定下载应用<br> <br> 默认为 me (BaiduPCS-Py 自己的下载器，不支持断续下载)<br> me 使用多文件并发下载。<br> <br> 除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。<br> 如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。<br> <br> aget_py (https://github.com/PeterDing/aget) 默认安装<br> aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)<br> aria2 (下载 https://github.com/aria2/aria2/releases)<br> |
+
+## 播放媒体文件
+
+```
+BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
+```
+
+### 选项
+
+| Option                     | Description                                          |
+| -------------------------- | ---------------------------------------------------- |
+| -R, --recursive            | 递归播放                                             |
+| -f, --from-index INTEGER   | 从所有目录中的第几个文件开始播放，默认为 0（第一个） |
+| -I, --include TEXT         | 筛选包含这个字符串的文件                             |
+| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件                         |
+| -E, --exclude TEXT         | 筛选 不 包含这个字符串的文件                         |
+| --exclude-regex, --ER TEXT | 筛选 不 包含这个正则表达式的文件                     |
+| --player-params, --PP TEXT | 第三方播放器参数                                     |
+| -m, --m3u8                 | 获取 m3u8 文件并播放                                 |
+| -q, --quiet                | 取消第三方播放器输出                                 |
+| --out-cmd, --OC            | 输出第三方播放器命令                                 |
+| -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)  |
+
+## 上传文件
+
+上传一些本地文件或目录到网盘目录。
+
+```
+BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
+### 选项
+
+| Option                     | Description        |
+| -------------------------- | ------------------ |
+| -w, --max-workers INTEGER  | 同时上传文件数     |
+| --no-ignore-existing, --NI | 上传已经存在的文件 |
+| --no-show-progress, --NP   | 不显示上传进度     |
+
+## 同步本地目录到远端
+
+同步本地目录到远端。
+
+如果本地文件 md5 和远端不同则上传文件。对于本地不存在的文件但远端存在则删除远端文件。
+
+```
+BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
+```
+
+### 选项
+
+| Option                    | Description    |
+| ------------------------- | -------------- |
+| -w, --max-workers INTEGER | 同时上传文件数 |
+| --no-show-progress, --NP  | 不显示上传进度 |
+
+## 分享文件
+
+```
+BaiduPCS-Py share [OPTIONS] [REMOTEPATHS]...
+```
+
+### 选项
+
+| Option              | Description                      |
+| ------------------- | -------------------------------- |
+| -p, --password TEXT | 设置秘密，4 个字符。默认没有秘密 |
+
+## 列出分享链接
+
+```
+BaiduPCS-Py shared
+```
+
+### 选项
+
+| Option         | Description                                  |
+| -------------- | -------------------------------------------- |
+| -S, --show-all | 显示所有分享的链接，默认只显示有效的分享链接 |
+
+## 取消分享链接
+
+```
+BaiduPCS-Py cancelshared [OPTIONS] [SHARE_IDS]...
+```
+
+## 保存其他用户分享的链接
+
+保存其他用户分享的链接到远端目录。
+
+```
+BaiduPCS-Py save [OPTIONS] SHARED_URL REMOTEDIR
+```
+
+### 选项
+
+| Option                | Description                        |
+| --------------------- | ---------------------------------- |
+| -p, --password TEXT   | 链接密码，如果没有不用设置         |
+| --no-show-vcode, --NV | 不显示验证码，如果需要验证码则报错 |
+
+## 添加离线下载任务
+
+```
+BaiduPCS-Py add [TASK_URLS]... REMOTEDIR
+```
+
+## 列出离线下载任务
+
+```
+# 列出所有离线下载任务
+BaiduPCS-Py tasks
+
+# 也可列出给定id的任务。
+BaiduPCS-Py tasks [TASK_IDS]...
+```
+
+## 清除已经下载完和下载失败的任务
+
+```
+BaiduPCS-Py cleartasks
+```
+
+## 取消下载任务
+
+```
+BaiduPCS-Py canceltasks [TASK_IDS]...
+```
+
+## 删除所有离线下载任务
+
+```
+BaiduPCS-Py purgetasks
+```
+
+### 选项
+
+| Option | Description  |
+| ------ | ------------ |
+| --yes  | 确定直接运行 |
