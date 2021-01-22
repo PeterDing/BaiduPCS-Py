@@ -112,6 +112,12 @@ class RangeRequestIO(IOBase):
         return False
 
     def _split_chunk(self, size: int) -> List[Tuple[int, int]]:
+        """Split the chunks for range header
+
+        Echo chunk has the length at most `self._max_chunk_size`.
+        The total length of all chunks is equal to `min(self._offset + size, len(self))`
+        """
+
         start, end = self._offset, min(self._offset + size, len(self))
         left = list(range(start, end, self._max_chunk_size))
         left.append(end)
