@@ -1,5 +1,6 @@
 from typing import Optional, Any, Callable
 from os import PathLike
+from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 
@@ -37,10 +38,32 @@ class MeDownloader(RangeRequestIO):
         self,
         localpath: PathLike,
         task_id: Optional[TaskID],
+        continue_: bool = False,
         done_callback: Optional[Callable[[Future], Any]] = None,
     ):
+        """
+        Download the url content to `localpath`
+
+        The downloading work executing in the class ThreadPoolExecutor
+
+        Args:
+            continue_ (bool): If set to True, only downloading the remain content depended on
+            the size of `localpath`
+        """
+
         self._task_id = task_id
-        self._fd = open(localpath, "wb")
+
+        if continue_:
+            _path = Path(localpath)
+            _offset = _path.stat().st_size if _path.exists() else 0
+            _fd = _path.open("ab")
+            _fd.seek(_offset, 0)
+        else:
+            _offset = 0
+            _fd = open(localpath, "wb")
+
+        self._offset = _offset
+        self._fd = _fd
 
         cls = self.__class__
         cls._semaphore.acquire()
