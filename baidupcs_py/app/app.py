@@ -607,7 +607,7 @@ def remove(ctx, remotepaths):
     help="""指定下载应用
 
     \b
-    默认为 me (BaiduPCS-Py 自己的下载器，不支持断续下载)
+    默认为 me (BaiduPCS-Py 自己的下载器，支持断续下载)
         me 使用多文件并发下载。
 
     除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。
