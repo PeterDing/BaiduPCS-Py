@@ -66,8 +66,6 @@ class Downloader(Enum):
                 shutil.move(localpath_tmp, localpath)
 
         if self == Downloader.me:
-            if Path(localpath_tmp).exists():
-                os.remove(localpath_tmp)
             self._me_download(
                 url,
                 localpath_tmp,
@@ -148,7 +146,10 @@ class Downloader(Enum):
             _progress.start_task(task_id)
 
         meDownloader.download(
-            Path(localpath), task_id=task_id, done_callback=_wrap_done_callback
+            Path(localpath),
+            task_id=task_id,
+            continue_=True,
+            done_callback=_wrap_done_callback,
         )
 
     def _aget_py_cmd(
