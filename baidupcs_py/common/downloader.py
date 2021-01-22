@@ -25,9 +25,10 @@ class MeDownloader(RangeRequestIO):
 
     @classmethod
     def _exit_executor(cls):
-        as_completed(cls._futures)
-        cls._futures = []
-        cls._executor.__exit__(None, None, None)
+        if getattr(cls, "_executor", None):
+            as_completed(cls._futures)
+            cls._futures = []
+            cls._executor.__exit__(None, None, None)
 
     def __init__(self, *args, max_workers: int = CPU_NUM, **kwargs):
         super().__init__(*args, **kwargs)
