@@ -10,6 +10,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 > 也是 https://github.com/PeterDing/iScript/blob/master/pan.baidu.com.py 的重构版。
 
 - [安装](#安装)
+- [API](#API)
 - [用法](#用法)
 - [命令别名](#命令别名)
 - [添加用户](#添加用户)
@@ -49,6 +50,16 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 
 ```
 pip3 install BaiduPCS-Py
+```
+
+## API
+
+BaiduPCS-Py 的百度网盘 API 只依赖 requests，方便用户开发自己的运用。
+
+```python
+from baidupcs_py.baidupcs import BaiduPCSApi
+
+api = BaiduPCSApi(bduss=bduss, cookies=cookies)
 ```
 
 ## 用法
