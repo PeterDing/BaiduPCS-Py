@@ -65,12 +65,12 @@ def handle_error(func):
         try:
             return func(*args, **kwargs)
         except BaiduPCSError as err:
-            print(f"[bold red]ERROR[/bold red]: BaiduPCSError: {err}")
+            print(f"(v{__version__}) [bold red]ERROR[/bold red]: BaiduPCSError: {err}")
             if DEBUG:
                 console = Console()
                 console.print_exception()
         except Exception as err:
-            print(f"[bold red]System ERROR[/bold red]: {err}")
+            print(f"(v{__version__}) [bold red]System ERROR[/bold red]: {err}")
             if DEBUG:
                 console = Console()
                 console.print_exception()
