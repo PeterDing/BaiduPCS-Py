@@ -102,6 +102,10 @@ class BaiduPCS:
         self._user_id = user_id
         self._user_info = user_info
 
+    @property
+    def cookies(self) -> Dict[str, Optional[str]]:
+        return self._session.cookies.get_dict()
+
     @staticmethod
     def _form_url(node: PcsNode, domain: str = PCS_BAIDU_COM):
         return f"{domain}/{node.value}"

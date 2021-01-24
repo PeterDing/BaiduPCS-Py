@@ -39,7 +39,7 @@ class BaiduPCSApi:
 
     @property
     def cookies(self) -> Dict[str, Optional[str]]:
-        return self._baidupcs._cookies
+        return self._baidupcs.cookies
 
     def bdstoken(self) -> Optional[str]:
         return self._baidupcs.bdstoken()
