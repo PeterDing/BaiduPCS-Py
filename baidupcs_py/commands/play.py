@@ -62,7 +62,7 @@ MEDIA_EXTS = set(
 
 
 def _with_media_ext(path: str) -> bool:
-    ext = os.path.splitext(path)[-1]
+    ext = os.path.splitext(path)[-1].lower()
     if ext in MEDIA_EXTS:
         return True
     else:
