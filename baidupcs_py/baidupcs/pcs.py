@@ -526,7 +526,7 @@ class BaiduPCS:
     def share(self, *remotepaths: str, password: Optional[str] = None):
         """Share some paths to public"""
 
-        assert self._stoken, "`stoken` is needed."
+        assert self._stoken, "`STOKEN` is not in `cookies`"
 
         meta = self.meta(*remotepaths)
         fs_ids = [i["fs_id"] for i in meta["list"]]
@@ -659,7 +659,7 @@ class BaiduPCS:
         Call `BaiduPCS.access_share` before calling the function
         """
 
-        assert self._stoken, "`stoken` is needed."
+        assert self._stoken, "`STOKEN` is not in `cookies`"
 
         resp = self._request(Method.Get, shared_url, params=None)
         html = resp.text
@@ -671,7 +671,7 @@ class BaiduPCS:
 
     @assert_ok
     def list_shared_paths(self, sharedpath: str, uk: int, share_id: int):
-        assert self._stoken, "`stoken` is needed."
+        assert self._stoken, "`STOKEN` is not in `cookies`"
 
         url = self._form_url(PcsNode.SharedPathList, domain=PAN_BAIDU_COM)
         params = {
