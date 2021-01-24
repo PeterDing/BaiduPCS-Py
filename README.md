@@ -128,7 +128,7 @@ BaiduPCS-Py useradd
 BaiduPCS-Py useradd --cookies "cookies 值" --bduss "bduss 值"
 ```
 
-你也可以只添加 `bduss`，省去 `cookies`，但这会让你无发使用 `save` 命令来转存其他用法的分享文件。
+你也可以只添加 `bduss`，省去 `cookies` (或 `cookies` 中没有 `STOKEN` 值)，但这会让你无发使用 `share` 和 `save` 命令来转存其他用法的分享文件。
 
 BaiduPCS-Py 支持多用户，你只需一直用 `useradd` 来添加用户即可。
 
@@ -425,6 +425,8 @@ BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
 
 ## 分享文件
 
+**注意：使用这个命令需要 cookies 中含有 `STOKEN` 值。**
+
 ```
 BaiduPCS-Py share [OPTIONS] [REMOTEPATHS]...
 ```
@@ -454,6 +456,8 @@ BaiduPCS-Py cancelshared [OPTIONS] [SHARE_IDS]...
 ```
 
 ## 保存其他用户分享的链接
+
+**注意：使用这个命令需要 cookies 中含有 `STOKEN` 值。**
 
 保存其他用户分享的链接到远端目录。
 
