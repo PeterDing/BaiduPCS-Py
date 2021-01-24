@@ -659,6 +659,8 @@ class BaiduPCS:
         Call `BaiduPCS.access_share` before calling the function
         """
 
+        assert self._stoken, "`stoken` is needed."
+
         resp = self._request(Method.Get, shared_url, params=None)
         html = resp.text
 
@@ -669,6 +671,8 @@ class BaiduPCS:
 
     @assert_ok
     def list_shared_paths(self, sharedpath: str, uk: int, share_id: int):
+        assert self._stoken, "`stoken` is needed."
+
         url = self._form_url(PcsNode.SharedPathList, domain=PAN_BAIDU_COM)
         params = {
             "channel": "chunlei",
