@@ -43,6 +43,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [清除已经下载完和下载失败的任务](#清除已经下载完和下载失败的任务)
 - [取消下载任务](#取消下载任务)
 - [删除所有离线下载任务](#删除所有离线下载任务)
+- [开启 HTTP 服务](#开启 HTTP 服务)
 
 ## 安装
 
@@ -511,3 +512,21 @@ BaiduPCS-Py purgetasks
 | Option | Description  |
 | ------ | ------------ |
 | --yes  | 确定直接运行 |
+
+## 开启 HTTP 服务
+
+在远端 `ROOT_DIR` 目录下开启 HTTP 服务。
+
+`ROOT_DIR` 默认为 `/`
+
+```
+BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
+```
+
+### 选项
+
+| Option                | Description |
+| --------------------- | ----------- |
+| -h, --host TEXT       | 监听 host   |
+| -p, --port INTEGER    | 监听 port   |
+| -w, --workers INTEGER | 进程数      |
