@@ -34,6 +34,7 @@ from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
 from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
 from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
+from baidupcs_py.commands.server import start_server
 
 import click
 
@@ -987,6 +988,28 @@ def purgetasks(ctx, yes):
         if not Confirm.ask("确定删除[i red]所有的[/i red]离线下载任务?", default=False):
             return
     _cloud.purge_all_tasks(api)
+
+
+# }}}
+
+# {{{ Server
+
+
+@app.command()
+@click.argument("root_dir", type=str, default="/", required=False)
+@click.option("--host", "-h", type=str, default="localhost", help="监听 host")
+@click.option("--port", "-p", type=int, default=8000, help="监听 port")
+@click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
+@click.pass_context
+@handle_error
+def server(ctx, root_dir, host, port, workers):
+    """开启 HTTP 服务"""
+
+    api = _recent_api(ctx)
+    if not api:
+        return
+
+    start_server(api, root_dir=root_dir, host=host, port=port, workers=workers)
 
 
 # }}}
