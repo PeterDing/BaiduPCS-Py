@@ -333,15 +333,17 @@ def userdel(ctx):
 
 
 @app.command()
-@click.option("--encrypt-key", "-k", prompt="encrypt-key", hide_input=True, help="加密密钥")
-@click.option("--salt", "-s", prompt="salt", hide_input=True, help="加密salt")
+@click.option(
+    "--encrypt-key", "--ek", prompt="encrypt-key", hide_input=True, help="加密密钥，32个字符内"
+)
+@click.option("--salt", "-s", prompt="salt", hide_input=True, help="加密salt，不限字符")
 @click.pass_context
 @handle_error
 def encryptkey(ctx, encrypt_key, salt):
     """设置加密密钥"""
 
-    assert encrypt_key, "No encrypt-key"
-    assert salt, "No salt"
+    assert len(encrypt_key) <= 32, "No encrypt-key"
+    assert len(salt) > 0, "No salt"
 
     am = ctx.obj.account_manager
     am.set_encrypt_key(encrypt_key, salt)
@@ -528,9 +530,10 @@ def search(
 @click.argument("remotepath", nargs=1, type=str)
 @click.option("--encoding", "-e", type=str, help="文件编码，默认自动解码")
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
-def cat(ctx, remotepath, encoding, no_decrypt):
+def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
     """显示文件内容"""
 
     api = _recent_api(ctx)
@@ -543,7 +546,7 @@ def cat(ctx, remotepath, encoding, no_decrypt):
     if no_decrypt:
         encrypt_key = None
     else:
-        encrypt_key = _encrypt_key(ctx)
+        encrypt_key = encrypt_key or _encrypt_key(ctx)
 
     _cat(api, remotepath, encoding=encoding, encrypt_key=encrypt_key)
 
@@ -702,6 +705,7 @@ def remove(ctx, remotepaths):
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方下载应用命令")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
 def download(
@@ -720,6 +724,7 @@ def download(
     no_decrypt,
     quiet,
     out_cmd,
+    encrypt_key,
 ):
     """下载文件"""
 
@@ -746,7 +751,7 @@ def download(
     if no_decrypt:
         encrypt_key = None
     else:
-        encrypt_key = _encrypt_key(ctx)
+        encrypt_key = encrypt_key or _encrypt_key(ctx)
 
     _download(
         api,
@@ -790,6 +795,7 @@ def download(
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方播放器命令")
 @click.option("--use-local-server", "-s", is_flag=True, help="使用本地服务器播放")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
 def play(
@@ -807,6 +813,7 @@ def play(
     quiet,
     out_cmd,
     use_local_server,
+    encrypt_key,
 ):
     """播放媒体文件"""
 
@@ -829,7 +836,7 @@ def play(
 
     local_server = ""
     if use_local_server:
-        encrypt_key = _encrypt_key(ctx)
+        encrypt_key = encrypt_key or _encrypt_key(ctx)
 
         host = "localhost"
         port = random_avail_port(49152, 65535)
@@ -874,7 +881,7 @@ def play(
 @app.command()
 @click.argument("localpaths", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--encrypt-key", "-k", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.option(
     "--encrypt-type",
     "-e",
@@ -927,7 +934,7 @@ def upload(
 @app.command()
 @click.argument("localdir", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--encrypt-key", "-k", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.option(
     "--encrypt-type",
     "-e",
@@ -1150,16 +1157,17 @@ def purgetasks(ctx, yes):
 @click.option("--host", "-h", type=str, default="localhost", help="监听 host")
 @click.option("--port", "-p", type=int, default=8000, help="监听 port")
 @click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
+@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
-def server(ctx, root_dir, host, port, workers):
+def server(ctx, root_dir, host, port, workers, encrypt_key):
     """开启 HTTP 服务"""
 
     api = _recent_api(ctx)
     if not api:
         return
 
-    encrypt_key = _encrypt_key(ctx)
+    encrypt_key = encrypt_key or _encrypt_key(ctx)
 
     start_server(
         api,
