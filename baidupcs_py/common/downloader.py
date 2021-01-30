@@ -5,7 +5,7 @@ from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 
 from baidupcs_py.common.constant import CPU_NUM
-from baidupcs_py.common.io import RangeRequestIO, READ_SIZE
+from baidupcs_py.common.io import RangeRequestIO
 from baidupcs_py.common.concurrent import sure_release
 
 from rich.progress import TaskID
@@ -56,9 +56,13 @@ class MeDownloader(RangeRequestIO):
 
         if continue_:
             _path = Path(localpath)
-            _offset = _path.stat().st_size if _path.exists() else 0
-            _fd = _path.open("ab")
-            _fd.seek(_offset, 0)
+            if self.seekable():
+                _offset = _path.stat().st_size if _path.exists() else 0
+                _fd = _path.open("ab")
+                _fd.seek(_offset, 0)
+            else:
+                _offset = 0
+                _fd = _path.open("wb")
         else:
             _offset = 0
             _fd = open(localpath, "wb")
@@ -79,19 +83,11 @@ class MeDownloader(RangeRequestIO):
         cls._futures.append(fut)
 
     def work(self):
-        size = len(self)
-        ranges = self._split_chunk(size)
-        for _range in ranges:
-            with self._request(_range) as resp:
-                stream = resp.raw
-                while True:
-                    b = stream.read(READ_SIZE)
-                    if not b:
-                        break
+        start, end = self._offset, len(self)
 
-                    self._fd.write(b)
-                    self._offset += len(b)
-
-                    # Call callback
-                    if self._callback:
-                        self._callback(self._task_id, self._offset)
+        for b in self._auto_decrypt_request.read((start, end)):
+            self._fd.write(b)
+            self._offset += len(b)
+            # Call callback
+            if self._callback:
+                self._callback(self._task_id, self._offset)
