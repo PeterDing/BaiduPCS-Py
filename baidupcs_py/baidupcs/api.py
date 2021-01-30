@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Tuple, Callable
+from typing import Optional, Dict, List, Tuple, Callable, IO
 
 from io import BytesIO
 import datetime
@@ -76,26 +76,34 @@ class BaiduPCSApi:
 
     def upload_file(
         self,
-        localpath: str,
+        io: IO,
         remotepath: str,
         ondup="overwrite",
         callback: Callable[[MultipartEncoderMonitor], None] = None,
     ) -> PcsFile:
         info = self._baidupcs.upload_file(
-            localpath, remotepath, ondup=ondup, callback=callback
+            io, remotepath, ondup=ondup, callback=callback
         )
         return PcsFile.from_(info)
 
     def rapid_upload_file(
-        self, localpath: str, remotepath: str, ondup="overwrite"
+        self,
+        slice_md5: str,
+        content_md5: str,
+        content_crc32: int,
+        io_len: int,
+        remotepath: str,
+        ondup="overwrite",
     ) -> PcsFile:
-        info = self._baidupcs.rapid_upload_file(localpath, remotepath, ondup=ondup)
+        info = self._baidupcs.rapid_upload_file(
+            slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
+        )
         return PcsFile.from_(info)
 
     def upload_slice(
-        self, buf: bytes, callback: Callable[[MultipartEncoderMonitor], None] = None
+        self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None
     ) -> str:
-        info = self._baidupcs.upload_slice(buf, callback=callback)
+        info = self._baidupcs.upload_slice(io, callback=callback)
         return info["md5"]
 
     def combine_slices(
@@ -316,16 +324,19 @@ class BaiduPCSApi:
         pds["level"] = info["level_info"]["current_level"]
         return pds
 
-    def download_link(self, remotepath: str) -> str:
-        info = self._baidupcs.download_link(remotepath)
+    def download_link(self, remotepath: str, pcs: bool = False) -> str:
+        info = self._baidupcs.download_link(remotepath, pcs=pcs)
         return info["urls"][0]["url"]
 
     def file_stream(
         self,
         remotepath: str,
         callback: Callable[..., None] = None,
+        encrypt_key=Optional[str],
     ) -> RangeRequestIO:
-        return self._baidupcs.file_stream(remotepath, callback=callback)
+        return self._baidupcs.file_stream(
+            remotepath, callback=callback, encrypt_key=encrypt_key
+        )
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:
         info = self._baidupcs.m3u8_stream(remotepath, type)

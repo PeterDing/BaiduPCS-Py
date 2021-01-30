@@ -1,23 +1,24 @@
-from typing import Optional, Dict, List, Union, Any, Callable
+from typing import Optional, Dict, List, Union, Any, Callable, IO
 from typing_extensions import Literal
 from enum import Enum
 
-import io
 from pathlib import Path
 import time
 import re
 import json
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from baidupcs_py.common import constant
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
+from baidupcs_py.common.cache import timeout_cache
+from baidupcs_py.common.crypto import calu_md5, calu_sha1
 from baidupcs_py.baidupcs.errors import BaiduPCSError, parse_errno
 from baidupcs_py.baidupcs.phone import get_phone_model, sum_IMEI
 from baidupcs_py.baidupcs.errors import assert_ok
-from baidupcs_py.utils import calu_md5, calu_crc32_and_md5, calu_sha1, dump_json
+from baidupcs_py.utils import dump_json
 
 
 PCS_BAIDU_COM = "https://pcs.baidu.com"
@@ -264,14 +265,11 @@ class BaiduPCS:
     @assert_ok
     def upload_file(
         self,
-        localpath: str,
+        io: IO,
         remotepath: str,
         ondup="overwrite",
         callback: Callable[[MultipartEncoderMonitor], None] = None,
     ):
-        localPath = Path(localpath)
-        assert localPath.is_file(), f"`{localpath}` is not existed"
-
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
         remotePath = Path(remotepath)
 
@@ -284,32 +282,25 @@ class BaiduPCS:
             "BDUSS": self._bduss,
         }
 
-        m = MultipartEncoder(
-            fields={
-                "file": ("file", localPath.open("rb"), ""),
-                "local_mtime": str(int(localPath.stat().st_mtime)),
-            }
-        )
+        m = MultipartEncoder(fields={"file": ("file", io, "")})
         monitor = MultipartEncoderMonitor(m, callback=callback)
 
         resp = self._request(Method.Post, url, params=params, data=monitor)
         return resp.json()
 
     @assert_ok
-    def rapid_upload_file(self, localpath: str, remotepath: str, ondup="overwrite"):
+    def rapid_upload_file(
+        self,
+        slice_md5: str,
+        content_md5: str,
+        content_crc32: int,
+        io_len: int,
+        remotepath: str,
+        ondup="overwrite",
+    ):
         """size > 256KB"""
 
-        localPath = Path(localpath)
-        assert localPath.is_file(), f"`{localpath}` is not existed"
-
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
-
-        # Calucate file features
-        buf = localPath.open("rb").read(constant.OneM)
-        slice_md5 = calu_md5(buf[: 256 * constant.OneK])
-        content_crc32, content_md5 = calu_crc32_and_md5(
-            localPath.open("rb"), constant.OneM
-        )
 
         url = self._form_url(PcsNode.File)
         params = {
@@ -318,7 +309,7 @@ class BaiduPCS:
         }
         data = {
             "path": remotepath,
-            "content-length": localPath.stat().st_size,
+            "content-length": io_len,
             "content-md5": content_md5,
             "slice-md5": slice_md5,
             "content-crc32": content_crc32,
@@ -329,7 +320,7 @@ class BaiduPCS:
 
     @assert_ok
     def upload_slice(
-        self, buf: bytes, callback: Callable[[MultipartEncoderMonitor], None] = None
+        self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None
     ):
         url = self._form_url(PcsNode.File)
         params = {
@@ -338,7 +329,7 @@ class BaiduPCS:
             "BDUSS": self._bduss,
         }
 
-        m = MultipartEncoder(fields={"file": ("file", io.BytesIO(buf), "")})
+        m = MultipartEncoder(fields={"file": ("file", io, "")})
         monitor = MultipartEncoderMonitor(m, callback=callback)
 
         resp = self._request(Method.Post, url, params=params, data=monitor)
@@ -628,7 +619,7 @@ class BaiduPCS:
         hdrs["Referer"] = init_url
         resp = self._request(Method.Post, url, headers=hdrs, params=params, data=data)
         info = resp.json()
-        err = parse_errno(info.get("errno", 0))
+        err = parse_errno(info.get("errno", 0), str(info))
         if err:
             raise err
 
@@ -806,14 +797,21 @@ class BaiduPCS:
         return resp.json()
 
     @assert_ok
-    def download_link(self, remotepath: str):
-        # if not self._user_id:
-        #     return None
-        #     path = urllib.parse.quote(remotepath)
-        #     return (
-        #         'http://c.pcs.baidu.com/rest/2.0/pcs/file'
-        #         f'?method=download&app_id={PCS_APP_ID}&path={path}&ver=2.0&clienttype=1'
-        #     )
+    @timeout_cache(1 * 60 * 60)  # 1 hour timeout
+    def download_link(self, remotepath: str, pcs: bool = False):
+        if pcs:
+            return {
+                "errno": 0,
+                "urls": [
+                    {
+                        "url": (
+                            "http://c.pcs.baidu.com/rest/2.0/pcs/file"
+                            f"?method=download&app_id={PCS_APP_ID}&path={quote_plus(remotepath)}"
+                            "&ver=2.0&clienttype=1"
+                        )
+                    }
+                ],
+            }
 
         bduss = self._bduss
         uid = str(self._user_id) or ""
@@ -844,6 +842,7 @@ class BaiduPCS:
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
+        encrypt_key=Optional[str],
     ) -> RangeRequestIO:
         info = self.download_link(remotepath)
         url = info["urls"][0]["url"]
@@ -860,6 +859,7 @@ class BaiduPCS:
             headers=headers,
             max_chunk_size=max_chunk_size,
             callback=callback,
+            encrypt_key=encrypt_key,
         )
 
     # Playing the m3u8 file is needed add `--stream-lavf-o-append="protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"` for mpv
