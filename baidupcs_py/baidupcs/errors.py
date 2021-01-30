@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from functools import wraps
 
 ERRORS = {
@@ -117,9 +117,10 @@ class BaiduPCSError(Exception):
         super().__init__(message)
 
 
-def parse_errno(error_code: int) -> Optional[BaiduPCSError]:
+def parse_errno(error_code: int, info: Any = None) -> Optional[BaiduPCSError]:
     if error_code != 0:
-        msg = f"error_code: {error_code}, message: {ERRORS.get(error_code, UNKNOWN_ERROR)}"
+        mean = ERRORS.get(error_code, info or UNKNOWN_ERROR)
+        msg = f"error_code: {error_code}, message: {mean}"
         return BaiduPCSError(msg, error_code=error_code)
     return None
 
@@ -136,7 +137,12 @@ def assert_ok(func):
         if error_code is None:
             error_code = 0
         error_code = int(error_code)
-        err = parse_errno(error_code)
+
+        if error_code not in ERRORS:
+            err = parse_errno(error_code, str(info))
+        else:
+            err = parse_errno(error_code)
+
         if err:
             raise err
         return info
