@@ -819,18 +819,26 @@ class RangeRequestIO(IO):
     ):
         kwargs["stream"] = True
 
+        self._method = method
+        self._url = url
+        self._headers = headers
+        self._kwargs = kwargs
+        self._max_chunk_size = max_chunk_size
         self._callback = callback
-        self._offset = 0
+        self._encrypt_key = encrypt_key
 
+        self.reset()
+
+    def reset(self):
+        self._offset = 0
         self._auto_decrypt_request = AutoDecryptRequest(
-            method,
-            url,
-            headers=headers,
-            max_chunk_size=max_chunk_size,
-            encrypt_key=encrypt_key,
-            **kwargs,
+            self._method,
+            self._url,
+            headers=self._headers,
+            max_chunk_size=self._max_chunk_size,
+            encrypt_key=self._encrypt_key,
+            **self._kwargs,
         )
-        super().__init__()
 
     def __len__(self) -> int:
         return len(self._auto_decrypt_request)
