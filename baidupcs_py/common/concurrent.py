@@ -15,6 +15,10 @@ def retry(times: int):
     def wrap(func):
         @wraps(func)
         def retry_it(*args, **kwargs):
+            nonlocal times
+            if times < 0:  # forever
+                times = 1 << 32
+
             for i in range(1, times + 1):
                 try:
                     r = func(*args, **kwargs)
