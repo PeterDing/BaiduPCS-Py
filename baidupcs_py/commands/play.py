@@ -83,6 +83,7 @@ class Player(Enum):
         quiet: bool = False,
         player_params: List[str] = [],
         out_cmd: bool = False,
+        use_local_server: bool = False,
     ):
         global DEFAULT_PLAYER
         if not self.which():
@@ -100,6 +101,7 @@ class Player(Enum):
                 m3u8=m3u8,
                 quiet=quiet,
                 player_params=player_params,
+                use_local_server=use_local_server,
             )
         else:
             cmd = self._mpv_cmd(
@@ -108,6 +110,7 @@ class Player(Enum):
                 m3u8=m3u8,
                 quiet=quiet,
                 player_params=player_params,
+                use_local_server=use_local_server,
             )
 
         # Print out command
@@ -140,19 +143,23 @@ class Player(Enum):
         m3u8: bool = False,
         quiet: bool = False,
         player_params: List[str] = [],
+        use_local_server: bool = False,
     ):
-        _ck = "Cookie: " + "; ".join(
-            [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-        )
-        cmd = [
-            self.which(),
-            url,
-            "--no-ytdl",
-            "--http-header-fields="
-            f'"User-Agent: {USER_AGENT}","{_ck}","Connection: Keep-Alive"',
-            *player_params,
-        ]
-        if m3u8:
+        if use_local_server:
+            cmd = [self.which(), url, *player_params]
+        else:
+            _ck = "Cookie: " + "; ".join(
+                [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
+            )
+            cmd = [
+                self.which(),
+                url,
+                "--no-ytdl",
+                "--http-header-fields="
+                f'"User-Agent: {USER_AGENT}","{_ck}","Connection: Keep-Alive"',
+                *player_params,
+            ]
+        if not use_local_server and m3u8:
             cmd.append(
                 "--stream-lavf-o-append="
                 "protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"
@@ -174,6 +181,7 @@ def play_file(
     m3u8: bool = False,
     quiet: bool = False,
     out_cmd: bool = False,
+    local_server: str = "",
 ):
     if not _with_media_ext(remotepath):
         return
@@ -185,6 +193,11 @@ def play_file(
         with open(DEFAULT_TEMP_M3U8, "w") as fd:
             fd.write(m3u8_cn)
         url = DEFAULT_TEMP_M3U8
+
+    use_local_server = bool(local_server)
+    if use_local_server:
+        url = f"{local_server}{remotepath}"
+        print("url:", url)
     else:
         url = api.download_link(remotepath)
 
@@ -195,6 +208,7 @@ def play_file(
         quiet=quiet,
         player_params=player_params,
         out_cmd=out_cmd,
+        use_local_server=use_local_server,
     )
 
 
@@ -209,6 +223,7 @@ def play_dir(
     m3u8: bool = False,
     quiet: bool = False,
     out_cmd: bool = False,
+    local_server: str = "",
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
@@ -222,6 +237,7 @@ def play_dir(
                 m3u8=m3u8,
                 quiet=quiet,
                 out_cmd=out_cmd,
+                local_server=local_server,
             )
         else:  # is_dir
             play_dir(
@@ -235,6 +251,7 @@ def play_dir(
                 m3u8=m3u8,
                 quiet=quiet,
                 out_cmd=out_cmd,
+                local_server=local_server,
             )
 
 
@@ -249,6 +266,7 @@ def play(
     m3u8: bool = False,
     quiet: bool = False,
     out_cmd: bool = False,
+    local_server: str = "",
 ):
     """Play media file in `remotepaths`
 
@@ -271,6 +289,7 @@ def play(
                 m3u8=m3u8,
                 quiet=quiet,
                 out_cmd=out_cmd,
+                local_server=local_server,
             )
         else:
             play_dir(
@@ -284,4 +303,5 @@ def play(
                 m3u8=m3u8,
                 quiet=quiet,
                 out_cmd=out_cmd,
+                local_server=local_server,
             )
