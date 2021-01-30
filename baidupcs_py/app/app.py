@@ -3,13 +3,16 @@ from collections import OrderedDict
 from functools import wraps
 import os
 import signal
+import time
 from pathlib import Path
+from multiprocessing import Process
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.common.path import join_path
+from baidupcs_py.common.net import random_avail_port
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
     ExcludeSifter,
@@ -31,7 +34,12 @@ from baidupcs_py.commands.download import (
     DEFAULT_CHUNK_SIZE,
 )
 from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
-from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
+from baidupcs_py.commands.upload import (
+    upload as _upload,
+    from_tos,
+    CPU_NUM,
+    EncryptType,
+)
 from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
 from baidupcs_py.commands.server import start_server
@@ -39,8 +47,8 @@ from baidupcs_py.commands.server import start_server
 import click
 
 from rich import print
-from rich.prompt import Prompt, Confirm
 from rich.console import Console
+from rich.prompt import Prompt, Confirm
 
 DEBUG = os.getenv("DEBUG")
 
@@ -79,15 +87,26 @@ def handle_error(func):
     return wrap
 
 
-def _recent_api(ctx) -> Optional[BaiduPCSApi]:
+def _recent_account(ctx) -> Optional[Account]:
     """Return recent user's `BaiduPCSApi`"""
 
     am = ctx.obj.account_manager
     account = am.who()
-    if not account:
+    if account:
+        return account
+    else:
         print("[italic red]No recent user, please adding or selecting one[/]")
         return None
-    return account.pcsapi()
+
+
+def _recent_api(ctx) -> Optional[BaiduPCSApi]:
+    """Return recent user's `BaiduPCSApi`"""
+
+    account = _recent_account(ctx)
+    if account:
+        return account.pcsapi()
+    else:
+        return None
 
 
 def _pwd(ctx) -> Path:
@@ -95,6 +114,26 @@ def _pwd(ctx) -> Path:
 
     am = ctx.obj.account_manager
     return Path(am.pwd)
+
+
+def _encrypt_key(ctx) -> Optional[str]:
+    """Return recent user's encryption key"""
+
+    account = _recent_account(ctx)
+    if account:
+        return account.encrypt_key
+    else:
+        return None
+
+
+def _salt(ctx) -> Optional[str]:
+    """Return recent user's encryption key"""
+
+    account = _recent_account(ctx)
+    if account:
+        return account.salt
+    else:
+        return None
 
 
 ALIAS = OrderedDict(
@@ -105,6 +144,7 @@ ALIAS = OrderedDict(
         "ul": "userlist",
         "ua": "useradd",
         "ud": "userdel",
+        "ek": "encryptkey",
         "l": "ls",
         "f": "search",
         "md": "mkdir",
@@ -173,9 +213,10 @@ def app(ctx, account_data):
 
 @app.command()
 @click.argument("user_id", type=int, default=None, required=False)
+@click.option("--show-encrypt-key", "-K", is_flag=True, help="显示加密密钥")
 @click.pass_context
 @handle_error
-def who(ctx, user_id):
+def who(ctx, user_id, show_encrypt_key):
     """显示当前用户的信息
 
     也可指定 `user_id`
@@ -185,6 +226,12 @@ def who(ctx, user_id):
     account = am.who(user_id)
     if account:
         display_user_info(account.user)
+        if show_encrypt_key:
+            encrypt_key = _encrypt_key(ctx)
+            salt = _salt(ctx)
+
+            print(f"[red]encrypt key[/red]: {encrypt_key}")
+            print(f"[red]salt[/red]: {salt}")
     else:
         print("[italic red]No recent user, please adding or selecting one[/]")
 
@@ -283,6 +330,22 @@ def userdel(ctx):
     am.save()
 
     print(f"Delete user {user_id}")
+
+
+@app.command()
+@click.option("--encrypt-key", "-k", prompt="encrypt-key", hide_input=True, help="加密密钥")
+@click.option("--salt", "-s", prompt="salt", hide_input=True, help="加密salt")
+@click.pass_context
+@handle_error
+def encryptkey(ctx, encrypt_key, salt):
+    """设置加密密钥"""
+
+    assert encrypt_key, "No encrypt-key"
+    assert salt, "No salt"
+
+    am = ctx.obj.account_manager
+    am.set_encrypt_key(encrypt_key, salt)
+    am.save()
 
 
 @app.command()
@@ -464,9 +527,10 @@ def search(
 @app.command()
 @click.argument("remotepath", nargs=1, type=str)
 @click.option("--encoding", "-e", type=str, help="文件编码，默认自动解码")
+@click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
 @click.pass_context
 @handle_error
-def cat(ctx, remotepath, encoding):
+def cat(ctx, remotepath, encoding, no_decrypt):
     """显示文件内容"""
 
     api = _recent_api(ctx)
@@ -476,7 +540,12 @@ def cat(ctx, remotepath, encoding):
     pwd = _pwd(ctx)
     remotepath = join_path(pwd, remotepath)
 
-    _cat(api, remotepath, encoding=encoding)
+    if no_decrypt:
+        encrypt_key = None
+    else:
+        encrypt_key = _encrypt_key(ctx)
+
+    _cat(api, remotepath, encoding=encoding, encrypt_key=encrypt_key)
 
 
 @app.command()
@@ -630,6 +699,7 @@ def remove(ctx, remotepaths):
 @click.option(
     "--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE, help="同步链接分块大小"
 )
+@click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方下载应用命令")
 @click.pass_context
@@ -647,6 +717,7 @@ def download(
     downloader,
     concurrency,
     chunk_size,
+    no_decrypt,
     quiet,
     out_cmd,
 ):
@@ -672,6 +743,11 @@ def download(
     pwd = _pwd(ctx)
     remotepaths = [join_path(pwd, r) for r in remotepaths]
 
+    if no_decrypt:
+        encrypt_key = None
+    else:
+        encrypt_key = _encrypt_key(ctx)
+
     _download(
         api,
         remotepaths,
@@ -684,6 +760,7 @@ def download(
             concurrency=concurrency, chunk_size=chunk_size, quiet=quiet
         ),
         out_cmd=out_cmd,
+        encrypt_key=encrypt_key,
     )
 
 
@@ -712,6 +789,7 @@ def download(
 @click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方播放器命令")
+@click.option("--use-local-server", "-s", is_flag=True, help="使用本地服务器播放")
 @click.pass_context
 @handle_error
 def play(
@@ -728,6 +806,7 @@ def play(
     m3u8,
     quiet,
     out_cmd,
+    use_local_server,
 ):
     """播放媒体文件"""
 
@@ -748,6 +827,32 @@ def play(
     pwd = _pwd(ctx)
     remotepaths = [join_path(pwd, r) for r in remotepaths]
 
+    local_server = ""
+    if use_local_server:
+        encrypt_key = _encrypt_key(ctx)
+
+        host = "localhost"
+        port = random_avail_port(49152, 65535)
+
+        local_server = f"http://{host}:{port}"
+
+        ps = Process(
+            target=start_server,
+            args=(
+                api,
+                "/",
+            ),
+            kwargs=dict(
+                host=host,
+                port=port,
+                workers=CPU_NUM,
+                encrypt_key=encrypt_key,
+                log_level="warning",
+            ),
+        )
+        ps.start()
+        time.sleep(1)
+
     _play(
         api,
         remotepaths,
@@ -759,25 +864,49 @@ def play(
         m3u8=m3u8,
         quiet=quiet,
         out_cmd=out_cmd,
+        local_server=local_server,
     )
+
+    if use_local_server:
+        ps.terminate()
 
 
 @app.command()
 @click.argument("localpaths", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
+@click.option("--encrypt-key", "-k", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-type",
+    "-e",
+    type=click.Choice([t.name for t in EncryptType]),
+    default=EncryptType.No.name,
+    help="文件加密方法，默认为 No 不加密",
+)
 @click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
 @click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传已经存在的文件")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.pass_context
 @handle_error
 def upload(
-    ctx, localpaths, remotedir, max_workers, no_ignore_existing, no_show_progress
+    ctx,
+    localpaths,
+    remotedir,
+    encrypt_key,
+    encrypt_type,
+    max_workers,
+    no_ignore_existing,
+    no_show_progress,
 ):
     """上传文件"""
 
     api = _recent_api(ctx)
     if not api:
         return
+
+    encrypt_key = encrypt_key or _encrypt_key(ctx)
+    if encrypt_type != EncryptType.No.name and not encrypt_key:
+        raise ValueError(f"Encrypting with {encrypt_type} must have a key")
+    salt = _salt(ctx)
 
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
@@ -786,6 +915,9 @@ def upload(
     _upload(
         api,
         from_to_list,
+        encrypt_key=encrypt_key,
+        salt=salt,
+        encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
         ignore_existing=not no_ignore_existing,
         show_progress=not no_show_progress,
@@ -795,11 +927,21 @@ def upload(
 @app.command()
 @click.argument("localdir", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
+@click.option("--encrypt-key", "-k", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-type",
+    "-e",
+    type=click.Choice([t.name for t in EncryptType]),
+    default=EncryptType.No.name,
+    help="文件加密方法，默认为 No 不加密",
+)
 @click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.pass_context
 @handle_error
-def sync(ctx, localdir, remotedir, max_workers, no_show_progress):
+def sync(
+    ctx, localdir, remotedir, encrypt_key, encrypt_type, max_workers, no_show_progress
+):
     """同步本地目录到远端"""
 
     api = _recent_api(ctx)
@@ -809,10 +951,18 @@ def sync(ctx, localdir, remotedir, max_workers, no_show_progress):
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
 
+    encrypt_key = encrypt_key or _encrypt_key(ctx)
+    if encrypt_type != EncryptType.No.name and not encrypt_key:
+        raise ValueError(f"Encrypting with {encrypt_type} must have a key")
+    salt = _salt(ctx)
+
     _sync(
         api,
         localdir,
         remotedir,
+        encrypt_key=encrypt_key,
+        salt=salt,
+        encrypt_type=encrypt_type,
         max_workers=max_workers,
         show_progress=not no_show_progress,
     )
@@ -1009,7 +1159,16 @@ def server(ctx, root_dir, host, port, workers):
     if not api:
         return
 
-    start_server(api, root_dir=root_dir, host=host, port=port, workers=workers)
+    encrypt_key = _encrypt_key(ctx)
+
+    start_server(
+        api,
+        root_dir=root_dir,
+        host=host,
+        port=port,
+        workers=workers,
+        encrypt_key=encrypt_key,
+    )
 
 
 # }}}
