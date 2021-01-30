@@ -13,7 +13,7 @@ from baidupcs_py.common.path import is_file, exists, walk
 from baidupcs_py.common import constant
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.concurrent import sure_release, retry
-from baidupcs_py.common.progress_bar import _progress
+from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.common.io import (
     total_len,
     sample_data,
@@ -154,7 +154,7 @@ def upload(
         _progress.console.print(table)
 
 
-@retry(3)
+@retry(-1)
 def upload_file(
     api: BaiduPCSApi,
     from_to: FromTo,
@@ -174,11 +174,11 @@ def upload_file(
         try:
             if api.exists(remotepath):
                 print(f"`{remotepath}` already exists.")
-                if task_id is not None:
+                if task_id is not None and progress_task_exists(task_id):
                     _progress.remove_task(task_id)
                 return
         except Exception as err:
-            if task_id is not None:
+            if task_id is not None and progress_task_exists(task_id):
                 _progress.remove_task(task_id)
             raise err
 
@@ -200,18 +200,18 @@ def upload_file(
     encrypt_io.close()
 
     # Progress bar
-    if task_id is not None:
+    if task_id is not None and progress_task_exists(task_id):
         _progress.update(task_id, total=io_len)
         _progress.start_task(task_id)
 
     def callback(monitor: MultipartEncoderMonitor):
-        if task_id is not None:
+        if task_id is not None and progress_task_exists(task_id):
             _progress.update(task_id, completed=monitor.bytes_read)
 
     slice_completed = 0
 
     def callback_for_slice(monitor: MultipartEncoderMonitor):
-        if task_id is not None:
+        if task_id is not None and progress_task_exists(task_id):
             _progress.update(task_id, completed=slice_completed + monitor.bytes_read)
 
     if io_len > 256 * constant.OneK:
@@ -227,17 +227,17 @@ def upload_file(
                 slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
             )
             encrypt_io.close()
-            if task_id is not None:
+            if task_id is not None and progress_task_exists(task_id):
                 _progress.update(task_id, completed=io_len)
                 _progress.remove_task(task_id)
                 return
         except BaiduPCSError as err:
             if err.error_code != 31079:  # 31079: '未找到文件MD5，请使用上传API上传整个文件。'
-                if task_id is not None:
+                if task_id is not None and progress_task_exists(task_id):
                     _progress.remove_task(task_id)
                 raise err
             else:
-                if task_id is not None:
+                if task_id is not None and progress_task_exists(task_id):
                     _progress.reset(task_id)
 
     try:
@@ -266,6 +266,8 @@ def upload_file(
 
             encrypt_io.close()
             api.combine_slices(slice_md5s, remotepath, ondup=ondup)
-    finally:
-        if task_id is not None:
+        if task_id is not None and progress_task_exists(task_id):
             _progress.remove_task(task_id)
+    finally:
+        if task_id is not None and progress_task_exists(task_id):
+            _progress.reset(task_id)
