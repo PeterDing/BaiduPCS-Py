@@ -51,9 +51,7 @@ def test_calu_file_md5():
     fd = open(path, "w")
     fd.write("asdf")
 
-    cp = subprocess.run(
-        _md5_cmd(localpath), universal_newlines=True, stdout=subprocess.PIPE
-    )
+    cp = subprocess.run(_md5_cmd(path), universal_newlines=True, stdout=subprocess.PIPE)
     output = cp.stdout.strip()
     print("calu_file_md5: cmd output:", output)
 
