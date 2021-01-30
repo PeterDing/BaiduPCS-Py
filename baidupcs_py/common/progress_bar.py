@@ -1,3 +1,5 @@
+from typing import Optional
+
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -6,6 +8,7 @@ from rich.progress import (
     DownloadColumn,
     TransferSpeedColumn,
     TimeRemainingColumn,
+    TaskID,
 )
 
 _progress = Progress(
@@ -20,3 +23,9 @@ _progress = Progress(
     "•",
     TimeRemainingColumn(),
 )
+
+
+def progress_task_exists(task_id: Optional[TaskID]) -> bool:
+    if task_id is None:
+        return False
+    return task_id in _progress.task_ids
