@@ -1,17 +1,29 @@
-from typing import Optional, List
+from typing import Optional, List, Any, IO
 
 import os
+from enum import Enum
 from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from random import Random
 
+from baidupcs_py.baidupcs.errors import BaiduPCSError
 from baidupcs_py.baidupcs import BaiduPCSApi, FromTo
 from baidupcs_py.common.path import is_file, exists, walk
 from baidupcs_py.common import constant
 from baidupcs_py.common.constant import CPU_NUM
-from baidupcs_py.common.concurrent import sure_release
+from baidupcs_py.common.concurrent import sure_release, retry
 from baidupcs_py.common.progress_bar import _progress
-from baidupcs_py.baidupcs.errors import BaiduPCSError
+from baidupcs_py.common.io import (
+    total_len,
+    sample_data,
+    ChunkIO,
+    EncryptIO,
+    SimpleEncryptIO,
+    ChaCha20EncryptIO,
+    AES256CBCEncryptIO,
+    rapid_upload_params,
+)
 
 from requests_toolbelt import MultipartEncoderMonitor
 
@@ -21,7 +33,32 @@ from rich.box import SIMPLE
 from rich.text import Text
 from rich import print
 
-DEFAULT_SLICE_SIZE = 100 * constant.OneM
+# If slice size >= 100M, the rate of uploading will be much lower.
+DEFAULT_SLICE_SIZE = 50 * constant.OneM
+
+
+class EncryptType(Enum):
+    No = "No"
+    Simple = "Simple"
+    ChaCha20 = "ChaCha20"
+    AES265CBC = "AES265CBC"
+
+    def encrypt_io(self, io: IO, encrypt_key: Any, nonce_or_iv: Any = None):
+        io_len = total_len(io)
+        if self == EncryptType.No:
+            return io
+        elif self == EncryptType.Simple:
+            return SimpleEncryptIO(io, encrypt_key, io_len)
+        elif self == EncryptType.ChaCha20:
+            return ChaCha20EncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
+        elif self == EncryptType.AES265CBC:
+            return AES256CBCEncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
+        else:
+            raise ValueError(f"Unknown EncryptType: {self}")
 
 
 def to_remotepath(sub_path: str, remotedir: str) -> str:
@@ -52,6 +89,9 @@ def upload(
     api: BaiduPCSApi,
     from_to_list: List[FromTo],
     ondup: str = "overwrite",
+    encrypt_key: Any = None,
+    salt: Any = None,
+    encrypt_type: EncryptType = EncryptType.No,
     max_workers: int = CPU_NUM,
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
@@ -86,6 +126,9 @@ def upload(
                     api,
                     from_to,
                     ondup,
+                    encrypt_key=encrypt_key,
+                    salt=salt,
+                    encrypt_type=encrypt_type,
                     slice_size=slice_size,
                     ignore_existing=ignore_existing,
                     task_id=task_id,
@@ -100,7 +143,7 @@ def upload(
 
     # Summary
     if excepts:
-        table = Table("Upload Error", box=SIMPLE, padding=0, show_edge=False)
+        table = Table(title="Upload Error", box=SIMPLE, show_edge=False)
         table.add_column("From", justify="left", overflow="fold")
         table.add_column("To", justify="left", overflow="fold")
         table.add_column("Error", justify="left")
@@ -111,10 +154,14 @@ def upload(
         _progress.console.print(table)
 
 
+@retry(3)
 def upload_file(
     api: BaiduPCSApi,
     from_to: FromTo,
     ondup: str,
+    encrypt_key: Any = None,
+    salt: Any = None,
+    encrypt_type: EncryptType = EncryptType.No,
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
     task_id: Optional[TaskID] = None,
@@ -135,10 +182,26 @@ def upload_file(
                 _progress.remove_task(task_id)
             raise err
 
-    local_size = Path(localpath).stat().st_size
+    # Generate nonce
+    rg = Random(salt)
+    raw_io = open(localpath, "rb")
+    nonce = sample_data(raw_io, rg, 16)
+    raw_io.close()
 
+    # IO Length
+    encrypt_io = encrypt_type.encrypt_io(
+        open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+    )
+    if isinstance(encrypt_io, EncryptIO):
+        io_len = len(encrypt_io)
+    else:
+        io_len = encrypt_io.seek(0, 2)
+        encrypt_io.seek(0, 0)
+    encrypt_io.close()
+
+    # Progress bar
     if task_id is not None:
-        _progress.update(task_id, total=local_size)
+        _progress.update(task_id, total=io_len)
         _progress.start_task(task_id)
 
     def callback(monitor: MultipartEncoderMonitor):
@@ -151,11 +214,21 @@ def upload_file(
         if task_id is not None:
             _progress.update(task_id, completed=slice_completed + monitor.bytes_read)
 
-    if local_size > 256 * constant.OneK:
+    if io_len > 256 * constant.OneK:
+        # Rapid Upload
         try:
-            api.rapid_upload_file(localpath, remotepath, ondup=ondup)
+            encrypt_io = encrypt_type.encrypt_io(
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+            )
+            slice_md5, content_md5, content_crc32, io_len = rapid_upload_params(
+                encrypt_io
+            )
+            api.rapid_upload_file(
+                slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
+            )
+            encrypt_io.close()
             if task_id is not None:
-                _progress.update(task_id, completed=local_size)
+                _progress.update(task_id, completed=io_len)
                 _progress.remove_task(task_id)
                 return
         except BaiduPCSError as err:
@@ -168,20 +241,30 @@ def upload_file(
                     _progress.reset(task_id)
 
     try:
-        if local_size < slice_size:
-            api.upload_file(localpath, remotepath, ondup=ondup, callback=callback)
+        if io_len < slice_size:
+            # Upload file
+            encrypt_io = encrypt_type.encrypt_io(
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+            )
+            api.upload_file(encrypt_io, remotepath, ondup=ondup, callback=callback)
+            encrypt_io.close()
         else:
+            # Upload file slice
             slice_md5s = []
-            fd = open(localpath, "rb")
+            encrypt_io = encrypt_type.encrypt_io(
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+            )
+
             while True:
-                buf = fd.read(slice_size)
-                if not buf:
+                size = min(slice_size, io_len - slice_completed)
+                if size == 0:
                     break
-
-                slice_md5 = api.upload_slice(buf, callback=callback_for_slice)
+                io = ChunkIO(encrypt_io, size)
+                slice_md5 = api.upload_slice(io, callback=callback_for_slice)
                 slice_md5s.append(slice_md5)
-                slice_completed += len(buf)
+                slice_completed += size
 
+            encrypt_io.close()
             api.combine_slices(slice_md5s, remotepath, ondup=ondup)
     finally:
         if task_id is not None:
