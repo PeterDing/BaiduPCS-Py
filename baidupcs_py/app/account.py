@@ -13,6 +13,8 @@ class Account(NamedTuple):
 
     # current working directory
     pwd: str = "/"
+    encrypt_key: Optional[str] = None
+    salt: Optional[str] = None
 
     def pcsapi(self) -> BaiduPCSApi:
         auth = self.user.auth
@@ -55,6 +57,20 @@ class AccountManager:
         """All accounts"""
 
         return list(self._accounts.values())
+
+    def set_encrypt_key(
+        self, encrypt_key: Optional[str] = None, salt: Optional[str] = None
+    ):
+        """Set encryption key"""
+
+        assert self._who, "No recent user"
+
+        account = self._accounts.get(self._who)
+
+        assert account
+
+        account = account._replace(encrypt_key=encrypt_key, salt=salt)
+        self._accounts[self._who] = account
 
     def cd(self, remotedir: str = "/"):
         """Change current working directory"""
