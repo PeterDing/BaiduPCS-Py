@@ -11,7 +11,7 @@ from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.common import constant
 from baidupcs_py.common.io import DecryptIO, READ_SIZE
 from baidupcs_py.common.downloader import MeDownloader
-from baidupcs_py.common.progress_bar import _progress
+from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.commands.sifter import Sifter, sift
 
 _print = print
@@ -148,6 +148,10 @@ class Downloader(Enum):
             if task_id is not None:
                 _progress.update(task_id, completed=offset + 1)
 
+        def except_callback(task_id: Optional[TaskID]):
+            if task_id is not None and progress_task_exists(task_id):
+                _progress.reset(task_id)
+
         meDownloader = MeDownloader(
             "GET",
             url,
@@ -167,6 +171,7 @@ class Downloader(Enum):
             task_id=task_id,
             continue_=True,
             done_callback=_wrap_done_callback,
+            except_callback=except_callback,
         )
 
     def _aget_py_cmd(
