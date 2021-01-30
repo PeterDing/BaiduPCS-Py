@@ -9,6 +9,7 @@ from concurrent.futures import Future
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.common import constant
+from baidupcs_py.common.io import DecryptIO, READ_SIZE
 from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -54,6 +55,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         out_cmd: bool = False,
+        encrypt_key: Optional[str] = None,
     ):
         global DEFAULT_DOWNLOADER
         if not self.which():
@@ -72,6 +74,7 @@ class Downloader(Enum):
                 cookies=cookies,
                 downloadparams=downloadparams,
                 done_callback=done_callback,
+                encrypt_key=encrypt_key,
             )
             return
         elif self == Downloader.aget_py:
@@ -94,6 +97,18 @@ class Downloader(Enum):
                 f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
             )
         else:
+            if encrypt_key:
+                dio = DecryptIO(open(localpath_tmp, "rb"), encrypt_key)
+                if dio.encrypted():
+                    with open(localpath, "wb") as fd:
+                        while True:
+                            buf = dio.read(READ_SIZE)
+                            if not buf:
+                                break
+                            fd.write(buf)
+
+                    os.remove(localpath_tmp)
+                    return
             shutil.move(localpath_tmp, localpath)
 
     def spawn(self, cmd: List[str], quiet: bool = False):
@@ -107,6 +122,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         done_callback: Optional[Callable[[Future], Any]] = None,
+        encrypt_key: Optional[str] = None,
     ):
         headers = {
             "Cookie ": "; ".join(
@@ -138,6 +154,7 @@ class Downloader(Enum):
             headers=headers,
             max_workers=downloadparams.concurrency,
             callback=monit_callback,
+            encrypt_key=encrypt_key,
         )
 
         if task_id is not None:
@@ -251,6 +268,7 @@ def download_file(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
+    encrypt_key: Optional[str] = None,
 ):
     localpath = Path(localdir) / os.path.basename(remotepath)
 
@@ -272,6 +290,7 @@ def download_file(
         api.cookies,
         downloadparams=downloadparams,
         out_cmd=out_cmd,
+        encrypt_key=encrypt_key,
     )
 
 
@@ -285,6 +304,7 @@ def download_dir(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams=DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
+    encrypt_key: Optional[str] = None,
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
@@ -297,6 +317,7 @@ def download_dir(
                 downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
+                encrypt_key=encrypt_key,
             )
         else:  # is_dir
             _localdir = Path(localdir) / os.path.basename(rp.path)
@@ -310,6 +331,7 @@ def download_dir(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
+                encrypt_key=encrypt_key,
             )
 
 
@@ -323,6 +345,7 @@ def download(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
+    encrypt_key: Optional[str] = None,
 ):
     """Download `remotepaths` to the `localdir`
 
@@ -344,6 +367,7 @@ def download(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
+                encrypt_key=encrypt_key,
             )
         else:
             _localdir = str(Path(localdir) / os.path.basename(rp))
@@ -357,6 +381,7 @@ def download(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
+                encrypt_key=encrypt_key,
             )
 
     if downloader == Downloader.me:
