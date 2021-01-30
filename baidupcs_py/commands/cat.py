@@ -11,8 +11,9 @@ def cat(
     remotepath: str,
     max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
     encoding: Optional[str] = None,
+    encrypt_key=Optional[str],
 ):
-    rangeRequestIO = api.file_stream(remotepath)
+    rangeRequestIO = api.file_stream(remotepath, encrypt_key=encrypt_key)
     cn = rangeRequestIO.read()
     if cn:
         if encoding:
