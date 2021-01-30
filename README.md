@@ -81,6 +81,7 @@ BaiduPCS-Py --help
 | su   | su           |
 | ul   | userlist     |
 | ua   | useradd      |
+| ek   | encryptkey   |
 | ud   | userdel      |
 | l    | ls           |
 | f    | search       |
