@@ -1,10 +1,11 @@
 from typing import Optional, Dict
 from pathlib import Path
+import asyncio
 
 import uvicorn
 
 from baidupcs_py.baidupcs import BaiduPCSApi
-from baidupcs_py.common.io import RangeRequestIO, READ_SIZE
+from baidupcs_py.common.io import RangeRequestIO
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.utils import format_date
 
@@ -12,31 +13,21 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from jinja2 import Template
 
+from rich import print
+
 app = FastAPI()
 
 _api: Optional[BaiduPCSApi] = None
 _root_dir: str = "/"
+_encrypt_key: Optional[str] = None
 
 # This template is from https://github.com/rclone/rclone/blob/master/cmd/serve/httplib/serve/data/templates/index.html
 _html_tempt: Template = Template((Path(__file__).parent / "index.html").open().read())
 
 
 def fake_io(io: RangeRequestIO, start: int = 0, end: int = -1):
-    while True:
-        length = len(io)
-        io.seek(start, 0)
-        size = length if end < 0 else end - start + 1
-
-        ranges = io._split_chunk(size)
-        for _range in ranges:
-            with io._request(_range) as resp:
-                stream = resp.raw
-                while True:
-                    b = stream.read(READ_SIZE)
-                    if not b:
-                        break
-                    yield b
-        return
+    for b in io._auto_decrypt_request.read((start, end)):
+        yield b
 
 
 @app.get("{remotepath:path}")
@@ -81,27 +72,34 @@ async def http_server(
         )
         return HTMLResponse(cn)
     else:
-        range_request_io = _api.file_stream(_rp_str)
-        length = len(range_request_io)
+        while True:
+            try:
+                range_request_io = _api.file_stream(_rp_str, encrypt_key=_encrypt_key)
+                length = len(range_request_io)
+                break
+            except Exception as err:
+                print("Error:", err)
+                await asyncio.sleep(1)
+
         headers: Dict[str, str] = {
             "accept-ranges": "bytes",
             "connection": "Keep-Alive",
         }
 
-        if _range:
+        if _range and range_request_io.seekable():
             assert _range.startswith("bytes=")
 
             status_code = 206
             start, end = _range[6:].split("-")
-            _s, _e = int(start or 0), int(end or length - 1)
-            _io = fake_io(range_request_io, _s, _e)
-            headers["content-range"] = f"bytes {_s}-{_e}/{length}"
-            headers["content-length"] = str(_e - _s + 1)
+            _s, _e = int(start or 0), int(end or length - 1) + 1
+            _iter_io = fake_io(range_request_io, _s, _e)
+            headers["content-range"] = f"bytes {_s}-{_e-1}/{length}"
+            headers["content-length"] = str(_e - _s)
         else:
             status_code = 200
-            _io = fake_io(range_request_io)
+            _iter_io = fake_io(range_request_io)
             headers["content-length"] = str(length)
-        return StreamingResponse(_io, status_code=status_code, headers=headers)
+        return StreamingResponse(_iter_io, status_code=status_code, headers=headers)
 
 
 def start_server(
@@ -110,8 +108,13 @@ def start_server(
     host: str = "localhost",
     port: int = 8000,
     workers: int = CPU_NUM,
+    encrypt_key: Optional[str] = None,
+    log_level: str = "info",
 ):
     """Create a http server on remote `root_dir`"""
+
+    global _encrypt_key
+    _encrypt_key = encrypt_key
 
     global _root_dir
     _root_dir = root_dir
@@ -124,6 +127,6 @@ def start_server(
         "baidupcs_py.commands.server:app",
         host=host,
         port=port,
-        log_level="info",
+        log_level=log_level,
         workers=1,
     )
