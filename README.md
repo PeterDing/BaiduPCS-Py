@@ -174,13 +174,19 @@ BaiduPCS-Py encryptkey --encrypt-key 'my-encrypt-key' --salt 'some-salt'
 BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type AES265CBC
 ```
 
+下载并用上面设置的 `encrypt-key` 自动解密文件：
+
+```
+BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/
+```
+
 也可以使用临时的 `encrypt-key`：
 
 ```
 BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type Simple --encrypt-key 'onlyyou'
 ```
 
-但`cat`、下载和播放这些文件时需要指定 `encrypt-key`，但不需要指定加密算法，程序会自动检查加密算法：
+但在使用临时的 `encrypt-key` 后，`cat`、下载和播放这些文件时需要指定 `encrypt-key`，但不需要指定加密算法，程序会自动检查加密算法：
 
 ```
 # 下载
