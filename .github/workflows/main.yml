@@ -31,3 +31,7 @@ jobs:
         run: poetry run black --check .
       - name: Typecheck with mypy
         run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable
+      - name: Test with pytest
+        run: |
+          make build-pyx
+          poetry run pytest -s tests/test_common.py
