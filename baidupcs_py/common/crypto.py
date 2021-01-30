@@ -6,7 +6,6 @@ import random
 from abc import ABC, abstractmethod
 from zlib import crc32
 from hashlib import md5, sha1
-from array import array
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.padding import PKCS7
