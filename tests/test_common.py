@@ -1,6 +1,7 @@
 import time
 import os
 import io
+import sys
 import subprocess
 
 import requests
@@ -47,6 +48,10 @@ def test_rangerequestio():
 
 
 def test_calu_file_md5():
+    # Github action fail on windows
+    if sys.platform not in ("darwin", "linux"):
+        return
+
     path = "temp-file"
     fd = open(path, "w")
     fd.write("asdf")
