@@ -14,6 +14,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [用法](#用法)
 - [命令别名](#命令别名)
 - [添加用户](#添加用户)
+- [设置文件加密密钥和盐](#设置文件加密密钥和盐)
 - [显示当前用户的信息](#显示当前用户的信息)
 - [更新用户信息](#更新用户信息)
 - [显示所有用户](#显示所有用户)
@@ -133,6 +134,74 @@ BaiduPCS-Py useradd --cookies "cookies 值" --bduss "bduss 值"
 
 BaiduPCS-Py 支持多用户，你只需一直用 `useradd` 来添加用户即可。
 
+## 设置文件加密密钥和盐
+
+BaiduPCS-Py 支持“无感的”文件加密。
+
+BaiduPCS-Py 可以加密上传文件，在下载的时候自动解密，让使用者感觉不到加密解密的过程。
+
+如果使用者需要将保密文件上传至百度网盘保存，可以使用这个方法。即使帐号被盗，攻击者也无法还原文件内容。
+
+BaiduPCS-Py 支持以下加密方法：
+
+- **Simple** 一种简单的加密算法。根据密钥生成一个字节对照表来加密解密文件。
+  速度快，但**不安全**，不建议加密重要文件。
+  因为这种算法加解密不需要知道上下文信息，所以，下载时支持分段下载，如果是媒体文件则支持拖动播放。
+  推荐用于加密不重要的媒体文件。
+- **ChaCha20** 工业级加密算法，速度快，推荐用于加密重要文件。不支持分段下载。
+- **AES265CBC** 工业级加密算法，推荐用于加密重要文件。不支持分段下载。
+
+为当前用户设置加密密钥和盐:
+
+交互添加：
+
+```
+BaiduPCS-Py encryptkey
+```
+
+或者直接添加：
+
+```
+BaiduPCS-Py encryptkey --encrypt-key 'my-encrypt-key' --salt 'some-salt'
+```
+
+上传并加密文件：
+
+上传和同步文件时只需要指定加密算法就可。如果不指定就不加密。
+
+```
+# 默认使用上面设置的 `encrypt-key`
+BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type AES265CBC
+```
+
+也可以使用临时的 `encrypt-key`：
+
+```
+BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type Simple --encrypt-key 'onlyyou'
+```
+
+但`cat`、下载和播放这些文件时需要指定 `encrypt-key`，但不需要指定加密算法，程序会自动检查加密算法：
+
+```
+# 下载
+BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/  --encrypt-key 'onlyyou'
+
+# 开启本地服务并播放
+BaiduPCS-Py play /to/here/some-file.mp4 --encrypt-key 'onlyyou' --use-local-server
+```
+
+显示当前用户的密钥和盐：
+
+```
+BaiduPCS-Py who --show-encrypt-key
+```
+
+BaiduPCS-Py 下载时默认会解密文件，如果想要下载但不解密文件，需要加 `--no-decrypt`
+
+```
+BaiduPCS-Py download some-file --no-decrypt
+```
+
 ## 显示当前用户的信息
 
 ```
@@ -146,6 +215,12 @@ BaiduPCS-Py who user_id
 ```
 
 指明显示用户 id 为 `user_id` 的用户信息。
+
+### 选项
+
+| Option                 | Description  |
+| ---------------------- | ------------ |
+| -K, --show-encrypt-key | 显示加密密钥 |
 
 ## 更新用户信息
 
@@ -284,9 +359,11 @@ BaiduPCS-Py cat [OPTIONS] REMOTEPATH
 
 ### 选项
 
-| Option              | Description            |
-| ------------------- | ---------------------- |
-| -e, --encoding TEXT | 文件编码，默认自动解码 |
+| Option                   | Description                  |
+| ------------------------ | ---------------------------- |
+| -e, --encoding TEXT      | 文件编码，默认自动解码       |
+| --no-decrypt, --ND       | 不解密                       |
+| --encrypt-key, --ek TEXT | 加密密钥，默认使用用户设置的 |
 
 ## 创建目录
 
@@ -368,6 +445,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 | -q, --quiet                                    | 取消第三方下载应用输出                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --out-cmd, --OC                                | 输出第三方下载应用命令                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | -d, --downloader [me\|aget_py\|aget_rs\|aria2] | 指定下载应用<br> <br> 默认为 me (BaiduPCS-Py 自己的下载器，支持断续下载)<br> me 使用多文件并发下载。<br> <br> 除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。<br> 如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。<br> <br> aget_py (https://github.com/PeterDing/aget) 默认安装<br> aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)<br> aria2 (下载 https://github.com/aria2/aria2/releases)<br> |
+| --encrypt-key, --ek TEXT                       | 加密密钥，默认使用用户设置的                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ## 播放媒体文件
 
@@ -390,6 +468,8 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 | -q, --quiet                | 取消第三方播放器输出                                 |
 | --out-cmd, --OC            | 输出第三方播放器命令                                 |
 | -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)  |
+| -s, --use-local-server     | 使用本地服务器播放                                   |
+| --encrypt-key, --ek TEXT   | 加密密钥，默认使用用户设置的                         |
 
 ## 上传文件
 
@@ -401,11 +481,13 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 
 ### 选项
 
-| Option                     | Description        |
-| -------------------------- | ------------------ |
-| -w, --max-workers INTEGER  | 同时上传文件数     |
-| --no-ignore-existing, --NI | 上传已经存在的文件 |
-| --no-show-progress, --NP   | 不显示上传进度     |
+| Option                                                     | Description                    |
+| ---------------------------------------------------------- | ------------------------------ |
+| --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES265CBC] | 文件加密方法，默认为 No 不加密 |
+| -w, --max-workers INTEGER                                  | 同时上传文件数                 |
+| --no-ignore-existing, --NI                                 | 上传已经存在的文件             |
+| --no-show-progress, --NP                                   | 不显示上传进度                 |
 
 ## 同步本地目录到远端
 
@@ -419,10 +501,12 @@ BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
 
 ### 选项
 
-| Option                    | Description    |
-| ------------------------- | -------------- |
-| -w, --max-workers INTEGER | 同时上传文件数 |
-| --no-show-progress, --NP  | 不显示上传进度 |
+| Option                                                     | Description                    |
+| ---------------------------------------------------------- | ------------------------------ |
+| --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES265CBC] | 文件加密方法，默认为 No 不加密 |
+| -w, --max-workers INTEGER                                  | 同时上传文件数                 |
+| --no-show-progress, --NP                                   | 不显示上传进度                 |
 
 ## 分享文件
 
@@ -525,8 +609,9 @@ BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
 
 ### 选项
 
-| Option                | Description |
-| --------------------- | ----------- |
-| -h, --host TEXT       | 监听 host   |
-| -p, --port INTEGER    | 监听 port   |
-| -w, --workers INTEGER | 进程数      |
+| Option                   | Description                  |
+| ------------------------ | ---------------------------- |
+| -h, --host TEXT          | 监听 host                    |
+| -p, --port INTEGER       | 监听 port                    |
+| -w, --workers INTEGER    | 进程数                       |
+| --encrypt-key, --ek TEXT | 加密密钥，默认使用用户设置的 |
