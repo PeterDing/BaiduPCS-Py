@@ -1,7 +1,7 @@
 import time
 import os
 import io
-import tempfile
+import subprocess
 
 import requests
 
@@ -22,6 +22,7 @@ from baidupcs_py.common.crypto import (
     padding_key,
     padding_size,
     random_bytes,
+    _md5_cmd,
     calu_file_md5,
     SimpleCryptography,
     ChaCha20Cryptography,
@@ -46,11 +47,19 @@ def test_rangerequestio():
 
 
 def test_calu_file_md5():
-    _, path = tempfile.mkstemp()
+    path = "temp-file"
     fd = open(path, "w")
+    fd.write("asdf")
+
+    cp = subprocess.run(
+        _md5_cmd(localpath), universal_newlines=True, stdout=subprocess.PIPE
+    )
+    output = cp.stdout.strip()
+    print("calu_file_md5: cmd output:", output)
+
     try:
-        fd.write("asdf")
         r = calu_file_md5(path)
+        print("calu_file_md5:", r)
     finally:
         os.remove(path)
     assert r
