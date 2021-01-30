@@ -7,4 +7,7 @@ format-check:
 format:
 	black .
 
+build-pyx:
+	python build.py build_ext --inplace
+
 all: format-check typecheck
