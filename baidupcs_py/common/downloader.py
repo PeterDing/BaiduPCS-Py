@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.io import RangeRequestIO
-from baidupcs_py.common.concurrent import sure_release
+from baidupcs_py.common.concurrent import sure_release, retry
 
 from rich.progress import TaskID
 
@@ -41,6 +41,7 @@ class MeDownloader(RangeRequestIO):
         task_id: Optional[TaskID],
         continue_: bool = False,
         done_callback: Optional[Callable[[Future], Any]] = None,
+        except_callback: Optional[Callable[..., Any]] = None,
     ):
         """
         Download the url content to `localpath`
@@ -53,6 +54,7 @@ class MeDownloader(RangeRequestIO):
         """
 
         self._task_id = task_id
+        self._except_callback = except_callback
 
         if continue_:
             _path = Path(localpath)
@@ -82,12 +84,18 @@ class MeDownloader(RangeRequestIO):
             fut.add_done_callback(done_callback)
         cls._futures.append(fut)
 
+    @retry(-1)
     def work(self):
-        start, end = self._offset, len(self)
+        try:
+            start, end = self._offset, len(self)
 
-        for b in self._auto_decrypt_request.read((start, end)):
-            self._fd.write(b)
-            self._offset += len(b)
-            # Call callback
-            if self._callback:
-                self._callback(self._task_id, self._offset)
+            for b in self._auto_decrypt_request.read((start, end)):
+                self._fd.write(b)
+                self._offset += len(b)
+                # Call callback
+                if self._callback:
+                    self._callback(self._task_id, self._offset)
+        except Exception as err:
+            self._except_callback(self._task_id)
+            self.reset()
+            raise err
