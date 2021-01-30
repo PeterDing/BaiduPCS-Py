@@ -53,3 +53,5 @@ coverage.xml
 docs/_build/
 
 /bin.py
+/baidupcs_py/common/simple_cipher.c
+/baidupcs_py/common/simple_cipher.html
