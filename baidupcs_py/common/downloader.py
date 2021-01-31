@@ -84,7 +84,7 @@ class MeDownloader(RangeRequestIO):
             fut.add_done_callback(done_callback)
         cls._futures.append(fut)
 
-    @retry(-1)
+    @retry(30)
     def work(self):
         try:
             start, end = self._offset, len(self)
