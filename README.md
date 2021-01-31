@@ -462,23 +462,25 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 ```
 
+**注意**: 大于100MB的媒体文件无法直接播放，需要加 `-s` 使用本地服务器播放。
+
 ### 选项
 
-| Option                     | Description                                          |
-| -------------------------- | ---------------------------------------------------- |
-| -R, --recursive            | 递归播放                                             |
-| -f, --from-index INTEGER   | 从所有目录中的第几个文件开始播放，默认为 0（第一个） |
-| -I, --include TEXT         | 筛选包含这个字符串的文件                             |
-| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件                         |
-| -E, --exclude TEXT         | 筛选 不 包含这个字符串的文件                         |
-| --exclude-regex, --ER TEXT | 筛选 不 包含这个正则表达式的文件                     |
-| --player-params, --PP TEXT | 第三方播放器参数                                     |
-| -m, --m3u8                 | 获取 m3u8 文件并播放                                 |
-| -q, --quiet                | 取消第三方播放器输出                                 |
-| --out-cmd, --OC            | 输出第三方播放器命令                                 |
-| -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)  |
-| -s, --use-local-server     | 使用本地服务器播放                                   |
-| --encrypt-key, --ek TEXT   | 加密密钥，默认使用用户设置的                         |
+| Option                     | Description                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| -R, --recursive            | 递归播放                                                                      |
+| -f, --from-index INTEGER   | 从所有目录中的第几个文件开始播放，默认为 0（第一个）                          |
+| -I, --include TEXT         | 筛选包含这个字符串的文件                                                      |
+| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件                                                  |
+| -E, --exclude TEXT         | 筛选 不 包含这个字符串的文件                                                  |
+| --exclude-regex, --ER TEXT | 筛选 不 包含这个正则表达式的文件                                              |
+| --player-params, --PP TEXT | 第三方播放器参数                                                              |
+| -m, --m3u8                 | 获取 m3u8 文件并播放                                                          |
+| -q, --quiet                | 取消第三方播放器输出                                                          |
+| --out-cmd, --OC            | 输出第三方播放器命令                                                          |
+| -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
+| -s, --use-local-server     | 使用本地服务器播放。大于 100MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
+| --encrypt-key, --ek TEXT   | 加密密钥，默认使用用户设置的                                                  |
 
 ## 上传文件
 
