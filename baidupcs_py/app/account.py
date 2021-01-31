@@ -5,8 +5,6 @@ import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
 
-DEFAULT_DATA_PATH = Path("~").expanduser() / ".baidupcs-py" / "accounts.pk"
-
 
 class Account(NamedTuple):
     user: PcsUser
