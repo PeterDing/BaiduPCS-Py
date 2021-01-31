@@ -13,11 +13,14 @@ from baidupcs_py.common.io import DecryptIO, READ_SIZE
 from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.commands.sifter import Sifter, sift
+from baidupcs_py.commands.log import get_logger
 
 _print = print
 
 from rich import print
 from rich.progress import TaskID
+
+logger = get_logger(__name__)
 
 USER_AGENT = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
 
@@ -64,8 +67,11 @@ class Downloader(Enum):
         localpath_tmp = localpath + ".tmp"
 
         def done_callback(fut: Future):
-            if not fut.exception():
+            err = fut.exception()
+            if not err:
                 shutil.move(localpath_tmp, localpath)
+            else:
+                logger.info("`download`: MeDownloader fails: error: %s", err)
 
         if self == Downloader.me:
             self._me_download(
@@ -92,6 +98,9 @@ class Downloader(Enum):
             return
 
         returncode = self.spawn(cmd, downloadparams.quiet)
+
+        logger.debug("`download`: cmd returncode: %s", returncode)
+
         if returncode != 0:
             print(
                 f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
@@ -357,6 +366,23 @@ def download(
     Args:
         `from_index` (int): The start index of downloading entries from EACH remote directory
     """
+
+    logger.debug(
+        "`download`: sifters: %s, recursive: %s, from_index: %s, "
+        "downloader: %s, downloadparams: %s, out_cmd: %s, has encrypt_key: %s",
+        sifters,
+        recursive,
+        from_index,
+        downloader,
+        downloadparams,
+        out_cmd,
+        bool(encrypt_key),
+    )
+    logger.debug(
+        "`download`: remotepaths should be uniq %s == %s",
+        len(remotepaths),
+        len(set(remotepaths)),
+    )
 
     remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths:
