@@ -20,7 +20,6 @@ from baidupcs_py.common.io import (
     rapid_upload_params,
 )
 from baidupcs_py.common.crypto import (
-    padding_key,
     padding_size,
     random_bytes,
     _md5_cmd,
@@ -149,9 +148,10 @@ def test_noencryptio():
 
 def test_simpleencryptio():
     key = "123"
+    nonce_or_iv = os.urandom(16)
     buf = os.urandom(1024 * 1024 * 50)
     bio = io.BytesIO(buf)
-    c = SimpleEncryptIO(bio, key, len(buf))
+    c = SimpleEncryptIO(bio, key, nonce_or_iv, len(buf))
     assert total_len(c) == len(buf) + ENCRYPT_HEAD_LEN
     enc = c.read()
     d = to_decryptio(io.BytesIO(enc), key)
@@ -200,6 +200,8 @@ def test_aes256cbcencryptio_uniq():
     bio = io.BytesIO(buf)
     c = AES256CBCEncryptIO(bio, key, iv, len(buf))
     enc1 = c.read()
+
+    time.sleep(1)
 
     bio = io.BytesIO(buf)
     c = AES256CBCEncryptIO(bio, key, iv, len(buf))
