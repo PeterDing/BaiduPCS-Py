@@ -1,15 +1,18 @@
 from typing import Optional
 from collections import OrderedDict
 from functools import wraps
+from pathlib import Path
+from multiprocessing import Process
 import os
 import signal
 import time
-from pathlib import Path
-from multiprocessing import Process
+import logging
+import traceback
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
-from baidupcs_py.app.account import Account, AccountManager, DEFAULT_DATA_PATH
+from baidupcs_py.app.account import Account, AccountManager
+from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.net import random_avail_port
@@ -43,6 +46,7 @@ from baidupcs_py.commands.upload import (
 from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
 from baidupcs_py.commands.server import start_server
+from baidupcs_py.commands.log import get_logger
 
 import click
 
@@ -50,10 +54,14 @@ from rich import print
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-DEBUG = os.getenv("DEBUG")
+logger = get_logger(__name__)
+
+DEBUG = logger.level == logging.DEBUG
 
 
 def handle_signal(sign_num, frame):
+    logger.debug("`app`: handle_signal: %s", sign_num)
+
     if _progress._started:
         print()
         # Stop _progress, otherwise terminal stdout will be contaminated
@@ -74,11 +82,15 @@ def handle_error(func):
         try:
             return func(*args, **kwargs)
         except BaiduPCSError as err:
+            logger.debug("`app`: BaiduPCSError: %s", traceback.format_exc())
+
             print(f"(v{__version__}) [bold red]ERROR[/bold red]: BaiduPCSError: {err}")
             if DEBUG:
                 console = Console()
                 console.print_exception()
         except Exception as err:
+            logger.debug("`app`: System Error: %s", traceback.format_exc())
+
             print(f"(v{__version__}) [bold red]System ERROR[/bold red]: {err}")
             if DEBUG:
                 console = Console()
@@ -200,7 +212,7 @@ _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
 
 @click.group(cls=AliasedGroup, help=_APP_DOC, epilog=_ALIAS_DOC)
 @click.option(
-    "--account-data", type=str, default=DEFAULT_DATA_PATH, help="Account data file"
+    "--account-data", type=str, default=ACCOUNT_DATA_PATH, help="Account data file"
 )
 @click.pass_context
 def app(ctx, account_data):
@@ -793,8 +805,14 @@ def download(
 @click.option("--player-params", "--PP", multiple=True, type=str, help="第三方播放器参数")
 @click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
+@click.option("--ignore-ext", "--IE", is_flag=True, help="不用文件名后缀名来判断媒体文件")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方播放器命令")
-@click.option("--use-local-server", "-s", is_flag=True, help="使用本地服务器播放")
+@click.option(
+    "--use-local-server",
+    "-s",
+    is_flag=True,
+    help="使用本地服务器播放。大于100MB的媒体文件无法直接播放，需要使用本地服务器播放",
+)
 @click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
@@ -811,6 +829,7 @@ def play(
     player_params,
     m3u8,
     quiet,
+    ignore_ext,
     out_cmd,
     use_local_server,
     encrypt_key,
@@ -870,6 +889,7 @@ def play(
         player_params=player_params,
         m3u8=m3u8,
         quiet=quiet,
+        ignore_ext=ignore_ext,
         out_cmd=out_cmd,
         local_server=local_server,
     )
