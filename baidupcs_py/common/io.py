@@ -315,9 +315,12 @@ class SimpleEncryptIO(EncryptIO):
 
     BLOCK_SIZE = 16  # 16 bytes
 
-    def __init__(self, io: IO, encrypt_key: Any, total_origin_len: int):
+    def __init__(
+        self, io: IO, encrypt_key: Any, nonce_or_iv: Any, total_origin_len: int
+    ):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
-        super().__init__(io, encrypt_key, os.urandom(self.BLOCK_SIZE), total_origin_len)
+        nonce_or_iv = padding_key(nonce_or_iv, self.BLOCK_SIZE)
+        super().__init__(io, encrypt_key, nonce_or_iv, total_origin_len)
 
         self._crypto = SimpleCryptography(self._encrypt_key)
 
@@ -742,7 +745,8 @@ class AutoDecryptRequest:
             if not resp_headers.get("Content-Range"):
                 raise IOError(
                     f"{self.__class__.__name__} - "
-                    "Server does not support `Range` head"
+                    "Server does not support `Range` head."
+                    f" Response content: {resp.raw.read(1000)}"
                 )
 
         try:
