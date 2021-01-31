@@ -180,10 +180,11 @@ def play_file(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    ignore_ext: bool = False,
     out_cmd: bool = False,
     local_server: str = "",
 ):
-    if not _with_media_ext(remotepath):
+    if not ignore_ext and not _with_media_ext(remotepath):
         return
 
     print(f"[italic blue]Play[/italic blue]: {remotepath} {'(m3u8)' if m3u8 else ''}")
@@ -222,6 +223,7 @@ def play_dir(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    ignore_ext: bool = False,
     out_cmd: bool = False,
     local_server: str = "",
 ):
@@ -236,6 +238,7 @@ def play_dir(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,
             )
@@ -250,6 +253,7 @@ def play_dir(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,
             )
@@ -265,6 +269,7 @@ def play(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    ignore_ext: bool = False,
     out_cmd: bool = False,
     local_server: str = "",
 ):
@@ -288,6 +293,7 @@ def play(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,
             )
@@ -302,6 +308,7 @@ def play(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,
             )
