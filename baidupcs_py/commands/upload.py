@@ -1,6 +1,7 @@
 from typing import Optional, List, Any, IO
 
 import os
+from io import BytesIO
 from enum import Enum
 from pathlib import Path
 from threading import Semaphore
@@ -17,13 +18,12 @@ from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.common.io import (
     total_len,
     sample_data,
-    ChunkIO,
-    EncryptIO,
     SimpleEncryptIO,
     ChaCha20EncryptIO,
     AES256CBCEncryptIO,
     rapid_upload_params,
 )
+from baidupcs_py.commands.log import get_logger
 
 from requests_toolbelt import MultipartEncoderMonitor
 
@@ -32,6 +32,8 @@ from rich.table import Table
 from rich.box import SIMPLE
 from rich.text import Text
 from rich import print
+
+logger = get_logger(__name__)
 
 # If slice size >= 100M, the rate of uploading will be much lower.
 DEFAULT_SLICE_SIZE = 50 * constant.OneM
@@ -48,7 +50,9 @@ class EncryptType(Enum):
         if self == EncryptType.No:
             return io
         elif self == EncryptType.Simple:
-            return SimpleEncryptIO(io, encrypt_key, io_len)
+            return SimpleEncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
         elif self == EncryptType.ChaCha20:
             return ChaCha20EncryptIO(
                 io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
@@ -174,6 +178,7 @@ def upload_file(
         try:
             if api.exists(remotepath):
                 print(f"`{remotepath}` already exists.")
+                logger.debug("`upload`: remote file already exists")
                 if task_id is not None and progress_task_exists(task_id):
                     _progress.remove_task(task_id)
                 return
@@ -182,26 +187,25 @@ def upload_file(
                 _progress.remove_task(task_id)
             raise err
 
-    # Generate nonce
+    logger.debug("`upload`: encrypt_type: %s", encrypt_type)
+
+    # Generate nonce_or_iv
     rg = Random(salt)
     raw_io = open(localpath, "rb")
-    nonce = sample_data(raw_io, rg, 16)
+    nonce_or_iv = sample_data(raw_io, rg, 16)
     raw_io.close()
 
     # IO Length
     encrypt_io = encrypt_type.encrypt_io(
-        open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+        open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
     )
-    if isinstance(encrypt_io, EncryptIO):
-        io_len = len(encrypt_io)
-    else:
-        io_len = encrypt_io.seek(0, 2)
-        encrypt_io.seek(0, 0)
-    encrypt_io.close()
+    encrypt_io_len = total_len(encrypt_io)
+
+    logger.debug("`upload`: encrypt_io_len: %s", encrypt_io_len)
 
     # Progress bar
     if task_id is not None and progress_task_exists(task_id):
-        _progress.update(task_id, total=io_len)
+        _progress.update(task_id, total=encrypt_io_len)
         _progress.start_task(task_id)
 
     def callback(monitor: MultipartEncoderMonitor):
@@ -214,60 +218,127 @@ def upload_file(
         if task_id is not None and progress_task_exists(task_id):
             _progress.update(task_id, completed=slice_completed + monitor.bytes_read)
 
-    if io_len > 256 * constant.OneK:
+    if encrypt_io_len > 256 * constant.OneK:
         # Rapid Upload
+        logger.debug("`upload`: rapid_upload starts")
         try:
             encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
             )
-            slice_md5, content_md5, content_crc32, io_len = rapid_upload_params(
+            slice_md5, content_md5, content_crc32, encrypt_io_len = rapid_upload_params(
                 encrypt_io
             )
             api.rapid_upload_file(
-                slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
+                slice_md5,
+                content_md5,
+                content_crc32,
+                encrypt_io_len,
+                remotepath,
+                ondup=ondup,
             )
             encrypt_io.close()
             if task_id is not None and progress_task_exists(task_id):
-                _progress.update(task_id, completed=io_len)
+                _progress.update(task_id, completed=encrypt_io_len)
                 _progress.remove_task(task_id)
+
+                logger.debug("`upload`: rapid_upload success")
                 return
         except BaiduPCSError as err:
+            logger.debug("`upload`: rapid_upload fails")
+
             if err.error_code != 31079:  # 31079: '未找到文件MD5，请使用上传API上传整个文件。'
                 if task_id is not None and progress_task_exists(task_id):
                     _progress.remove_task(task_id)
+
+                logger.warning("`rapid_upload`: unknown error: %s", err)
                 raise err
             else:
+                logger.info("`rapid_upload`: %s, no exist in remote", localpath)
+
                 if task_id is not None and progress_task_exists(task_id):
                     _progress.reset(task_id)
 
     try:
-        if io_len < slice_size:
+        if encrypt_io_len < slice_size:
             # Upload file
+            logger.debug("`upload`: upload_file starts")
+
             encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
             )
-            api.upload_file(encrypt_io, remotepath, ondup=ondup, callback=callback)
+
+            retry(
+                30,
+                except_callback=lambda err, fail_count: logger.warning(
+                    "`upload`: `upload_file`: error: %s, fail_count: %s",
+                    err,
+                    fail_count,
+                ),
+            )(api.upload_file)(encrypt_io, remotepath, ondup=ondup, callback=callback)
+
             encrypt_io.close()
+
+            logger.debug("`upload`: upload_file success")
         else:
             # Upload file slice
+            logger.debug("`upload`: upload_slice starts")
+
             slice_md5s = []
             encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce
+                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
             )
 
             while True:
-                size = min(slice_size, io_len - slice_completed)
+                logger.debug(
+                    "`upload`: upload_slice: slice_completed: %s", slice_completed
+                )
+
+                size = min(slice_size, encrypt_io_len - slice_completed)
                 if size == 0:
                     break
-                io = ChunkIO(encrypt_io, size)
-                slice_md5 = api.upload_slice(io, callback=callback_for_slice)
+
+                data = encrypt_io.read(size) or b""
+                io = BytesIO(data)
+
+                logger.debug(
+                    "`upload`: upload_slice: size should be %s == %s", size, len(data)
+                )
+
+                # Retry upload until success
+                slice_md5 = retry(
+                    -1,
+                    except_callback=lambda err, fail_count: (
+                        io.seek(0, 0),
+                        logger.warning(
+                            "`upload`: `upload_slice`: error: %s, fail_count: %s",
+                            err,
+                            fail_count,
+                        ),
+                    ),
+                )(api.upload_slice)(io, callback=callback_for_slice)
+
                 slice_md5s.append(slice_md5)
                 slice_completed += size
 
             encrypt_io.close()
-            api.combine_slices(slice_md5s, remotepath, ondup=ondup)
+
+            # Combine slices
+            retry(
+                30,
+                except_callback=lambda err, fail_count: logger.warning(
+                    "`upload`: `combine_slices`: error: %s, fail_count: %s",
+                    err,
+                    fail_count,
+                ),
+            )(api.combine_slices)(slice_md5s, remotepath, ondup=ondup)
+
+            logger.debug("`upload`: upload_slice and combine_slices success")
+
         if task_id is not None and progress_task_exists(task_id):
             _progress.remove_task(task_id)
+    except Exception as err:
+        logger.warning("`upload`: error: %s", err)
+        raise err
     finally:
         if task_id is not None and progress_task_exists(task_id):
             _progress.reset(task_id)
