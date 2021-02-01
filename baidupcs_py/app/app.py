@@ -16,6 +16,7 @@ from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.net import random_avail_port
+from baidupcs_py.common.event import keyboard_listener_start
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
     ExcludeSifter,
@@ -53,6 +54,9 @@ import click
 from rich import print
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
+
+# Keyboard listener start
+keyboard_listener_start()
 
 logger = get_logger(__name__)
 

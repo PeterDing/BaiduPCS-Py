@@ -1,6 +1,7 @@
 from typing import Optional, List, Any, IO
 
 import os
+import time
 from io import BytesIO
 from enum import Enum
 from pathlib import Path
@@ -10,8 +11,9 @@ from random import Random
 
 from baidupcs_py.baidupcs.errors import BaiduPCSError
 from baidupcs_py.baidupcs import BaiduPCSApi, FromTo
-from baidupcs_py.common.path import is_file, exists, walk
 from baidupcs_py.common import constant
+from baidupcs_py.common.path import is_file, exists, walk
+from baidupcs_py.common.event import KeyHandler, KeyboardMonitor
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.concurrent import sure_release, retry
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
@@ -37,6 +39,26 @@ logger = get_logger(__name__)
 
 # If slice size >= 100M, the rate of uploading will be much lower.
 DEFAULT_SLICE_SIZE = 50 * constant.OneM
+
+
+UPLOAD_STOP = False
+
+
+def _toggle_stop(*args, **kwargs):
+    global UPLOAD_STOP
+    UPLOAD_STOP = not UPLOAD_STOP
+
+
+# Pass "p" to toggle uploading start/stop
+KeyboardMonitor.register(KeyHandler("p", callback=_toggle_stop))
+
+
+def _wait_start():
+    while True:
+        if UPLOAD_STOP:
+            time.sleep(1)
+        else:
+            break
 
 
 class EncryptType(Enum):
@@ -170,6 +192,8 @@ def upload_file(
     ignore_existing: bool = True,
     task_id: Optional[TaskID] = None,
 ):
+    _wait_start()
+
     localpath, remotepath = from_to
 
     assert exists(localpath), f"`{localpath}` does not exist"
@@ -269,10 +293,13 @@ def upload_file(
 
             retry(
                 30,
-                except_callback=lambda err, fail_count: logger.warning(
-                    "`upload`: `upload_file`: error: %s, fail_count: %s",
-                    err,
-                    fail_count,
+                except_callback=lambda err, fail_count: (
+                    logger.warning(
+                        "`upload`: `upload_file`: error: %s, fail_count: %s",
+                        err,
+                        fail_count,
+                    ),
+                    _wait_start(),
                 ),
             )(api.upload_file)(encrypt_io, remotepath, ondup=ondup, callback=callback)
 
@@ -289,6 +316,8 @@ def upload_file(
             )
 
             while True:
+                _wait_start()
+
                 logger.debug(
                     "`upload`: upload_slice: slice_completed: %s", slice_completed
                 )
@@ -314,6 +343,7 @@ def upload_file(
                             err,
                             fail_count,
                         ),
+                        _wait_start(),
                     ),
                 )(api.upload_slice)(io, callback=callback_for_slice)
 
