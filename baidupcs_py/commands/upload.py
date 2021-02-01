@@ -47,6 +47,10 @@ UPLOAD_STOP = False
 def _toggle_stop(*args, **kwargs):
     global UPLOAD_STOP
     UPLOAD_STOP = not UPLOAD_STOP
+    if UPLOAD_STOP:
+        print("[i yellow]Uploading stop[/i yellow]")
+    else:
+        print("[i yellow]Uploading continue[/i yellow]")
 
 
 # Pass "p" to toggle uploading start/stop
