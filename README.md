@@ -462,7 +462,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 ```
 
-**注意**: 大于100MB的媒体文件无法直接播放，需要加 `-s` 使用本地服务器播放。
+**注意**: 大于 100MB 的媒体文件无法直接播放，需要加 `-s` 使用本地服务器播放。
 
 ### 选项
 
@@ -485,6 +485,8 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 ## 上传文件
 
 上传一些本地文件或目录到网盘目录。
+
+上传过程中，按 “p” 可以暂停或继续上传。
 
 ```
 BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
