@@ -326,6 +326,9 @@ class BaiduPCSApi:
 
     def download_link(self, remotepath: str, pcs: bool = False) -> str:
         info = self._baidupcs.download_link(remotepath, pcs=pcs)
+        assert bool(
+            info.get("urls")
+        ), "Remote entry should be blocked. Server returns no download link."
         return info["urls"][0]["url"]
 
     def file_stream(
