@@ -10,4 +10,9 @@ format:
 build-pyx:
 	python build.py build_ext --inplace
 
+build-publish: all
+	rm -fr dist
+	poetry build -f sdist
+	poetry publish
+
 all: format-check typecheck
