@@ -55,9 +55,6 @@ from rich import print
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-# Keyboard listener start
-keyboard_listener_start()
-
 logger = get_logger(__name__)
 
 DEBUG = logger.level == logging.DEBUG
@@ -930,6 +927,9 @@ def upload(
 ):
     """上传文件"""
 
+    # Keyboard listener start
+    keyboard_listener_start()
+
     api = _recent_api(ctx)
     if not api:
         return
@@ -974,6 +974,9 @@ def sync(
     ctx, localdir, remotedir, encrypt_key, encrypt_type, max_workers, no_show_progress
 ):
     """同步本地目录到远端"""
+
+    # Keyboard listener start
+    keyboard_listener_start()
 
     api = _recent_api(ctx)
     if not api:
