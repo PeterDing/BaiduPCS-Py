@@ -28,6 +28,7 @@ from baidupcs_py.common.crypto import (
     ChaCha20Cryptography,
     AES256CBCCryptography,
 )
+from baidupcs_py.commands.upload import EncryptType
 
 
 def test_rangerequestio():
@@ -217,7 +218,7 @@ def test_rapid_upload_params():
     o = ChaCha20EncryptIO(io.BytesIO(buf), key, nonce, len(buf))
     enc0 = rapid_upload_params(o)
 
-    o = ChaCha20EncryptIO(io.BytesIO(buf), key, nonce, len(buf))
+    o = EncryptType.ChaCha20.encrypt_io(io.BytesIO(buf), key, nonce)
     enc1 = rapid_upload_params(o)
 
     assert enc0 == enc1
