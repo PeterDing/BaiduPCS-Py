@@ -94,7 +94,7 @@ class KeyboardListener(threading.Thread):
                 c = self.getch()
                 self._on(c)
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
 
             # Exit when main_thread exited
             if not self._mt.is_alive():
