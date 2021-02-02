@@ -1189,9 +1189,11 @@ def purgetasks(ctx, yes):
 @click.option("--port", "-p", type=int, default=8000, help="监听 port")
 @click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
 @click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option("--username", type=str, default=None, help="HTTP Basic Auth 用户名")
+@click.option("--password", type=str, default=None, help="HTTP Basic Auth 密钥")
 @click.pass_context
 @handle_error
-def server(ctx, root_dir, host, port, workers, encrypt_key):
+def server(ctx, root_dir, host, port, workers, encrypt_key, username, password):
     """开启 HTTP 服务"""
 
     api = _recent_api(ctx)
@@ -1200,6 +1202,9 @@ def server(ctx, root_dir, host, port, workers, encrypt_key):
 
     encrypt_key = encrypt_key or _encrypt_key(ctx)
 
+    if username:
+        assert password, "Must set password"
+
     start_server(
         api,
         root_dir=root_dir,
@@ -1207,6 +1212,8 @@ def server(ctx, root_dir, host, port, workers, encrypt_key):
         port=port,
         workers=workers,
         encrypt_key=encrypt_key,
+        username=username,
+        password=password,
     )
 
 

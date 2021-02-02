@@ -1,16 +1,19 @@
 from typing import Optional, Dict
 from pathlib import Path
 import asyncio
+import secrets
 
 import uvicorn
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.common.io import RangeRequestIO
 from baidupcs_py.common.constant import CPU_NUM
+from baidupcs_py.common.path import join_path
 from baidupcs_py.utils import format_date
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import Depends, FastAPI, Request, status, HTTPException
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import HTMLResponse, StreamingResponse, Response
 from jinja2 import Template
 
 from rich import print
@@ -21,6 +24,10 @@ _api: Optional[BaiduPCSApi] = None
 _root_dir: str = "/"
 _encrypt_key: Optional[str] = None
 
+# For Auth
+_username: Optional[str] = None
+_password: Optional[str] = None
+
 # This template is from https://github.com/rclone/rclone/blob/master/cmd/serve/httplib/serve/data/templates/index.html
 _html_tempt: Template = Template((Path(__file__).parent / "index.html").open().read())
 
@@ -30,8 +37,7 @@ def fake_io(io: RangeRequestIO, start: int = 0, end: int = -1):
         yield b
 
 
-@app.get("{remotepath:path}")
-async def http_server(
+async def handle_request(
     request: Request,
     remotepath: str,
     order: str = "asc",  # desc , asc
@@ -48,21 +54,24 @@ async def http_server(
 
     remotepath = remotepath.strip("/")
 
-    _rp = Path(_root_dir) / remotepath
-    _rp_str = _rp.as_posix()
+    _rp = join_path(_root_dir, remotepath)
+
+    # Anti path traversal attack
+    if not _rp.startswith(_root_dir):
+        raise HTTPException(status_code=404, detail="Item not found")
 
     _range = request.headers.get("range")
 
-    if not _api.exists(_rp_str):
+    if not _api.exists(_rp):
         raise HTTPException(status_code=404, detail="Item not found")
 
-    is_dir = _api.is_dir(_rp_str)
+    is_dir = _api.is_dir(_rp)
     if is_dir:
         chunks = ["/"] + (remotepath.split("/") if remotepath != "" else [])
         navigation = [
             (i - 1, "../" * (len(chunks) - i), name) for i, name in enumerate(chunks, 1)
         ]
-        pcs_files = _api.list(_rp_str, desc=desc, name=name, time=time, size=size)
+        pcs_files = _api.list(_rp, desc=desc, name=name, time=time, size=size)
         entries = []
         for f in pcs_files:
             p = Path(f.path)
@@ -74,7 +83,7 @@ async def http_server(
     else:
         while True:
             try:
-                range_request_io = _api.file_stream(_rp_str, encrypt_key=_encrypt_key)
+                range_request_io = _api.file_stream(_rp, encrypt_key=_encrypt_key)
                 length = len(range_request_io)
                 break
             except Exception as err:
@@ -102,6 +111,36 @@ async def http_server(
         return StreamingResponse(_iter_io, status_code=status_code, headers=headers)
 
 
+_security = HTTPBasic()
+
+
+def to_auth(credentials: HTTPBasicCredentials = Depends(_security)) -> str:
+    correct_username = secrets.compare_digest(credentials.username, _username or "")
+    correct_password = secrets.compare_digest(credentials.password, _password or "")
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+
+def make_auth_http_server():
+    @app.get("{remotepath:path}")
+    async def auth_http_server(
+        username: str = Depends(to_auth), response: Response = Depends(handle_request)
+    ):
+        if username:
+            return response
+
+
+def make_http_server():
+    @app.get("{remotepath:path}")
+    async def http_server(response: Response = Depends(handle_request)):
+        return response
+
+
 def start_server(
     api: BaiduPCSApi,
     root_dir: str = "/",
@@ -110,6 +149,8 @@ def start_server(
     workers: int = CPU_NUM,
     encrypt_key: Optional[str] = None,
     log_level: str = "info",
+    username: Optional[str] = None,
+    password: Optional[str] = None,
 ):
     """Create a http server on remote `root_dir`"""
 
@@ -122,6 +163,19 @@ def start_server(
     global _api
     if not _api:
         _api = api
+
+    global _username
+    if not _username:
+        _username = username
+
+    global _password
+    if not _password:
+        _password = password
+
+    if _username and _password:
+        make_auth_http_server()
+    else:
+        make_http_server()
 
     uvicorn.run(
         "baidupcs_py.commands.server:app",
