@@ -4,6 +4,8 @@ from pathlib import Path
 import os
 import shutil
 import subprocess
+import random
+import time
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -223,12 +225,18 @@ def play_dir(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    shuffle: bool = False,
     ignore_ext: bool = False,
     out_cmd: bool = False,
     local_server: str = "",
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
+
+    if shuffle:
+        rg = random.Random(time.time())
+        rg.shuffle(remotepaths)
+
     for rp in remotepaths[from_index:]:
         if rp.is_file:
             play_file(
@@ -253,6 +261,7 @@ def play_dir(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                shuffle=shuffle,
                 ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,
@@ -269,6 +278,7 @@ def play(
     player_params: List[str] = [],
     m3u8: bool = False,
     quiet: bool = False,
+    shuffle: bool = False,
     ignore_ext: bool = False,
     out_cmd: bool = False,
     local_server: str = "",
@@ -278,6 +288,10 @@ def play(
     Args:
         `from_index` (int): The start index of playing entries from EACH remote directory
     """
+
+    if shuffle:
+        rg = random.Random(time.time())
+        rg.shuffle(remotepaths)
 
     for rp in remotepaths:
 
@@ -308,6 +322,7 @@ def play(
                 player_params=player_params,
                 m3u8=m3u8,
                 quiet=quiet,
+                shuffle=shuffle,
                 ignore_ext=ignore_ext,
                 out_cmd=out_cmd,
                 local_server=local_server,

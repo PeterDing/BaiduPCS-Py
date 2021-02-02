@@ -177,6 +177,7 @@ ALIAS = OrderedDict(
         "t": "tasks",
         "ct": "cleartasks",
         "cct": "canceltasks",
+        "sv": "server",
     }
 )
 
@@ -806,6 +807,7 @@ def download(
 @click.option("--player-params", "--PP", multiple=True, type=str, help="第三方播放器参数")
 @click.option("--m3u8", "-m", is_flag=True, help="获取m3u8文件并播放")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方播放器输出")
+@click.option("--shuffle", "--sf", is_flag=True, help="随机播放")
 @click.option("--ignore-ext", "--IE", is_flag=True, help="不用文件名后缀名来判断媒体文件")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方播放器命令")
 @click.option(
@@ -830,6 +832,7 @@ def play(
     player_params,
     m3u8,
     quiet,
+    shuffle,
     ignore_ext,
     out_cmd,
     use_local_server,
@@ -890,6 +893,7 @@ def play(
         player_params=player_params,
         m3u8=m3u8,
         quiet=quiet,
+        shuffle=shuffle,
         ignore_ext=ignore_ext,
         out_cmd=out_cmd,
         local_server=local_server,
