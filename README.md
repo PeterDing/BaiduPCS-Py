@@ -621,6 +621,12 @@ BaiduPCS-Py purgetasks
 BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
 ```
 
+如果需要设置认证，使用下面的选项设置用户名和密钥：
+
+```
+BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --username 'foo' --password 'bar'
+```
+
 ### 选项
 
 | Option                   | Description                  |
@@ -629,3 +635,5 @@ BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
 | -p, --port INTEGER       | 监听 port                    |
 | -w, --workers INTEGER    | 进程数                       |
 | --encrypt-key, --ek TEXT | 加密密钥，默认使用用户设置的 |
+| --username TEXT          | HTTP Basic Auth 用户名       |
+| --password TEXT          | HTTP Basic Auth 密钥         |
