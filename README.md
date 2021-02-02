@@ -477,6 +477,7 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 | --player-params, --PP TEXT | 第三方播放器参数                                                              |
 | -m, --m3u8                 | 获取 m3u8 文件并播放                                                          |
 | -q, --quiet                | 取消第三方播放器输出                                                          |
+| --shuffle, --sf            | 随机播放                                                                      |
 | --out-cmd, --OC            | 输出第三方播放器命令                                                          |
 | -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
 | -s, --use-local-server     | 使用本地服务器播放。大于 100MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
