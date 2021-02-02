@@ -3,7 +3,7 @@ from typing import Optional, Dict, List, Tuple, Callable, IO
 from io import BytesIO
 import datetime
 
-from baidupcs_py.common.io import RangeRequestIO
+from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.baidupcs.pcs import BaiduPCS, BaiduPCSError, M3u8Type
 from baidupcs_py.baidupcs.inner import (
     PcsFile,
@@ -334,11 +334,15 @@ class BaiduPCSApi:
     def file_stream(
         self,
         remotepath: str,
+        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_key=Optional[str],
     ) -> RangeRequestIO:
         return self._baidupcs.file_stream(
-            remotepath, callback=callback, encrypt_key=encrypt_key
+            remotepath,
+            max_chunk_size=max_chunk_size,
+            callback=callback,
+            encrypt_key=encrypt_key,
         )
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:
