@@ -32,7 +32,7 @@ from baidupcs_py.commands.upload import EncryptType
 
 
 def test_rangerequestio():
-    url = "https://www.taobao.com/"
+    url = "http://mirror.arizona.edu/ubuntu/dists/xenial/Contents-amd64.gz"
     io = RangeRequestIO("GET", url, max_chunk_size=1024)
 
     b = b""
