@@ -32,12 +32,12 @@ from baidupcs_py.commands.upload import EncryptType
 
 
 def test_rangerequestio():
-    url = "http://baidu.com"
-    io = RangeRequestIO("GET", url, max_chunk_size=30)
+    url = "https://www.taobao.com/"
+    io = RangeRequestIO("GET", url, max_chunk_size=1024)
 
     b = b""
     while True:
-        cn = io.read(10)
+        cn = io.read(1024)
         if not cn:
             break
         b += cn
