@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "BaiduPCS-Py"
 homepage = "https://github.com/PeterDing/BaiduPCS-Py"
-version = "0.5.7"
+version = "0.5.8"
 description = "Baidu Pcs App"
 authors = ["PeterDing <dfhayst@gmail.com>"]
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers = [
 build = "build.py"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 requests = "^2.25.1"
 rich = "^9.8.0"
 requests-toolbelt = "^0.9.1"
@@ -33,6 +33,7 @@ uvicorn = {extras = ["standard"], version = "^0.13.3"}
 Jinja2 = "^2.11.2"
 cryptography = "^3.3.1"
 filelock = "^3.0.12"
+Cython = "^0.29.21"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"

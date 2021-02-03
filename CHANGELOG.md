@@ -1,8 +1,14 @@
 # Changelog
 
-## v0.5.7
+## v0.5.8 - 2021-02-03
 
-## Added
+### Fixed
+
+- BaiduPCS-Py 需要 Python ^3.7
+
+## v0.5.7 - 2021-02-02
+
+### Added
 
 - HTTP 服务支持基本认证。
 - HTTP 服务支持反目录遍历
