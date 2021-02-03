@@ -102,6 +102,7 @@ BaiduPCS-Py --help
 | t    | tasks        |
 | ct   | cleartasks   |
 | cct  | canceltasks  |
+| sv   | server       |
 
 ## 添加用户
 
