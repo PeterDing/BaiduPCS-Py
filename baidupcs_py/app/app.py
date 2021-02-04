@@ -1,9 +1,15 @@
+import os
+
+# Enable UTF-8 Mode for Windows
+# https://www.python.org/dev/peps/pep-0540/
+if os.name == "nt":
+    os.environ["PYTHONUTF8"] = "1"
+
 from typing import Optional
 from collections import OrderedDict
 from functools import wraps
 from pathlib import Path
 from multiprocessing import Process
-import os
 import signal
 import time
 import logging

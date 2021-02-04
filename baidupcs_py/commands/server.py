@@ -29,7 +29,9 @@ _username: Optional[str] = None
 _password: Optional[str] = None
 
 # This template is from https://github.com/rclone/rclone/blob/master/cmd/serve/httplib/serve/data/templates/index.html
-_html_tempt: Template = Template((Path(__file__).parent / "index.html").open().read())
+_html_tempt: Template = Template(
+    (Path(__file__).parent / "index.html").open(encoding="utf-8").read()
+)
 
 
 def fake_io(io: RangeRequestIO, start: int = 0, end: int = -1):
