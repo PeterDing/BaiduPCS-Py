@@ -171,8 +171,8 @@ def _compat_account_manager(am: AccountManager):
 def _compat_v0_5_9(am: AccountManager):
     for user_id, account in am._accounts.items():
         old_products = account.user.products
-        if isinstance(old_products, dict):
-            print(
+        if isinstance(old_products, dict):  # type: ignore
+            print(  # type: ignore
                 "[i yellow]Update[/i yellow]: Transfer PcsUser format for ^v0.5.9: "
                 f"user_id: {user_id}"
             )
