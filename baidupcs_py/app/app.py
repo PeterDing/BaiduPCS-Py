@@ -1000,7 +1000,7 @@ def sync(
         remotedir,
         encrypt_key=encrypt_key,
         salt=salt,
-        encrypt_type=encrypt_type,
+        encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
         show_progress=not no_show_progress,
     )
