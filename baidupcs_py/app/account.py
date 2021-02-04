@@ -5,6 +5,8 @@ import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
 
+from rich import print
+
 
 class Account(NamedTuple):
     user: PcsUser
@@ -46,7 +48,9 @@ class AccountManager:
     @staticmethod
     def load_data(data_path: PathLike) -> "AccountManager":
         try:
-            return pickle.load(open(data_path, "rb"))
+            am = pickle.load(open(data_path, "rb"))
+            _compat_account_manager(am)
+            return am
         except Exception:
             return AccountManager(data_path=data_path)
 
@@ -115,6 +119,7 @@ class AccountManager:
 
             api = account.pcsapi()
             user = api.user_info()
+
             self._accounts[user_id] = account._replace(user=user)
 
     def su(self, user_id: int):
@@ -156,3 +161,20 @@ class AccountManager:
             data_path.parent.mkdir(parents=True)
 
         pickle.dump(self, open(data_path, "wb"))
+
+
+def _compat_account_manager(am: AccountManager):
+    """Update stored account manager to compat current version"""
+    _compat_v0_5_9(am)
+
+
+def _compat_v0_5_9(am: AccountManager):
+    for user_id, account in am._accounts.items():
+        old_products = account.user.products
+        if isinstance(old_products, dict):
+            print(
+                "[i yellow]Update[/i yellow]: Transfer PcsUser format for ^v0.5.9: "
+                f"user_id: {user_id}"
+            )
+            am.update(user_id)
+    am.save()
