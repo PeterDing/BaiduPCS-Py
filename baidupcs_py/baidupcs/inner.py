@@ -176,6 +176,12 @@ class PcsAuth(NamedTuple):
     ptoken: Optional[str] = None
 
 
+class PcsUserProduct(NamedTuple):
+    name: str
+    start_time: int  # second
+    end_time: int  # second
+
+
 class PcsUser(NamedTuple):
     user_id: int
     user_name: Optional[str] = None
@@ -183,7 +189,8 @@ class PcsUser(NamedTuple):
     age: Optional[float] = None
     sex: Optional[str] = None
     quota: Optional[PcsQuota] = None
-    products: Optional[Dict[str, str]] = None
+    products: Optional[List[PcsUserProduct]] = None
+    level: Optional[int] = None
 
 
 TASK_STATUS_MSG = {

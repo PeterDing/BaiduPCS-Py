@@ -1,8 +1,6 @@
 from typing import Optional, Dict, List, Tuple, Callable, IO
 
 from io import BytesIO
-import datetime
-
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.baidupcs.pcs import BaiduPCS, BaiduPCSError, M3u8Type
 from baidupcs_py.baidupcs.inner import (
@@ -12,6 +10,7 @@ from baidupcs_py.baidupcs.inner import (
     PcsSharedPath,
     FromTo,
     PcsAuth,
+    PcsUserProduct,
     PcsUser,
     PcsQuota,
     CloudTask,
@@ -300,7 +299,7 @@ class BaiduPCSApi:
 
         quota = self.quota()
 
-        products = self.user_products()
+        products, level = self.user_products()
 
         return PcsUser(
             user_id=user_id,
@@ -310,19 +309,23 @@ class BaiduPCSApi:
             sex=sex,
             quota=quota,
             products=products,
+            level=level,
         )
 
-    def user_products(self) -> Dict[str, str]:
+    def user_products(self) -> Tuple[List[PcsUserProduct], int]:
         info = self._baidupcs.user_products()
-        pds = {}
+        pds = []
         for p in info["product_infos"]:
-            name = p["product_name"]
-            t = p["end_time"] - p["start_time"]
-            avail = str(datetime.timedelta(seconds=t))
-            pds[name] = f"Left {avail}"
+            pds.append(
+                PcsUserProduct(
+                    name=p["product_name"],
+                    start_time=p["start_time"],
+                    end_time=p["end_time"],
+                )
+            )
 
-        pds["level"] = info["level_info"]["current_level"]
-        return pds
+        level = info["level_info"]["current_level"]
+        return pds, level
 
     def download_link(self, remotepath: str, pcs: bool = False) -> str:
         info = self._baidupcs.download_link(remotepath, pcs=pcs)
