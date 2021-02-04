@@ -1,5 +1,8 @@
 from typing import Optional, List, Tuple, Union, Pattern
 from pathlib import Path
+import time
+import datetime
+
 
 from baidupcs_py.baidupcs import PcsFile, FromTo, CloudTask, PcsSharedLink, PcsUser
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -181,15 +184,20 @@ def display_shared_links(*shared_links: PcsSharedLink):
 
 
 def display_user_info(user_info: PcsUser):
-    user_id, user_name, auth, age, sex, quota, products = user_info
+    user_id, user_name, auth, age, sex, quota, products, level = user_info
     bduss = auth and auth.bduss
     quota_str = ""
     if quota:
         quota_str = human_size(quota.used) + "/" + human_size(quota.quota)
 
     products_str = ""
-    if products:
-        products_str = "\n    ".join([f"{k}: {v}" for k, v in products.items()])
+    for p in products or []:
+        name = p.name
+        start_date = format_date(p.start_time)
+        end_date = format_date(p.end_time)
+        avail = str(datetime.timedelta(seconds=(int(p.end_time - time.time()))))
+        value = f"From {start_date} to {end_date}, left {avail}"
+        products_str += f"\n    {name}: {value}"
 
     _tempt = (
         f"user id: {user_id}\n"
@@ -198,8 +206,8 @@ def display_user_info(user_info: PcsUser):
         f"age: {age}\n"
         f"sex: {sex}\n"
         f"quota: {quota_str}\n"
-        f"products:\n"
-        f"    {products_str}\n"
+        f"level: {level}\n"
+        f"products:{products_str}\n"
     )
 
     console = Console()
@@ -217,15 +225,16 @@ def display_user_infos(
     table = Table(box=SIMPLE, show_edge=False, highlight=True)
     table.add_column("Index", justify="left")
     table.add_column("Recent", justify="left")
-    table.add_column("User Id", justify="left")
-    table.add_column("User Name", justify="left")
+    table.add_column("User Id", justify="left", overflow="fold")
+    table.add_column("User Name", justify="left", overflow="fold")
     table.add_column("Quota", justify="left")
-    table.add_column("SVIP", justify="left")
-    table.add_column("VIP", justify="left")
-    table.add_column("pwd", justify="left")
+    table.add_column("SVIP", justify="left", overflow="fold")
+    table.add_column("VIP", justify="left", overflow="fold")
+    table.add_column("Level", justify="left")
+    table.add_column("pwd", justify="left", overflow="fold")
 
     for idx, (user_info, pwd) in enumerate(user_infos, 1):
-        user_id, user_name, auth, age, sex, quota, products = user_info
+        user_id, user_name, auth, age, sex, quota, products, level = user_info
 
         is_recent = "[green]✔[/green]" if user_id == recent_user_id else ""
 
@@ -237,16 +246,25 @@ def display_user_infos(
         vip = "[red]✘[/red]"
 
         assert products
-        for pn in products.keys():
-            if pn.startswith("svip2_nd"):
-                svip = "[green]✔[/green]"
+        for p in products or []:
+            avail = str(datetime.timedelta(seconds=(int(p.end_time - time.time()))))
+            if p.name.startswith("svip2_nd"):
+                svip = f"Left [green]{avail}[/green]"
                 continue
-            if pn.startswith("contentvip_nd"):
-                vip = "[green]✔[/green]"
+            if p.name.startswith("contentvip_nd"):
+                vip = f"Left [green]{avail}[/green]"
                 continue
 
         table.add_row(
-            str(idx), is_recent, str(user_id), user_name, quota_str, svip, vip, pwd
+            str(idx),
+            is_recent,
+            str(user_id),
+            user_name,
+            quota_str,
+            svip,
+            vip,
+            str(level),
+            pwd,
         )
 
     console = Console()
