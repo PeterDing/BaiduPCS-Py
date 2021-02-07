@@ -6,7 +6,7 @@ from baidupcs_py.commands.env import LOG_LEVEL, LOG_PATH
 
 
 def get_logger(name: str):
-    _LOG_PATH = Path(os.getenv("LOG_FILENAME") or LOG_PATH)
+    _LOG_PATH = Path(os.getenv("LOG_PATH") or LOG_PATH).expanduser()
     _LOG_LEVEL = os.getenv("LOG_LEVEL", LOG_LEVEL).upper()
     assert _LOG_LEVEL in LogLevels
 
