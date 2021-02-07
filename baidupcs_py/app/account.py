@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
+from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
 
 from rich import print
 
@@ -48,7 +49,8 @@ class AccountManager:
     @staticmethod
     def load_data(data_path: PathLike) -> "AccountManager":
         try:
-            am = pickle.load(open(data_path, "rb"))
+            data_path = Path(data_path).expanduser()
+            am = pickle.load(data_path.open("rb"))
             _compat_account_manager(am)
             return am
         except Exception:
@@ -156,7 +158,7 @@ class AccountManager:
         data_path = data_path or self._data_path
         assert data_path, "No data path"
 
-        data_path = Path(data_path)
+        data_path = Path(data_path).expanduser()
         if not data_path.parent.exists():
             data_path.parent.mkdir(parents=True)
 
@@ -177,4 +179,9 @@ def _compat_v0_5_9(am: AccountManager):
                 f"user_id: {user_id}"
             )
             am.update(user_id)
+
+    data_path = am._data_path
+    if not data_path or not Path(data_path).exists():
+        am._data_path = ACCOUNT_DATA_PATH
+
     am.save()

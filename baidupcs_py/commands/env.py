@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Local data directory
-DATA_DIR = Path("~").expanduser() / ".baidupcs-py"
+DATA_DIR = Path("~") / ".baidupcs-py"
 
 # Account data path
 ACCOUNT_DATA_PATH = DATA_DIR / "accounts.pk"
