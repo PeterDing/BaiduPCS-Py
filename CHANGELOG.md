@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.11 - 2021-02-07
+
+### Fixed
+
+- 修复帐号文件配置出错
+
+### Added
+
+- HTTP 服务返回头加 `content-type`
+
 ## v0.5.10 - 2021-02-04
 
 ### Fixed
