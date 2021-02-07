@@ -1,5 +1,7 @@
 from typing import Optional, Dict
 from pathlib import Path
+import os
+import mimetypes
 import asyncio
 import secrets
 
@@ -17,6 +19,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse, Response
 from jinja2 import Template
 
 from rich import print
+
+mimetypes.init()
 
 app = FastAPI()
 
@@ -95,7 +99,14 @@ async def handle_request(
         headers: Dict[str, str] = {
             "accept-ranges": "bytes",
             "connection": "Keep-Alive",
+            "access-control-allow-origin": "*",
         }
+
+        ext = os.path.splitext(remotepath)[-1]
+        content_type = mimetypes.types_map.get(ext)
+
+        if content_type:
+            headers["content-type"] = content_type
 
         if _range and range_request_io.seekable():
             assert _range.startswith("bytes=")
