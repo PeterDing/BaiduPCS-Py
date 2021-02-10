@@ -488,6 +488,8 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 
 上传一些本地文件或目录到网盘目录。
 
+BaiduPCS-Py 首先会尝试快速上传。如果快速上传失败，会使用分片上传上传文件。
+
 上传过程中，按 “p” 可以暂停或继续上传。
 
 ```
