@@ -177,7 +177,7 @@ def test_chacha20encryptio():
 def test_aes256cbcencryptio():
     key = os.urandom(32)
     iv = os.urandom(16)
-    buf = os.urandom(1024 * 1024 * 50)
+    buf = os.urandom(1024 * 1024 * 50 + 14)
     bio = io.BytesIO(buf)
     c = AES256CBCEncryptIO(bio, key, iv, len(buf))
 
@@ -185,11 +185,77 @@ def test_aes256cbcencryptio():
 
     enc = c.read()
     print("enc", len(enc))
-    d = to_decryptio(io.BytesIO(enc), key)
+    dio = to_decryptio(io.BytesIO(enc), key)
     # assert total_len(d) == len(buf)  # can be wrong
-    dec = d.read()
+    dec = dio.read()
     print("dec", len(dec))
     assert buf == dec
+
+    # Encrypt
+    # Assert length of Read(size), size > 0
+    buf = os.urandom(1024 * 50)
+    bio = io.BytesIO(buf)
+    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    length = 0
+    while True:
+        d = c.read(1)
+        if not d:
+            break
+        assert len(d) == 1
+        length += 1
+    assert total_len(c) == padding_size(len(buf), 16) + ENCRYPT_HEAD_LEN
+
+    buf = os.urandom(1024 * 50 + 14)
+    bio = io.BytesIO(buf)
+    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    length = 0
+    while True:
+        d = c.read(1)
+        if not d:
+            break
+        assert len(d) == 1
+        length += 1
+    assert total_len(c) == padding_size(len(buf), 16) + ENCRYPT_HEAD_LEN
+
+    # Decrypt
+    # Assert length of Read(size), size > 0
+    buf = os.urandom(1024 * 50)
+    bio = io.BytesIO(buf)
+    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    enc = b""
+    while True:
+        d = c.read(1)
+        if not d:
+            break
+        enc += d
+    dio = to_decryptio(io.BytesIO(enc), key)
+    length = 0
+    while True:
+        d = dio.read(1)
+        if not d:
+            break
+        assert len(d) == 1
+        length += 1
+    assert length == len(buf)
+
+    buf = os.urandom(1024 * 50 + 14)
+    bio = io.BytesIO(buf)
+    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    enc = b""
+    while True:
+        d = c.read(1)
+        if not d:
+            break
+        enc += d
+    dio = to_decryptio(io.BytesIO(enc), key)
+    length = 0
+    while True:
+        d = dio.read(1)
+        if not d:
+            break
+        assert len(d) == 1
+        length += 1
+    assert length == len(buf)
 
 
 def test_aes256cbcencryptio_uniq():
