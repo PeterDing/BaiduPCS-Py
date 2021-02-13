@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple, Dict, Any, Callable, Generator, IO
-from abc import ABC, abstractmethod
 from io import BytesIO, UnsupportedOperation
+from enum import Enum
 from pathlib import Path
 from zlib import crc32
 from random import Random
@@ -373,6 +373,14 @@ class AES256CBCEncryptIO(EncryptIO):
     def _read_block(self, size: int = -1):
         """Read encrypted block to cache"""
 
+        # `self._encrypted_cache` has remains.
+        if size > 0 and len(self._encrypted_cache) > size:
+            return
+
+        # `size` must be large or equal to the `size` as `size` be the times of `self.BLOCK_SIZE`
+        if size > 0:
+            size = padding_size(size, self.BLOCK_SIZE)
+
         data = self._io.read(size) or b""
         if not data:
             return
@@ -597,6 +605,14 @@ class AES256CBCDecryptIO(DecryptIO):
 
     def _read_block(self, size: int = -1):
         """Read encrypted block to cache"""
+
+        # `self._decrypted_cache` has remains.
+        if size > 0 and len(self._decrypted_cache) > size:
+            return
+
+        # `size` must be large or equal to the `size` as `size` be the times of `self.BLOCK_SIZE`
+        if size > 0:
+            size = padding_size(size, self.BLOCK_SIZE)
 
         data = self._io.read(size)
         if not data:
@@ -888,3 +904,29 @@ class RangeRequestIO(IO):
 
     def close(self):
         pass
+
+
+class EncryptType(Enum):
+    No = "No"
+    Simple = "Simple"
+    ChaCha20 = "ChaCha20"
+    AES256CBC = "AES256CBC"
+
+    def encrypt_io(self, io: IO, encrypt_key: Any, nonce_or_iv: Any = None):
+        io_len = total_len(io)
+        if self == EncryptType.No:
+            return io
+        elif self == EncryptType.Simple:
+            return SimpleEncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
+        elif self == EncryptType.ChaCha20:
+            return ChaCha20EncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
+        elif self == EncryptType.AES256CBC:
+            return AES256CBCEncryptIO(
+                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
+            )
+        else:
+            raise ValueError(f"Unknown EncryptType: {self}")
