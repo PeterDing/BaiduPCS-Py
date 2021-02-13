@@ -22,6 +22,7 @@ from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.net import random_avail_port
+from baidupcs_py.common.io import EncryptType
 from baidupcs_py.common.event import keyboard_listener_start
 from baidupcs_py.commands.sifter import (
     IncludeSifter,
@@ -44,12 +45,7 @@ from baidupcs_py.commands.download import (
     DEFAULT_CHUNK_SIZE,
 )
 from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
-from baidupcs_py.commands.upload import (
-    upload as _upload,
-    from_tos,
-    CPU_NUM,
-    EncryptType,
-)
+from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
 from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
 from baidupcs_py.commands.server import start_server

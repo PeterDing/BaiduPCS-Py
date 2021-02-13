@@ -1,9 +1,8 @@
-from typing import Optional, List, Any, IO
+from typing import Optional, List, Any
 
 import os
 import time
 from io import BytesIO
-from enum import Enum
 from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -20,10 +19,8 @@ from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.common.io import (
     total_len,
     sample_data,
-    SimpleEncryptIO,
-    ChaCha20EncryptIO,
-    AES256CBCEncryptIO,
     rapid_upload_params,
+    EncryptType,
 )
 from baidupcs_py.commands.log import get_logger
 
@@ -63,32 +60,6 @@ def _wait_start():
             time.sleep(1)
         else:
             break
-
-
-class EncryptType(Enum):
-    No = "No"
-    Simple = "Simple"
-    ChaCha20 = "ChaCha20"
-    AES256CBC = "AES256CBC"
-
-    def encrypt_io(self, io: IO, encrypt_key: Any, nonce_or_iv: Any = None):
-        io_len = total_len(io)
-        if self == EncryptType.No:
-            return io
-        elif self == EncryptType.Simple:
-            return SimpleEncryptIO(
-                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
-            )
-        elif self == EncryptType.ChaCha20:
-            return ChaCha20EncryptIO(
-                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
-            )
-        elif self == EncryptType.AES256CBC:
-            return AES256CBCEncryptIO(
-                io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
-            )
-        else:
-            raise ValueError(f"Unknown EncryptType: {self}")
 
 
 def to_remotepath(sub_path: str, remotedir: str) -> str:

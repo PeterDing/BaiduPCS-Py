@@ -8,11 +8,8 @@ from baidupcs_py.common.path import walk, join_path
 from baidupcs_py.common.crypto import calu_file_md5
 from baidupcs_py.common.concurrent import sure_release
 from baidupcs_py.common.constant import CPU_NUM
-from baidupcs_py.commands.upload import (
-    upload as _upload,
-    EncryptType,
-    DEFAULT_SLICE_SIZE,
-)
+from baidupcs_py.common.io import EncryptType
+from baidupcs_py.commands.upload import upload as _upload, DEFAULT_SLICE_SIZE
 
 from rich import print
 
