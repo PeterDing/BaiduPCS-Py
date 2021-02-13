@@ -69,7 +69,7 @@ def display_files(
         row.append(tp)
         if show_size:
             size = human_size(pcs_file.size) if pcs_file.size else ""
-            row.append(size)
+            row.append(f"{size} {pcs_file.size}")
         if show_date:
             date = format_date(pcs_file.mtime) if pcs_file.mtime else ""
             row.append(date)
