@@ -226,11 +226,11 @@ class AES256CBCCryptography(Cryptography):
         self._decryptor.finalize()
 
 
-def aes265cbc_encrypt(data: bytes, key: bytes, iv: bytes):
+def aes256cbc_encrypt(data: bytes, key: bytes, iv: bytes):
     crypto = AES256CBCCryptography(key, iv)
     return crypto.encrypt(data) + crypto._encryptor.finalize()
 
 
-def aes265cbc_decrypt(data: bytes, key: bytes, iv: bytes):
+def aes256cbc_decrypt(data: bytes, key: bytes, iv: bytes):
     crypto = AES256CBCCryptography(key, iv)
     return crypto.decrypt(data) + crypto._decryptor.finalize()

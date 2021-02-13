@@ -16,8 +16,8 @@ from baidupcs_py.common.crypto import (
     SimpleCryptography,
     ChaCha20Cryptography,
     AES256CBCCryptography,
-    aes265cbc_encrypt,
-    aes265cbc_decrypt,
+    aes256cbc_encrypt,
+    aes256cbc_decrypt,
     padding_key,
     padding_size,
     pkcs7_padding,
@@ -213,7 +213,7 @@ class EncryptIO(IO):
         self._crypto: Optional[Cryptography] = None
 
         # AES256CBC Encrypt `BAIDUPCS_PY_CRYPTO_MAGIC_CODE`
-        self._encrypted_baidupcs_py_crypto_magic_code = aes265cbc_encrypt(
+        self._encrypted_baidupcs_py_crypto_magic_code = aes256cbc_encrypt(
             BAIDUPCS_PY_CRYPTO_MAGIC_CODE,
             self._encrypt_key,
             random_bytes(16, self._encrypt_key),
@@ -659,7 +659,7 @@ def to_decryptio(io: IO, encrypt_key: Any):
         return io
 
     b_mc, magic_code, nonce_or_iv, total_origin_len = parse_head(head)
-    b_mc = aes265cbc_decrypt(b_mc, encrypt_key, random_bytes(16, encrypt_key))
+    b_mc = aes256cbc_decrypt(b_mc, encrypt_key, random_bytes(16, encrypt_key))
     total_origin_len = u8x8_to_u64(total_origin_len)
 
     if b_mc != BAIDUPCS_PY_CRYPTO_MAGIC_CODE:

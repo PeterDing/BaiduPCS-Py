@@ -11,7 +11,6 @@ from urllib.parse import urlparse, quote_plus
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
-from baidupcs_py.common import constant
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.common.cache import timeout_cache
 from baidupcs_py.common.crypto import calu_md5, calu_sha1

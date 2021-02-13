@@ -151,7 +151,7 @@ BaiduPCS-Py 支持以下加密方法：
   因为这种算法加解密不需要知道上下文信息，所以，下载时支持分段下载，如果是媒体文件则支持拖动播放。
   推荐用于加密不重要的媒体文件。
 - **ChaCha20** 工业级加密算法，速度快，推荐用于加密重要文件。不支持分段下载。
-- **AES265CBC** 工业级加密算法，推荐用于加密重要文件。不支持分段下载。
+- **AES256CBC** 工业级加密算法，推荐用于加密重要文件。不支持分段下载。
 
 **注意**：用命令 `encryptkey` 设置的密钥和盐**只是为当前用户**的。
 
@@ -175,7 +175,7 @@ BaiduPCS-Py encryptkey --encrypt-key 'my-encrypt-key' --salt 'some-salt'
 
 ```
 # 默认使用上面设置的 `encrypt-key`
-BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type AES265CBC
+BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type AES256CBC
 ```
 
 下载并用上面设置的 `encrypt-key` 自动解密文件：
@@ -504,7 +504,7 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 | Option                                                     | Description                    |
 | ---------------------------------------------------------- | ------------------------------ |
 | --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
-| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES265CBC] | 文件加密方法，默认为 No 不加密 |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
 | -w, --max-workers INTEGER                                  | 同时上传文件数                 |
 | --no-ignore-existing, --NI                                 | 上传已经存在的文件             |
 | --no-show-progress, --NP                                   | 不显示上传进度                 |
@@ -524,7 +524,7 @@ BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
 | Option                                                     | Description                    |
 | ---------------------------------------------------------- | ------------------------------ |
 | --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
-| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES265CBC] | 文件加密方法，默认为 No 不加密 |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
 | -w, --max-workers INTEGER                                  | 同时上传文件数                 |
 | --no-show-progress, --NP                                   | 不显示上传进度                 |
 

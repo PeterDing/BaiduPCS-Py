@@ -69,7 +69,7 @@ class EncryptType(Enum):
     No = "No"
     Simple = "Simple"
     ChaCha20 = "ChaCha20"
-    AES265CBC = "AES265CBC"
+    AES256CBC = "AES256CBC"
 
     def encrypt_io(self, io: IO, encrypt_key: Any, nonce_or_iv: Any = None):
         io_len = total_len(io)
@@ -83,7 +83,7 @@ class EncryptType(Enum):
             return ChaCha20EncryptIO(
                 io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
             )
-        elif self == EncryptType.AES265CBC:
+        elif self == EncryptType.AES256CBC:
             return AES256CBCEncryptIO(
                 io, encrypt_key, nonce_or_iv or os.urandom(16), io_len
             )
