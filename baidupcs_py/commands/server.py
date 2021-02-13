@@ -4,6 +4,7 @@ import os
 import mimetypes
 import asyncio
 import secrets
+import copy
 
 import uvicorn
 
@@ -190,10 +191,15 @@ def start_server(
     else:
         make_http_server()
 
+    log_config = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+    log_config["formatters"]["access"][
+        "fmt"
+    ] = '%(asctime)s - %(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
     uvicorn.run(
         "baidupcs_py.commands.server:app",
         host=host,
         port=port,
         log_level=log_level,
+        log_config=log_config,
         workers=1,
     )
