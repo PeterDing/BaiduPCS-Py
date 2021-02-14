@@ -317,7 +317,7 @@ def useradd(ctx, bduss, cookies):
 
     if cookies:
         cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
-        bduss = bduss or cookies.get('BDUSS')
+        bduss = bduss or cookies.get("BDUSS")
     else:
         cookies = {}
     if not bduss:
