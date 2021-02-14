@@ -306,7 +306,7 @@ def userlist(ctx):
 
 
 @app.command()
-@click.option("--bduss", prompt="bduss", hide_input=True, help="用户 bduss")
+@click.option("--bduss", prompt="bduss", hide_input=True, default="", help="用户 bduss")
 @click.option(
     "--cookies", prompt="cookies", hide_input=True, default="", help="用户 cookies"
 )
@@ -317,8 +317,11 @@ def useradd(ctx, bduss, cookies):
 
     if cookies:
         cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
+        bduss = bduss or cookies.get('BDUSS')
     else:
         cookies = {}
+    if not bduss:
+        raise ValueError("bduss must be specified or be included in cookie")
     account = Account.from_bduss(bduss, cookies=cookies)
     am = ctx.obj.account_manager
     am.useradd(account.user)
