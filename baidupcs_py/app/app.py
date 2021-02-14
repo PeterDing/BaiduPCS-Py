@@ -306,17 +306,19 @@ def userlist(ctx):
 
 
 @app.command()
-@click.option("--bduss", prompt="bduss", hide_input=True, help="用户 bduss")
-@click.option(
-    "--cookies", prompt="cookies", hide_input=True, default="", help="用户 cookies"
-)
+@click.option("--bduss", default="", help="用户 bduss")
+@click.option("--cookies", default="", help="用户 cookies")
 @click.pass_context
 @handle_error
 def useradd(ctx, bduss, cookies):
     """添加一个用户并设置为当前用户"""
-
+    while not bduss or not cookies:
+        bduss = input('bduss:')
+        cookies = input('cookies:')
     if cookies:
         cookies = dict([c.split("=", 1) for c in cookies.split("; ")])
+        while not cookies.get('BDUSS') and not bduss:
+            bduss = input('bduss:')
     else:
         cookies = {}
     account = Account.from_bduss(bduss, cookies=cookies)
