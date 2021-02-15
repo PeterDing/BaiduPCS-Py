@@ -72,6 +72,7 @@ def sync(
         else:
             check_list.append((localpath, all_pcs_files[path]))
 
+    # Compare localpath content md5 with remotepath content md5
     semaphore = Semaphore(max_workers)
     with ThreadPoolExecutor(max_workers=CPU_NUM) as executor:
         tasks = {}
