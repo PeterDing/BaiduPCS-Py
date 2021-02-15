@@ -63,13 +63,14 @@ def display_files(
         table.add_column("md5", justify="left")
     table.add_column("Path", justify="left", overflow="fold")
 
+    max_size_str_len = max([len(str(pcs_file.size)) for pcs_file in pcs_files])
     for pcs_file in pcs_files:
         row: List[Union[str, Text]] = []
         tp = Text("-", style="bold red")
         row.append(tp)
         if show_size:
             size = human_size(pcs_file.size) if pcs_file.size else ""
-            row.append(f"{size} {pcs_file.size}")
+            row.append(f"{size} {pcs_file.size: >{max_size_str_len}}")
         if show_date:
             date = format_date(pcs_file.mtime) if pcs_file.mtime else ""
             row.append(date)
