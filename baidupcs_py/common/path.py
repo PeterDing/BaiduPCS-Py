@@ -29,25 +29,23 @@ def walk(localpath: PathLike) -> Iterator[str]:
 
 
 def join_path(source: PathLike, dest: PathLike) -> str:
-    """Join posix paths
+    """Join posix paths"""
 
-    Only resolve relative path.
-    """
-
-    has_root = Path(source).as_posix().startswith("/")
-
-    if not isinstance(source, Path):
-        source = Path(source)
-    if not isinstance(dest, Path):
-        dest = Path(dest)
-
-    path = (source / dest).resolve().as_posix()
-
+    _path = (Path(source) / dest).as_posix()
+    has_root = _path.startswith("/")
     if not has_root:
-        parents = Path("").resolve().as_posix()
-        path = path[len(parents) + 1 :]
+        _path = "/" + _path
 
-    if IS_WIN and has_root:
-        return path.split(":", 1)[-1]
+    path = Path(_path).resolve().as_posix()
+
+    if IS_WIN:
+        p = path.split(":", 1)[-1]
+        if not has_root:
+            return p[1:]
+        else:
+            return p
     else:
-        return path
+        if not has_root:
+            return path[1:]
+        else:
+            return path
