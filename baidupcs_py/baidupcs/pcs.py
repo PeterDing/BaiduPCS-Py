@@ -401,7 +401,7 @@ class BaiduPCS:
         _sources = (Path(s) for s in sources)
         _dest = Path(dest)
 
-        param = [_from_to(str(s), str(_dest / s.name)) for s in _sources]
+        param = [_from_to(s.as_posix(), (_dest / s.name).as_posix()) for s in _sources]
         return self.file_operate("move", param)
 
     @assert_ok
@@ -440,7 +440,7 @@ class BaiduPCS:
         _sources = (Path(s) for s in sources)
         _dest = Path(dest)
 
-        param = [_from_to(str(s), str(_dest / s.name)) for s in _sources]
+        param = [_from_to(s.as_posix(), (_dest / s.name).as_posix()) for s in _sources]
         return self.file_operate("copy", param)
 
     @assert_ok

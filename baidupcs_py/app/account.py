@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsUser
+from baidupcs_py.common.path import join_path
 from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
 
 from rich import print
@@ -85,8 +86,8 @@ class AccountManager:
 
         assert account
 
-        pwd = Path(account.pwd) / remotedir
-        account = account._replace(pwd=pwd.resolve().as_posix())
+        pwd = join_path(account.pwd, remotedir)
+        account = account._replace(pwd=pwd)
         self._accounts[self._who] = account
 
     @property

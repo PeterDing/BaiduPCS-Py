@@ -124,11 +124,11 @@ def _recent_api(ctx) -> Optional[BaiduPCSApi]:
         return None
 
 
-def _pwd(ctx) -> Path:
+def _pwd(ctx) -> str:
     """Return recent user's pwd"""
 
     am = ctx.obj.account_manager
-    return Path(am.pwd)
+    return am.pwd
 
 
 def _encrypt_key(ctx) -> Optional[str]:
