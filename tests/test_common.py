@@ -8,6 +8,8 @@ import requests
 
 from baidupcs_py.common import constant
 from baidupcs_py.common.number import u64_to_u8x8, u8x8_to_u64
+from baidupcs_py.common.path import join_path
+from baidupcs_py.common.platform import IS_WIN
 from baidupcs_py.common.io import (
     ENCRYPT_HEAD_LEN,
     total_len,
@@ -18,6 +20,7 @@ from baidupcs_py.common.io import (
     AES256CBCEncryptIO,
     to_decryptio,
     rapid_upload_params,
+    EncryptType,
 )
 from baidupcs_py.common.crypto import (
     padding_size,
@@ -28,7 +31,24 @@ from baidupcs_py.common.crypto import (
     ChaCha20Cryptography,
     AES256CBCCryptography,
 )
-from baidupcs_py.commands.upload import EncryptType
+
+
+def test_join_path():
+    a = "/foo"
+    b = "bar"
+    assert join_path(a, b) == "/foo/bar"
+
+    a = "foo"
+    b = "bar"
+    assert join_path(a, b) == "foo/bar"
+
+    a = "/foo"
+    b = "../bar"
+    assert join_path(a, b) == "/bar"
+
+    a = "foo"
+    b = "../bar"
+    assert join_path(a, b) == "bar"
 
 
 def test_rangerequestio():
@@ -48,7 +68,7 @@ def test_rangerequestio():
 
 def test_calu_file_md5():
     # Github action fail on windows
-    if sys.platform not in ("darwin", "linux"):
+    if IS_WIN:
         return
 
     path = "temp-file"
