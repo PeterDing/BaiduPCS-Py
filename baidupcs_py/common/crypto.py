@@ -11,13 +11,14 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.backends import default_backend
 
+from baidupcs_py.common.platform import IS_LINUX, IS_MACOS
 from baidupcs_py.common.simple_cipher import SimpleCryptography as _SimpleCryptography
 
 
 def _md5_cmd(localpath: str) -> List[str]:
-    if sys.platform == "darwin":
+    if IS_MACOS:
         cmd = ["md5", localpath]
-    elif sys.platform == "linux":
+    elif IS_LINUX:
         cmd = ["md5sum", localpath]
     else:  # windows
         cmd = ["CertUtil", "-hashfile", localpath, "MD5"]
@@ -30,12 +31,14 @@ def calu_file_md5(localpath: str) -> str:
     )
 
     output = cp.stdout.strip()
-    if sys.platform == "darwin":
+    if IS_MACOS:
         return re.split(r"\s+", output)[-1]
-    elif sys.platform == "linux":
+    elif IS_LINUX:
         return re.split(r"\s+", output)[0]
     else:  # windows
-        return re.split(r"\s+", output)[-6]
+        cn = output.split("CertUtil")[0].strip()
+        cn = cn.split(":")[-1].strip().replace(" ", "")
+        return cn
 
 
 def calu_md5(buf: Union[str, bytes], encoding="utf-8") -> str:
