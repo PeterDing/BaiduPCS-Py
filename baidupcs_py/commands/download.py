@@ -9,7 +9,7 @@ from concurrent.futures import Future
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.common import constant
-from baidupcs_py.common.io import DecryptIO, READ_SIZE
+from baidupcs_py.common.io import to_decryptio, DecryptIO, READ_SIZE
 from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -58,7 +58,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         out_cmd: bool = False,
-        encrypt_key: Optional[str] = None,
+        encrypt_key: bytes = b"",
     ):
         global DEFAULT_DOWNLOADER
         if not self.which():
@@ -107,8 +107,8 @@ class Downloader(Enum):
             )
         else:
             if encrypt_key:
-                dio = DecryptIO(open(localpath_tmp, "rb"), encrypt_key)
-                if dio.encrypted():
+                dio = to_decryptio(open(localpath_tmp, "rb"), encrypt_key)
+                if isinstance(dio, DecryptIO):
                     with open(localpath, "wb") as fd:
                         while True:
                             buf = dio.read(READ_SIZE)
@@ -131,7 +131,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         done_callback: Optional[Callable[[Future], Any]] = None,
-        encrypt_key: Optional[str] = None,
+        encrypt_key: bytes = b"",
     ):
         headers = {
             "Cookie ": "; ".join(
@@ -282,7 +282,7 @@ def download_file(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: Optional[str] = None,
+    encrypt_key: bytes = b"",
 ):
     localpath = Path(localdir) / os.path.basename(remotepath)
 
@@ -318,7 +318,7 @@ def download_dir(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams=DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: Optional[str] = None,
+    encrypt_key: bytes = b"",
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
@@ -359,7 +359,7 @@ def download(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: Optional[str] = None,
+    encrypt_key: bytes = b"",
 ):
     """Download `remotepaths` to the `localdir`
 
