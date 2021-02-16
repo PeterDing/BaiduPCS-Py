@@ -5,10 +5,9 @@ import os
 if os.name == "nt":
     os.environ["PYTHONUTF8"] = "1"
 
-from typing import Optional
+from typing import Optional, List
 from collections import OrderedDict
 from functools import wraps
-from pathlib import Path
 from multiprocessing import Process
 import signal
 import time
@@ -65,7 +64,7 @@ DEBUG = logger.level == logging.DEBUG
 def handle_signal(sign_num, frame):
     logger.debug("`app`: handle_signal: %s", sign_num)
 
-    if _progress._started:
+    if _progress.live._started:
         print()
         # Stop _progress, otherwise terminal stdout will be contaminated
         _progress.stop()
@@ -98,6 +97,58 @@ def handle_error(func):
             if DEBUG:
                 console = Console()
                 console.print_exception()
+
+    return wrap
+
+
+def _user_ids(ctx) -> Optional[List[int]]:
+    """Select use_ids by their name probes"""
+
+    am = ctx.obj.account_manager
+    user_name_probes = ctx.obj.users
+
+    user_ids = []
+    for user_id, account in am._accounts.items():
+        user_name = account.user.user_name
+        for probe in user_name_probes:
+            if probe in user_name:
+                user_ids.append(user_id)
+                break
+    return user_ids
+
+
+def _change_account(ctx, user_id: int):
+    """Change recent account with `user_id`"""
+
+    am = ctx.obj.account_manager
+    am.su(user_id)
+
+
+def multi_user_do(func):
+    """Run command on multi users"""
+
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        ctx = args[0]
+        user_ids = _user_ids(ctx)
+        if not user_ids:
+            return func(*args, **kwargs)
+
+        am = ctx.obj.account_manager
+        for user_id in user_ids:
+            accout = am.who(user_id)
+            if not accout:
+                continue
+
+            user_name = accout.user.user_name
+            print(
+                "[i yellow]@Do[/i yellow]: "
+                f"user_name: [b]{user_name}[/b], "
+                f"user_id: [b]{user_id}[/b]"
+            )
+            _change_account(ctx, user_id)
+            func(*args, **kwargs)
+            print()
 
     return wrap
 
@@ -220,9 +271,11 @@ _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
 @click.option(
     "--account-data", type=str, default=ACCOUNT_DATA_PATH, help="Account data file"
 )
+@click.option("--users", type=str, default=None, help="用户名片段，用“,”分割")
 @click.pass_context
-def app(ctx, account_data):
+def app(ctx, account_data, users):
     ctx.obj.account_manager = AccountManager.load_data(account_data)
+    ctx.obj.users = [] if users is None else users.split(",")
 
 
 # Account
@@ -386,6 +439,7 @@ def cd(ctx, remotedir):
 @app.command()
 @click.pass_context
 @handle_error
+@multi_user_do
 def pwd(ctx):
     """显示当前工作目录"""
 
@@ -419,6 +473,7 @@ def pwd(ctx):
 @click.option("--show-absolute-path", "-A", is_flag=True, help="显示文件绝对路径")
 @click.pass_context
 @handle_error
+@multi_user_do
 def ls(
     ctx,
     remotepaths,
@@ -495,6 +550,7 @@ def ls(
 @click.option("--show-md5", "-M", is_flag=True, help="显示文件md5")
 @click.pass_context
 @handle_error
+@multi_user_do
 def search(
     ctx,
     keyword,
@@ -554,6 +610,7 @@ def search(
 @click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
+@multi_user_do
 def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
     """显示文件内容"""
 
@@ -577,6 +634,7 @@ def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
 @click.option("--show", "-S", is_flag=True, help="显示目录")
 @click.pass_context
 @handle_error
+@multi_user_do
 def mkdir(ctx, remotedirs, show):
     """创建目录"""
 
@@ -595,6 +653,7 @@ def mkdir(ctx, remotedirs, show):
 @click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
 @handle_error
+@multi_user_do
 def move(ctx, remotepaths, show):
     """移动文件
 
@@ -621,6 +680,7 @@ def move(ctx, remotepaths, show):
 @click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
 @handle_error
+@multi_user_do
 def rename(ctx, source, dest, show):
     """文件重命名
 
@@ -645,6 +705,7 @@ def rename(ctx, source, dest, show):
 @click.option("--show", "-S", is_flag=True, help="显示结果")
 @click.pass_context
 @handle_error
+@multi_user_do
 def copy(ctx, remotepaths, show):
     """拷贝文件
 
@@ -669,6 +730,7 @@ def copy(ctx, remotepaths, show):
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.pass_context
 @handle_error
+@multi_user_do
 def remove(ctx, remotepaths):
     """删除文件"""
 
@@ -729,6 +791,7 @@ def remove(ctx, remotepaths):
 @click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
+@multi_user_do
 def download(
     ctx,
     remotepaths,
@@ -826,6 +889,7 @@ def download(
 @click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
 @click.pass_context
 @handle_error
+@multi_user_do
 def play(
     ctx,
     remotepaths,
@@ -926,6 +990,7 @@ def play(
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.pass_context
 @handle_error
+@multi_user_do
 def upload(
     ctx,
     localpaths,
@@ -981,6 +1046,7 @@ def upload(
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.pass_context
 @handle_error
+@multi_user_do
 def sync(
     ctx, localdir, remotedir, encrypt_key, encrypt_type, max_workers, no_show_progress
 ):
@@ -1023,6 +1089,7 @@ def sync(
 @click.option("--password", "-p", type=str, help="设置秘密，4个字符。默认没有秘密")
 @click.pass_context
 @handle_error
+@multi_user_do
 def share(ctx, remotepaths, password):
     """分享文件
 
@@ -1046,6 +1113,7 @@ def share(ctx, remotepaths, password):
 @click.option("--show-all", "-S", is_flag=True, help="显示所有分享的链接，默认只显示有效的分享链接")
 @click.pass_context
 @handle_error
+@multi_user_do
 def shared(ctx, show_all):
     """列出分享链接"""
 
@@ -1060,6 +1128,7 @@ def shared(ctx, show_all):
 @click.argument("share_ids", nargs=-1, type=int)
 @click.pass_context
 @handle_error
+@multi_user_do
 def cancelshared(ctx, share_ids):
     """取消分享链接"""
 
@@ -1077,6 +1146,7 @@ def cancelshared(ctx, share_ids):
 @click.option("--no-show-vcode", "--NV", is_flag=True, help="不显示验证码")
 @click.pass_context
 @handle_error
+@multi_user_do
 def save(ctx, shared_url, remotedir, password, no_show_vcode):
     """保存其他用户分享的链接"""
 
@@ -1109,6 +1179,7 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 @click.argument("remotedir", nargs=1, type=str)
 @click.pass_context
 @handle_error
+@multi_user_do
 def add(ctx, task_urls, remotedir):
     """添加离线下载任务"""
 
@@ -1127,6 +1198,7 @@ def add(ctx, task_urls, remotedir):
 @click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
 @handle_error
+@multi_user_do
 def tasks(ctx, task_ids):
     """列出离线下载任务。也可列出给定id的任务"""
 
@@ -1143,6 +1215,7 @@ def tasks(ctx, task_ids):
 @app.command()
 @click.pass_context
 @handle_error
+@multi_user_do
 def cleartasks(ctx):
     """清除已经下载完和下载失败的任务"""
 
@@ -1157,6 +1230,7 @@ def cleartasks(ctx):
 @click.argument("task_ids", nargs=-1, type=str)
 @click.pass_context
 @handle_error
+@multi_user_do
 def canceltasks(ctx, task_ids):
     """取消下载任务"""
 
@@ -1172,6 +1246,7 @@ def canceltasks(ctx, task_ids):
 @click.option("--yes", is_flag=True, help="确定直接运行")
 @click.pass_context
 @handle_error
+@multi_user_do
 def purgetasks(ctx, yes):
     """删除所有离线下载任务"""
 
@@ -1200,6 +1275,7 @@ def purgetasks(ctx, yes):
 @click.option("--password", type=str, default=None, help="HTTP Basic Auth 密钥")
 @click.pass_context
 @handle_error
+@multi_user_do
 def server(ctx, root_dir, host, port, workers, encrypt_key, username, password):
     """开启 HTTP 服务"""
 
