@@ -181,6 +181,13 @@ def rapid_upload_params2(localPath: Path) -> Tuple[str, str, int, int]:
     return slice_md5, content_md5, content_crc32, localPath.stat().st_size
 
 
+def generate_nonce_or_iv(salt: bytes, io: IO) -> bytes:
+    io_len = total_len(io)
+    rg = Random(salt)
+    sample = sample_data(io, rg, 16)
+    return random_bytes(16, salt + sample + str(io_len).encode("utf-8"))
+
+
 class EncryptIO(IO):
     """Encrypt IO
 
@@ -189,7 +196,7 @@ class EncryptIO(IO):
     """
 
     def __init__(
-        self, io: IO, encrypt_key: Any, nonce_or_iv: Any, total_origin_len: int
+        self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes, total_origin_len: int
     ):
         self._io = io
 
@@ -316,7 +323,7 @@ class SimpleEncryptIO(EncryptIO):
     BLOCK_SIZE = 16  # 16 bytes
 
     def __init__(
-        self, io: IO, encrypt_key: Any, nonce_or_iv: Any, total_origin_len: int
+        self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes, total_origin_len: int
     ):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
         nonce_or_iv = padding_key(nonce_or_iv, self.BLOCK_SIZE)
@@ -330,7 +337,7 @@ class ChaCha20EncryptIO(EncryptIO):
 
     BLOCK_SIZE = 16  # 16 bytes
 
-    def __init__(self, io: IO, encrypt_key: Any, nonce: Any, total_origin_len: int):
+    def __init__(self, io: IO, encrypt_key: bytes, nonce: bytes, total_origin_len: int):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
         nonce = padding_key(nonce, self.BLOCK_SIZE)
         super().__init__(io, encrypt_key, nonce, total_origin_len)
@@ -346,7 +353,7 @@ class AES256CBCEncryptIO(EncryptIO):
 
     BLOCK_SIZE = 16  # 16 bytes
 
-    def __init__(self, io: IO, encrypt_key: Any, iv: Any, total_origin_len: int):
+    def __init__(self, io: IO, encrypt_key: bytes, iv: bytes, total_origin_len: int):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
         iv = padding_key(iv, self.BLOCK_SIZE)
         super().__init__(io, encrypt_key, iv, total_origin_len)
@@ -450,7 +457,7 @@ class AES256CBCEncryptIO(EncryptIO):
 
 class DecryptIO(IO):
     def __init__(
-        self, io: IO, encrypt_key: Any, nonce_or_iv: Any, total_origin_len: int
+        self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes, total_origin_len: int
     ):
         self._io = io
 
@@ -540,9 +547,9 @@ def parse_head(head: bytes) -> Tuple[bytes, bytes, bytes, bytes]:
 
 
 class SimpleDecryptIO(DecryptIO):
-    def __init__(self, io: IO, encrypt_key: Any, total_origin_len: int):
+    def __init__(self, io: IO, encrypt_key: bytes, total_origin_len: int):
         encrypt_key = padding_key(encrypt_key, 32)
-        super().__init__(io, encrypt_key, None, total_origin_len)
+        super().__init__(io, encrypt_key, b"", total_origin_len)
 
         self._crypto = SimpleCryptography(self._encrypt_key)
 
@@ -560,7 +567,7 @@ class SimpleDecryptIO(DecryptIO):
 class ChaCha20DecryptIO(DecryptIO):
     BLOCK_SIZE = 16  # 16 bytes
 
-    def __init__(self, io: IO, encrypt_key: Any, nonce: Any, total_origin_len: int):
+    def __init__(self, io: IO, encrypt_key: bytes, nonce: bytes, total_origin_len: int):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
         nonce = padding_key(nonce, self.BLOCK_SIZE)
         super().__init__(io, encrypt_key, nonce, total_origin_len)
@@ -581,7 +588,7 @@ class ChaCha20DecryptIO(DecryptIO):
 class AES256CBCDecryptIO(DecryptIO):
     BLOCK_SIZE = 16  # 16 bytes
 
-    def __init__(self, io: IO, encrypt_key: Any, iv: Any, total_origin_len: int):
+    def __init__(self, io: IO, encrypt_key: bytes, iv: bytes, total_origin_len: int):
         encrypt_key = padding_key(encrypt_key, self.BLOCK_SIZE * 2)
         iv = padding_key(iv, self.BLOCK_SIZE)
         super().__init__(io, encrypt_key, iv, total_origin_len)
@@ -663,7 +670,7 @@ class AES256CBCDecryptIO(DecryptIO):
         return False
 
 
-def to_decryptio(io: IO, encrypt_key: Any):
+def to_decryptio(io: IO, encrypt_key: bytes):
     if not encrypt_key:
         return io
 
@@ -701,7 +708,7 @@ class AutoDecryptRequest:
         url: str,
         headers: Optional[Dict[str, str]] = None,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
-        encrypt_key: Any = None,
+        encrypt_key: bytes = b"",
         **kwargs,
     ):
         kwargs["stream"] = True
@@ -834,7 +841,7 @@ class RangeRequestIO(IO):
         headers: Optional[Dict[str, str]] = None,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
-        encrypt_key: Any = None,
+        encrypt_key: bytes = b"",
         **kwargs,
     ):
         kwargs["stream"] = True
@@ -912,7 +919,7 @@ class EncryptType(Enum):
     ChaCha20 = "ChaCha20"
     AES256CBC = "AES256CBC"
 
-    def encrypt_io(self, io: IO, encrypt_key: Any, nonce_or_iv: Any = None):
+    def encrypt_io(self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes = b""):
         io_len = total_len(io)
         if self == EncryptType.No:
             return io
