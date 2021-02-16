@@ -14,6 +14,7 @@ from baidupcs_py.common.io import (
     ENCRYPT_HEAD_LEN,
     total_len,
     ChunkIO,
+    generate_nonce_or_iv,
     RangeRequestIO,
     SimpleEncryptIO,
     ChaCha20EncryptIO,
@@ -49,6 +50,22 @@ def test_join_path():
     a = "foo"
     b = "../bar"
     assert join_path(a, b) == "bar"
+
+
+def test_generate_nonce_or_iv():
+    salt = os.urandom(20)
+    buf = io.BytesIO(b"123456789")
+
+    ni1 = generate_nonce_or_iv(salt, buf)
+    buf.seek(0, 0)
+
+    ni2 = generate_nonce_or_iv(salt, buf)
+    buf.seek(0, 0)
+
+    print(ni1)
+
+    assert len(ni1) == 16
+    assert ni1 == ni2
 
 
 def test_rangerequestio():
