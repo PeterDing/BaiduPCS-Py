@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.5.16 - 2021-02-16
+
+### Added
+
+- 支持同时对多个帐号进行操作
+
+  下面的命令支持对多个帐号进行操作:
+
+  - pwd
+  - ls
+  - search
+  - cat
+  - mkdir
+  - move
+  - rename
+  - copy
+  - remove
+  - download
+  - play
+  - upload
+  - sync
+  - share
+  - shared
+  - cancelshared
+  - save
+  - add
+  - tasks
+  - cleartasks
+  - canceltasks
+  - purgetasks
+  - server
+
+### Changed
+
+- 更新依赖
+
 ## v0.5.15 - 2021-02-16
 
 ### Fixed
