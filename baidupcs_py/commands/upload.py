@@ -20,6 +20,7 @@ from baidupcs_py.common.io import (
     total_len,
     sample_data,
     rapid_upload_params,
+    generate_nonce_or_iv,
     EncryptType,
 )
 from baidupcs_py.commands.log import get_logger
@@ -90,8 +91,8 @@ def upload(
     api: BaiduPCSApi,
     from_to_list: List[FromTo],
     ondup: str = "overwrite",
-    encrypt_key: Any = None,
-    salt: Any = None,
+    encrypt_key: bytes = b"",
+    salt: bytes = b"",
     encrypt_type: EncryptType = EncryptType.No,
     max_workers: int = CPU_NUM,
     slice_size: int = DEFAULT_SLICE_SIZE,
@@ -160,8 +161,8 @@ def upload_file(
     api: BaiduPCSApi,
     from_to: FromTo,
     ondup: str,
-    encrypt_key: Any = None,
-    salt: Any = None,
+    encrypt_key: bytes = b"",
+    salt: bytes = b"",
     encrypt_type: EncryptType = EncryptType.No,
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
@@ -189,10 +190,12 @@ def upload_file(
     logger.debug("`upload`: encrypt_type: %s", encrypt_type)
 
     # Generate nonce_or_iv
-    rg = Random(salt)
-    raw_io = open(localpath, "rb")
-    nonce_or_iv = sample_data(raw_io, rg, 16)
-    raw_io.close()
+    if encrypt_key:
+        raw_io = open(localpath, "rb")
+        nonce_or_iv = generate_nonce_or_iv(salt, raw_io)
+        raw_io.close()
+    else:
+        nonce_or_iv = b""
 
     # IO Length
     encrypt_io = encrypt_type.encrypt_io(
