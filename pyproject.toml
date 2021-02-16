@@ -21,7 +21,7 @@ build = "build.py"
 [tool.poetry.dependencies]
 python = "^3.7"
 requests = "^2.25.1"
-rich = "^9.8.0"
+rich = "^9.11.0"
 requests-toolbelt = "^0.9.1"
 Pillow = "^8.1.0"
 click = "^7.1.2"
@@ -30,16 +30,16 @@ aget = "^0.1.17"
 chardet = "^4.0.0"
 fastapi = "^0.63.0"
 uvicorn = {extras = ["standard"], version = "^0.13.3"}
-Jinja2 = "^2.11.2"
-cryptography = "^3.3.1"
+Jinja2 = "^2.11.3"
+cryptography = "^3.4.5"
 filelock = "^3.0.12"
 Cython = "^0.29.21"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.1"
-mypy = "^0.790"
+pytest = "^6.2.2"
+mypy = "^0.800"
 black = "^20.8b1"
-setuptools = "^52.0.0"
+setuptools = "^53.0.0"
 Cython = "^0.29.21"
 
 [tool.poetry.scripts]
