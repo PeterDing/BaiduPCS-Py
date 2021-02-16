@@ -13,6 +13,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [API](#API)
 - [用法](#用法)
 - [命令别名](#命令别名)
+- [对多个帐号进行相同操作](#对多个帐号进行相同操作)
 - [添加用户](#添加用户)
 - [设置文件加密密钥和盐](#设置文件加密密钥和盐)
 - [显示当前用户的信息](#显示当前用户的信息)
@@ -103,6 +104,64 @@ BaiduPCS-Py --help
 | ct   | cleartasks   |
 | cct  | canceltasks  |
 | sv   | server       |
+
+## 对多个帐号进行相同操作
+
+BaiduPCS-Py 支持对多个帐号进行相同操作。比如，用相同关键字搜索多个帐号，上传相同的文件/目录到多个帐号，等等。
+
+使用者只需用 `--users` 选项来指定要操作的帐号名即可。
+
+`--users` 接受一个参数，这个参数是用“,”连接的要进行操作帐号名的部分字符。假设我们现在有 3 个帐号，帐号名分别是 `Tom`，`Peter`，`Joy`。
+现在我要同时对`Tom`和`Joy`进行关键字搜索。我们可以用下面的命令进行：
+
+```
+BaiduPCS-Py --users 'Tom,Joy' search 'keyword' / -R
+```
+
+或者给出帐号名的部分片段：
+
+```
+BaiduPCS-Py --users 'om,oy' search 'keyword' / -R
+```
+
+更简单可以用：
+
+```
+# Tom, Joy 都包含字符 "o"
+BaiduPCS-Py --users 'o' search 'keyword' / -R
+```
+
+如果要对所有帐号进行操作用 `--users ''`。
+
+如果不使用 `--users` 选项，默认只对当前帐号进行操作。
+
+以下命令支持对多个帐号进行操作：
+
+- pwd
+- ls
+- search
+- cat
+- mkdir
+- move
+- rename
+- copy
+- remove
+- download
+- play
+- upload
+- sync
+- share
+- shared
+- cancelshared
+- save
+- add
+- tasks
+- cleartasks
+- canceltasks
+- purgetasks
+- server
+
+**注意**: `--users` 一定要跟在 `BaiduPCS-Py` 后，命令前。
 
 ## 添加用户
 
