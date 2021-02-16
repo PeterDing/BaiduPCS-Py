@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.15 - 2021-02-16
+
+### Fixed
+
+- 修复第三方下载程序解密错误
+
+### Changed
+
+- Set `encrypt_key` and `salt` to bytes
+
 ## v0.5.14 - 2021-02-15
 
 ### Changed
