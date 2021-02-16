@@ -143,7 +143,7 @@ class Downloader(Enum):
 
         task_id: Optional[TaskID] = None
         if not downloadparams.quiet:
-            if not _progress._started:
+            if not _progress.live._started:
                 _progress.start()
             task_id = _progress.add_task("MeDownloader", start=False, title=localpath)
 
