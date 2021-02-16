@@ -339,7 +339,7 @@ class BaiduPCSApi:
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
-        encrypt_key=Optional[str],
+        encrypt_key: bytes = b"",
     ) -> RangeRequestIO:
         return self._baidupcs.file_stream(
             remotepath,

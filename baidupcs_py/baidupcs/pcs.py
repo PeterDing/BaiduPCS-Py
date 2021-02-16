@@ -841,7 +841,7 @@ class BaiduPCS:
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
-        encrypt_key=Optional[str],
+        encrypt_key: bytes = b"",
     ) -> RangeRequestIO:
         info = self.download_link(remotepath)
         url = info["urls"][0]["url"]

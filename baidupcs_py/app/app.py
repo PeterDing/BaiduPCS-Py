@@ -131,24 +131,26 @@ def _pwd(ctx) -> str:
     return am.pwd
 
 
-def _encrypt_key(ctx) -> Optional[str]:
+def _encrypt_key(ctx) -> bytes:
     """Return recent user's encryption key"""
 
     account = _recent_account(ctx)
     if account:
-        return account.encrypt_key
+        ek = account.encrypt_key
+        return bytes(ek or "", encoding="utf-8")
     else:
-        return None
+        return b""
 
 
-def _salt(ctx) -> Optional[str]:
+def _salt(ctx) -> bytes:
     """Return recent user's encryption key"""
 
     account = _recent_account(ctx)
     if account:
-        return account.salt
+        salt = account.salt
+        return bytes(salt or "", encoding="utf-8")
     else:
-        return None
+        return b""
 
 
 ALIAS = OrderedDict(
@@ -563,7 +565,7 @@ def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
     remotepath = join_path(pwd, remotepath)
 
     if no_decrypt:
-        encrypt_key = None
+        encrypt_key = b""
     else:
         encrypt_key = encrypt_key or _encrypt_key(ctx)
 
@@ -768,7 +770,7 @@ def download(
     remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     if no_decrypt:
-        encrypt_key = None
+        encrypt_key = b""
     else:
         encrypt_key = encrypt_key or _encrypt_key(ctx)
 

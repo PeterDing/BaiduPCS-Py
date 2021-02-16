@@ -43,7 +43,7 @@ def save_shared(
     api: BaiduPCSApi,
     shared_url: str,
     remotedir: str,
-    password=Optional[str],
+    password: Optional[str] = None,
     show_vcode: bool = True,
 ):
     assert remotedir.startswith("/"), "`remotedir` must be an absolute path"

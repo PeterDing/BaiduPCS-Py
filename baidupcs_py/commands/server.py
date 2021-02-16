@@ -27,7 +27,7 @@ app = FastAPI()
 
 _api: Optional[BaiduPCSApi] = None
 _root_dir: str = "/"
-_encrypt_key: Optional[str] = None
+_encrypt_key: bytes = b""
 
 # For Auth
 _username: Optional[str] = None
@@ -161,7 +161,7 @@ def start_server(
     host: str = "localhost",
     port: int = 8000,
     workers: int = CPU_NUM,
-    encrypt_key: Optional[str] = None,
+    encrypt_key: bytes = b"",
     log_level: str = "info",
     username: Optional[str] = None,
     password: Optional[str] = None,
