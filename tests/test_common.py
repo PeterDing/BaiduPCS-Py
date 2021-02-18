@@ -11,7 +11,7 @@ from baidupcs_py.common.number import u64_to_u8x8, u8x8_to_u64
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.platform import IS_WIN
 from baidupcs_py.common.io import (
-    ENCRYPT_HEAD_LEN,
+    PADDED_ENCRYPT_HEAD_WITH_SALT_LEN,
     total_len,
     ChunkIO,
     generate_nonce_or_iv,
@@ -24,6 +24,8 @@ from baidupcs_py.common.io import (
     EncryptType,
 )
 from baidupcs_py.common.crypto import (
+    generate_salt,
+    generate_key_iv,
     padding_size,
     random_bytes,
     _md5_cmd,
@@ -174,7 +176,7 @@ def test_aes256cbccryptography_time():
 
 
 def test_noencryptio():
-    key = "123"
+    key = b"123"
     buf = os.urandom(1024 * 1024 * 50)
     c = io.BytesIO(buf)
     enc = c.read()
@@ -184,12 +186,11 @@ def test_noencryptio():
 
 
 def test_simpleencryptio():
-    key = "123"
-    nonce_or_iv = os.urandom(16)
+    key = b"123"
     buf = os.urandom(1024 * 1024 * 50)
     bio = io.BytesIO(buf)
-    c = SimpleEncryptIO(bio, key, nonce_or_iv, len(buf))
-    assert total_len(c) == len(buf) + ENCRYPT_HEAD_LEN
+    c = SimpleEncryptIO(bio, key, len(buf))
+    assert total_len(c) == len(buf) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
     enc = c.read()
     d = to_decryptio(io.BytesIO(enc), key)
     assert total_len(d) == len(buf)
@@ -199,11 +200,10 @@ def test_simpleencryptio():
 
 def test_chacha20encryptio():
     key = os.urandom(32)
-    nonce = os.urandom(16)
     buf = os.urandom(1024 * 1024 * 50)
     bio = io.BytesIO(buf)
-    c = ChaCha20EncryptIO(bio, key, nonce, len(buf))
-    assert total_len(c) == len(buf) + ENCRYPT_HEAD_LEN
+    c = ChaCha20EncryptIO(bio, key, len(buf))
+    assert total_len(c) == len(buf) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
     enc = c.read()
     d = to_decryptio(io.BytesIO(enc), key)
     assert total_len(d) == len(buf)
@@ -213,12 +213,13 @@ def test_chacha20encryptio():
 
 def test_aes256cbcencryptio():
     key = os.urandom(32)
-    iv = os.urandom(16)
     buf = os.urandom(1024 * 1024 * 50 + 14)
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
 
-    assert total_len(c) == padding_size(len(buf), 16) + ENCRYPT_HEAD_LEN
+    assert (
+        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
+    )
 
     enc = c.read()
     print("enc", len(enc))
@@ -232,7 +233,7 @@ def test_aes256cbcencryptio():
     # Assert length of Read(size), size > 0
     buf = os.urandom(1024 * 50)
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
     length = 0
     while True:
         d = c.read(1)
@@ -240,11 +241,13 @@ def test_aes256cbcencryptio():
             break
         assert len(d) == 1
         length += 1
-    assert total_len(c) == padding_size(len(buf), 16) + ENCRYPT_HEAD_LEN
+    assert (
+        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
+    )
 
     buf = os.urandom(1024 * 50 + 14)
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
     length = 0
     while True:
         d = c.read(1)
@@ -252,13 +255,15 @@ def test_aes256cbcencryptio():
             break
         assert len(d) == 1
         length += 1
-    assert total_len(c) == padding_size(len(buf), 16) + ENCRYPT_HEAD_LEN
+    assert (
+        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
+    )
 
     # Decrypt
     # Assert length of Read(size), size > 0
     buf = os.urandom(1024 * 50)
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
     enc = b""
     while True:
         d = c.read(1)
@@ -277,7 +282,7 @@ def test_aes256cbcencryptio():
 
     buf = os.urandom(1024 * 50 + 14)
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
     enc = b""
     while True:
         d = c.read(1)
@@ -295,19 +300,44 @@ def test_aes256cbcencryptio():
     assert length == len(buf)
 
 
+def test_linked_crypted_io():
+    key = os.urandom(32)
+    buf = os.urandom(1024 * 50 + 14)
+    raw_len = len(buf)
+
+    raw_io = io.BytesIO(buf)
+    eio = SimpleEncryptIO(raw_io, key, raw_len)
+    dio = to_decryptio(eio, key)
+    eio = ChaCha20EncryptIO(dio, key, raw_len)
+    dio = to_decryptio(eio, key)
+    eio = AES256CBCEncryptIO(dio, key, raw_len)
+    dio = to_decryptio(eio, key)
+
+    length = 0
+    dbuf = b""
+    while True:
+        d = dio.read(1)
+        if not d:
+            break
+        dbuf += d
+        assert len(d) == 1
+        length += 1
+
+    assert length == raw_len
+    assert dbuf == buf
+
+
 def test_aes256cbcencryptio_uniq():
     key = os.urandom(32)
-    iv = os.urandom(16)
     buf = os.urandom(1024 * 1024 * 50)
 
     bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c = AES256CBCEncryptIO(bio, key, len(buf))
     enc1 = c.read()
 
     time.sleep(1)
 
-    bio = io.BytesIO(buf)
-    c = AES256CBCEncryptIO(bio, key, iv, len(buf))
+    c.reset()
     enc2 = c.read()
 
     assert enc1 == enc2
@@ -315,14 +345,13 @@ def test_aes256cbcencryptio_uniq():
 
 def test_rapid_upload_params():
     key = os.urandom(32)
-    nonce = os.urandom(16)
     buf = os.urandom(60 * constant.OneM)
 
-    o = ChaCha20EncryptIO(io.BytesIO(buf), key, nonce, len(buf))
-    enc0 = rapid_upload_params(o)
+    eio = ChaCha20EncryptIO(io.BytesIO(buf), key, len(buf))
+    enc0 = rapid_upload_params(eio)
 
-    o = EncryptType.ChaCha20.encrypt_io(io.BytesIO(buf), key, nonce)
-    enc1 = rapid_upload_params(o)
+    eio.reset()
+    enc1 = rapid_upload_params(eio)
 
     assert enc0 == enc1
 
@@ -374,3 +403,15 @@ def test_padding_size():
     bs = 16
     r = padding_size(i, bs, ceil=False)
     assert r == 0
+
+
+def test_generate_key_iv():
+    pwd = b"test"
+    salt = b"\xf6\x81\x8c\xae\x13\x18r\xbd"
+    key, iv = generate_key_iv(pwd, salt, 32, 16)
+
+    assert (
+        key
+        == b"l\x04\xcb\xae\xc4\xd7\xa05^\x04\x93\xa2M\xe5\x0ee\\?\xc1C;\xca\xab|Z\xda\x98\xe8\xdb\x01\xdb\xa0"
+    )
+    assert iv == b"\x8b\xe2\x02\x8e\xee6j\x1cLv\xa2&\xa2\x8a\x1d\xfd"
