@@ -15,7 +15,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [命令别名](#命令别名)
 - [对多个帐号进行相同操作](#对多个帐号进行相同操作)
 - [添加用户](#添加用户)
-- [设置文件加密密钥和盐](#设置文件加密密钥和盐)
+- [设置文件加密密码](#设置文件加密密码)
 - [显示当前用户的信息](#显示当前用户的信息)
 - [更新用户信息](#更新用户信息)
 - [显示所有用户](#显示所有用户)
@@ -82,7 +82,7 @@ BaiduPCS-Py --help
 | su   | su           |
 | ul   | userlist     |
 | ua   | useradd      |
-| ek   | encryptkey   |
+| ep   | encryptpwd   |
 | ud   | userdel      |
 | l    | ls           |
 | f    | search       |
@@ -195,7 +195,7 @@ BaiduPCS-Py useradd --cookies "cookies 值" --bduss "bduss 值"
 
 BaiduPCS-Py 支持多用户，你只需一直用 `useradd` 来添加用户即可。
 
-## 设置文件加密密钥和盐
+## 设置文件加密密码
 
 BaiduPCS-Py 支持“无感的”文件加密。
 
@@ -212,20 +212,20 @@ BaiduPCS-Py 支持以下加密方法：
 - **ChaCha20** 工业级加密算法，速度快，推荐用于加密重要文件。不支持分段下载。
 - **AES256CBC** 工业级加密算法，推荐用于加密重要文件。不支持分段下载。
 
-**注意**：用命令 `encryptkey` 设置的密钥和盐**只是为当前用户**的。
+**注意**：用命令 `encryptpwd` 设置的密码和盐**只是为当前用户**的。
 
-为当前用户设置加密密钥和盐:
+为当前用户设置加密密码和盐:
 
 交互添加：
 
 ```
-BaiduPCS-Py encryptkey
+BaiduPCS-Py encryptpwd
 ```
 
 或者直接添加：
 
 ```
-BaiduPCS-Py encryptkey --encrypt-key 'my-encrypt-key' --salt 'some-salt'
+BaiduPCS-Py encryptpwd --encrypt-password 'my-encrypt-password'
 ```
 
 上传并加密文件：
@@ -233,36 +233,36 @@ BaiduPCS-Py encryptkey --encrypt-key 'my-encrypt-key' --salt 'some-salt'
 上传和同步文件时只需要指定加密算法就可。如果不指定就不加密。
 
 ```
-# 默认使用上面设置的 `encrypt-key`
+# 默认使用上面设置的 `encrypt-password`
 BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type AES256CBC
 ```
 
-下载并用上面设置的 `encrypt-key` 自动解密文件：
+下载并用上面设置的 `encrypt-password` 自动解密文件：
 
 ```
 BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/
 ```
 
-也可以使用临时的 `encrypt-key`：
+也可以使用临时的 `encrypt-password`：
 
 ```
-BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type Simple --encrypt-key 'onlyyou'
+BaiduPCS-Py upload some-file.mp4 some-dir/ /to/here --encrypt-type Simple --encrypt-password 'onlyyou'
 ```
 
-但在使用临时的 `encrypt-key` 后，`cat`、下载和播放这些文件时需要指定 `encrypt-key`，但不需要指定加密算法，程序会自动检查加密算法：
+但在使用临时的 `encrypt-password` 后，`cat`、下载和播放这些文件时需要指定 `encrypt-password`，但不需要指定加密算法，程序会自动检查加密算法：
 
 ```
 # 下载
-BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/  --encrypt-key 'onlyyou'
+BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/  --encrypt-password 'onlyyou'
 
 # 开启本地服务并播放
-BaiduPCS-Py play /to/here/some-file.mp4 --encrypt-key 'onlyyou' --use-local-server
+BaiduPCS-Py play /to/here/some-file.mp4 --encrypt-password 'onlyyou' --use-local-server
 ```
 
 显示当前用户的密钥和盐：
 
 ```
-BaiduPCS-Py who --show-encrypt-key
+BaiduPCS-Py who --show-encrypt-password
 ```
 
 BaiduPCS-Py 下载时默认会解密文件，如果想要下载但不解密文件，需要加 `--no-decrypt`
@@ -287,9 +287,9 @@ BaiduPCS-Py who user_id
 
 ### 选项
 
-| Option                 | Description  |
-| ---------------------- | ------------ |
-| -K, --show-encrypt-key | 显示加密密钥 |
+| Option                      | Description  |
+| --------------------------- | ------------ |
+| -K, --show-encrypt-password | 显示加密密码 |
 
 ## 更新用户信息
 
@@ -428,11 +428,11 @@ BaiduPCS-Py cat [OPTIONS] REMOTEPATH
 
 ### 选项
 
-| Option                   | Description                  |
-| ------------------------ | ---------------------------- |
-| -e, --encoding TEXT      | 文件编码，默认自动解码       |
-| --no-decrypt, --ND       | 不解密                       |
-| --encrypt-key, --ek TEXT | 加密密钥，默认使用用户设置的 |
+| Option                        | Description                  |
+| ----------------------------- | ---------------------------- |
+| -e, --encoding TEXT           | 文件编码，默认自动解码       |
+| --no-decrypt, --ND            | 不解密                       |
+| --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的 |
 
 ## 创建目录
 
@@ -514,7 +514,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 | -q, --quiet                                            | 取消第三方下载应用输出                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | --out-cmd, --OC                                        | 输出第三方下载应用命令                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | -d, --downloader [ me \| aget_py \| aget_rs \| aria2 ] | 指定下载应用<br> <br> 默认为 me (BaiduPCS-Py 自己的下载器，支持断续下载)<br> me 使用多文件并发下载。<br> <br> 除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。<br> 如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。对于 SVIP 用户，用那个下载器都很快。<br> <br> aget_py (https://github.com/PeterDing/aget) 默认安装<br> aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)<br> aria2 (下载 https://github.com/aria2/aria2/releases)<br> |
-| --encrypt-key, --ek TEXT                               | 加密密钥，默认使用用户设置的                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --encrypt-password, --ep TEXT                          | 加密密码，默认使用用户设置的                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ## 播放媒体文件
 
@@ -528,23 +528,23 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 
 ### 选项
 
-| Option                     | Description                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------- |
-| -R, --recursive            | 递归播放                                                                      |
-| -f, --from-index INTEGER   | 从所有目录中的第几个文件开始播放，默认为 0（第一个）                          |
-| -I, --include TEXT         | 筛选包含这个字符串的文件                                                      |
-| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件                                                  |
-| -E, --exclude TEXT         | 筛选 不 包含这个字符串的文件                                                  |
-| --exclude-regex, --ER TEXT | 筛选 不 包含这个正则表达式的文件                                              |
-| --player-params, --PP TEXT | 第三方播放器参数                                                              |
-| -m, --m3u8                 | 获取 m3u8 文件并播放                                                          |
-| -q, --quiet                | 取消第三方播放器输出                                                          |
-| --shuffle, --sf            | 随机播放                                                                      |
-| --ignore-ext, --IE         | 不用文件名后缀名来判断媒体文件                                                |
-| --out-cmd, --OC            | 输出第三方播放器命令                                                          |
-| -p, --player [mpv]         | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
-| -s, --use-local-server     | 使用本地服务器播放。大于 100MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
-| --encrypt-key, --ek TEXT   | 加密密钥，默认使用用户设置的                                                  |
+| Option                        | Description                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| -R, --recursive               | 递归播放                                                                      |
+| -f, --from-index INTEGER      | 从所有目录中的第几个文件开始播放，默认为 0（第一个）                          |
+| -I, --include TEXT            | 筛选包含这个字符串的文件                                                      |
+| --include-regex, --IR TEXT    | 筛选包含这个正则表达式的文件                                                  |
+| -E, --exclude TEXT            | 筛选 不 包含这个字符串的文件                                                  |
+| --exclude-regex, --ER TEXT    | 筛选 不 包含这个正则表达式的文件                                              |
+| --player-params, --PP TEXT    | 第三方播放器参数                                                              |
+| -m, --m3u8                    | 获取 m3u8 文件并播放                                                          |
+| -q, --quiet                   | 取消第三方播放器输出                                                          |
+| --shuffle, --sf               | 随机播放                                                                      |
+| --ignore-ext, --IE            | 不用文件名后缀名来判断媒体文件                                                |
+| --out-cmd, --OC               | 输出第三方播放器命令                                                          |
+| -p, --player [mpv]            | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
+| -s, --use-local-server        | 使用本地服务器播放。大于 100MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
+| --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的                                                  |
 
 ## 上传文件
 
@@ -562,7 +562,7 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 
 | Option                                                     | Description                    |
 | ---------------------------------------------------------- | ------------------------------ |
-| --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
+| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的   |
 | -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
 | -w, --max-workers INTEGER                                  | 同时上传文件数                 |
 | --no-ignore-existing, --NI                                 | 上传已经存在的文件             |
@@ -582,7 +582,7 @@ BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
 
 | Option                                                     | Description                    |
 | ---------------------------------------------------------- | ------------------------------ |
-| --encrypt-key, --ek TEXT                                   | 加密密钥，默认使用用户设置的   |
+| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的   |
 | -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
 | -w, --max-workers INTEGER                                  | 同时上传文件数                 |
 | --no-show-progress, --NP                                   | 不显示上传进度                 |
@@ -694,11 +694,11 @@ BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --username 'foo' --password 'bar'
 
 ### 选项
 
-| Option                   | Description                  |
-| ------------------------ | ---------------------------- |
-| -h, --host TEXT          | 监听 host                    |
-| -p, --port INTEGER       | 监听 port                    |
-| -w, --workers INTEGER    | 进程数                       |
-| --encrypt-key, --ek TEXT | 加密密钥，默认使用用户设置的 |
-| --username TEXT          | HTTP Basic Auth 用户名       |
-| --password TEXT          | HTTP Basic Auth 密钥         |
+| Option                        | Description                  |
+| ----------------------------- | ---------------------------- |
+| -h, --host TEXT               | 监听 host                    |
+| -p, --port INTEGER            | 监听 port                    |
+| -w, --workers INTEGER         | 进程数                       |
+| --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的 |
+| --username TEXT               | HTTP Basic Auth 用户名       |
+| --password TEXT               | HTTP Basic Auth 密钥         |
