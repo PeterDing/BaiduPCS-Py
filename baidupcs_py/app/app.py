@@ -182,13 +182,13 @@ def _pwd(ctx) -> str:
     return am.pwd
 
 
-def _encrypt_key(ctx) -> bytes:
+def _encrypt_password(ctx) -> bytes:
     """Return recent user's encryption key"""
 
     account = _recent_account(ctx)
     if account:
-        ek = account.encrypt_key
-        return bytes(ek or "", encoding="utf-8")
+        ep = account.encrypt_password
+        return bytes(ep or "", encoding="utf-8")
     else:
         return b""
 
@@ -212,7 +212,7 @@ ALIAS = OrderedDict(
         "ul": "userlist",
         "ua": "useradd",
         "ud": "userdel",
-        "ek": "encryptkey",
+        "ep": "encryptpwd",
         "l": "ls",
         "f": "search",
         "md": "mkdir",
@@ -284,10 +284,10 @@ def app(ctx, account_data, users):
 
 @app.command()
 @click.argument("user_id", type=int, default=None, required=False)
-@click.option("--show-encrypt-key", "-K", is_flag=True, help="显示加密密钥")
+@click.option("--show-encrypt-password", "-K", is_flag=True, help="显示加密密码")
 @click.pass_context
 @handle_error
-def who(ctx, user_id, show_encrypt_key):
+def who(ctx, user_id, show_encrypt_password):
     """显示当前用户的信息
 
     也可指定 `user_id`
@@ -297,11 +297,11 @@ def who(ctx, user_id, show_encrypt_key):
     account = am.who(user_id)
     if account:
         display_user_info(account.user)
-        if show_encrypt_key:
-            encrypt_key = _encrypt_key(ctx)
+        if show_encrypt_password:
+            encrypt_password = _encrypt_password(ctx)
             salt = _salt(ctx)
 
-            print(f"[red]encrypt key[/red]: {encrypt_key}")
+            print(f"[red]encrypt password[/red]: {encrypt_password}")
             print(f"[red]salt[/red]: {salt}")
     else:
         print("[italic red]No recent user, please adding or selecting one[/]")
@@ -408,19 +408,24 @@ def userdel(ctx):
 
 @app.command()
 @click.option(
-    "--encrypt-key", "--ek", prompt="encrypt-key", hide_input=True, help="加密密钥，32个字符内"
+    "--encrypt-password",
+    "--ep",
+    prompt="encrypt-password",
+    hide_input=True,
+    help="加密密码，任意字符",
 )
-@click.option("--salt", "-s", prompt="salt", hide_input=True, help="加密salt，不限字符")
+@click.option(
+    "--salt", "-s", type=str, default=None, help="加密salt，不限字符 (^v0.5.17 后不使用)"
+)
 @click.pass_context
 @handle_error
-def encryptkey(ctx, encrypt_key, salt):
-    """设置加密密钥"""
+def encryptpwd(ctx, encrypt_password, salt):
+    """设置加密密码"""
 
-    assert len(encrypt_key) <= 32, "No encrypt-key"
-    assert len(salt) > 0, "No salt"
+    assert len(encrypt_password) > 0, "No encrypt-password"
 
     am = ctx.obj.account_manager
-    am.set_encrypt_key(encrypt_key, salt)
+    am.set_encrypt_password(encrypt_password, salt)
     am.save()
 
 
@@ -607,11 +612,13 @@ def search(
 @click.argument("remotepath", nargs=1, type=str)
 @click.option("--encoding", "-e", type=str, help="文件编码，默认自动解码")
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.pass_context
 @handle_error
 @multi_user_do
-def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
+def cat(ctx, remotepath, encoding, no_decrypt, encrypt_password):
     """显示文件内容"""
 
     api = _recent_api(ctx)
@@ -622,11 +629,11 @@ def cat(ctx, remotepath, encoding, no_decrypt, encrypt_key):
     remotepath = join_path(pwd, remotepath)
 
     if no_decrypt:
-        encrypt_key = b""
+        encrypt_password = b""
     else:
-        encrypt_key = encrypt_key or _encrypt_key(ctx)
+        encrypt_password = encrypt_password or _encrypt_password(ctx)
 
-    _cat(api, remotepath, encoding=encoding, encrypt_key=encrypt_key)
+    _cat(api, remotepath, encoding=encoding, encrypt_password=encrypt_password)
 
 
 @app.command()
@@ -788,7 +795,9 @@ def remove(ctx, remotepaths):
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方下载应用命令")
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -808,7 +817,7 @@ def download(
     no_decrypt,
     quiet,
     out_cmd,
-    encrypt_key,
+    encrypt_password,
 ):
     """下载文件"""
 
@@ -833,9 +842,9 @@ def download(
     remotepaths = [join_path(pwd, r) for r in remotepaths]
 
     if no_decrypt:
-        encrypt_key = b""
+        encrypt_password = b""
     else:
-        encrypt_key = encrypt_key or _encrypt_key(ctx)
+        encrypt_password = encrypt_password or _encrypt_password(ctx)
 
     _download(
         api,
@@ -849,7 +858,7 @@ def download(
             concurrency=concurrency, chunk_size=chunk_size, quiet=quiet
         ),
         out_cmd=out_cmd,
-        encrypt_key=encrypt_key,
+        encrypt_password=encrypt_password,
     )
 
 
@@ -886,7 +895,9 @@ def download(
     is_flag=True,
     help="使用本地服务器播放。大于100MB的媒体文件无法直接播放，需要使用本地服务器播放",
 )
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -907,7 +918,7 @@ def play(
     ignore_ext,
     out_cmd,
     use_local_server,
-    encrypt_key,
+    encrypt_password,
 ):
     """播放媒体文件"""
 
@@ -930,7 +941,7 @@ def play(
 
     local_server = ""
     if use_local_server:
-        encrypt_key = encrypt_key or _encrypt_key(ctx)
+        encrypt_password = encrypt_password or _encrypt_password(ctx)
 
         host = "localhost"
         port = random_avail_port(49152, 65535)
@@ -947,7 +958,7 @@ def play(
                 host=host,
                 port=port,
                 workers=CPU_NUM,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
                 log_level="warning",
             ),
         )
@@ -977,7 +988,9 @@ def play(
 @app.command()
 @click.argument("localpaths", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.option(
     "--encrypt-type",
     "-e",
@@ -995,7 +1008,7 @@ def upload(
     ctx,
     localpaths,
     remotedir,
-    encrypt_key,
+    encrypt_password,
     encrypt_type,
     max_workers,
     no_ignore_existing,
@@ -1010,10 +1023,9 @@ def upload(
     if not api:
         return
 
-    encrypt_key = encrypt_key or _encrypt_key(ctx)
-    if encrypt_type != EncryptType.No.name and not encrypt_key:
+    encrypt_password = encrypt_password or _encrypt_password(ctx)
+    if encrypt_type != EncryptType.No.name and not encrypt_password:
         raise ValueError(f"Encrypting with {encrypt_type} must have a key")
-    salt = _salt(ctx)
 
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
@@ -1022,8 +1034,7 @@ def upload(
     _upload(
         api,
         from_to_list,
-        encrypt_key=encrypt_key,
-        salt=salt,
+        encrypt_password=encrypt_password,
         encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
         ignore_existing=not no_ignore_existing,
@@ -1034,7 +1045,9 @@ def upload(
 @app.command()
 @click.argument("localdir", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.option(
     "--encrypt-type",
     "-e",
@@ -1048,7 +1061,13 @@ def upload(
 @handle_error
 @multi_user_do
 def sync(
-    ctx, localdir, remotedir, encrypt_key, encrypt_type, max_workers, no_show_progress
+    ctx,
+    localdir,
+    remotedir,
+    encrypt_password,
+    encrypt_type,
+    max_workers,
+    no_show_progress,
 ):
     """同步本地目录到远端"""
 
@@ -1062,17 +1081,15 @@ def sync(
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
 
-    encrypt_key = encrypt_key or _encrypt_key(ctx)
-    if encrypt_type != EncryptType.No.name and not encrypt_key:
+    encrypt_password = encrypt_password or _encrypt_password(ctx)
+    if encrypt_type != EncryptType.No.name and not encrypt_password:
         raise ValueError(f"Encrypting with {encrypt_type} must have a key")
-    salt = _salt(ctx)
 
     _sync(
         api,
         localdir,
         remotedir,
-        encrypt_key=encrypt_key,
-        salt=salt,
+        encrypt_password=encrypt_password,
         encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
         show_progress=not no_show_progress,
@@ -1270,20 +1287,22 @@ def purgetasks(ctx, yes):
 @click.option("--host", "-h", type=str, default="localhost", help="监听 host")
 @click.option("--port", "-p", type=int, default=8000, help="监听 port")
 @click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
-@click.option("--encrypt-key", "--ek", type=str, default=None, help="加密密钥，默认使用用户设置的")
+@click.option(
+    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
+)
 @click.option("--username", type=str, default=None, help="HTTP Basic Auth 用户名")
 @click.option("--password", type=str, default=None, help="HTTP Basic Auth 密钥")
 @click.pass_context
 @handle_error
 @multi_user_do
-def server(ctx, root_dir, host, port, workers, encrypt_key, username, password):
+def server(ctx, root_dir, host, port, workers, encrypt_password, username, password):
     """开启 HTTP 服务"""
 
     api = _recent_api(ctx)
     if not api:
         return
 
-    encrypt_key = encrypt_key or _encrypt_key(ctx)
+    encrypt_password = encrypt_password or _encrypt_password(ctx)
 
     if username:
         assert password, "Must set password"
@@ -1294,7 +1313,7 @@ def server(ctx, root_dir, host, port, workers, encrypt_key, username, password):
         host=host,
         port=port,
         workers=workers,
-        encrypt_key=encrypt_key,
+        encrypt_password=encrypt_password,
         username=username,
         password=password,
     )
