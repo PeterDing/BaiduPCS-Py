@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.17 - 2021-02-18
+
+### Changed
+
+#### Encryption File Version 2
+
+使用 openssl 加密文件的方式来生成 encrypt key 和 nonce or iv 来加密文件 head。文件内容使用 encrypt key 和 随机 nonce or iv 来加密。
+
+同时兼容 Encryption File Version 1
+
 ## v0.5.16 - 2021-02-16
 
 ### Added
