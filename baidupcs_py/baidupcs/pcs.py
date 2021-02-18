@@ -841,7 +841,7 @@ class BaiduPCS:
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
-        encrypt_key: bytes = b"",
+        encrypt_password: bytes = b"",
     ) -> RangeRequestIO:
         info = self.download_link(remotepath)
         url = info["urls"][0]["url"]
@@ -858,7 +858,7 @@ class BaiduPCS:
             headers=headers,
             max_chunk_size=max_chunk_size,
             callback=callback,
-            encrypt_key=encrypt_key,
+            encrypt_password=encrypt_password,
         )
 
     # Playing the m3u8 file is needed add `--stream-lavf-o-append="protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"` for mpv

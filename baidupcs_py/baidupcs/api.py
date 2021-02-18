@@ -339,13 +339,13 @@ class BaiduPCSApi:
         remotepath: str,
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
-        encrypt_key: bytes = b"",
+        encrypt_password: bytes = b"",
     ) -> RangeRequestIO:
         return self._baidupcs.file_stream(
             remotepath,
             max_chunk_size=max_chunk_size,
             callback=callback,
-            encrypt_key=encrypt_key,
+            encrypt_password=encrypt_password,
         )
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:

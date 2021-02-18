@@ -58,7 +58,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         out_cmd: bool = False,
-        encrypt_key: bytes = b"",
+        encrypt_password: bytes = b"",
     ):
         global DEFAULT_DOWNLOADER
         if not self.which():
@@ -80,7 +80,7 @@ class Downloader(Enum):
                 cookies=cookies,
                 downloadparams=downloadparams,
                 done_callback=done_callback,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
             )
             return
         elif self == Downloader.aget_py:
@@ -106,8 +106,8 @@ class Downloader(Enum):
                 f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
             )
         else:
-            if encrypt_key:
-                dio = to_decryptio(open(localpath_tmp, "rb"), encrypt_key)
+            if encrypt_password:
+                dio = to_decryptio(open(localpath_tmp, "rb"), encrypt_password)
                 if isinstance(dio, DecryptIO):
                     with open(localpath, "wb") as fd:
                         while True:
@@ -131,7 +131,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
         done_callback: Optional[Callable[[Future], Any]] = None,
-        encrypt_key: bytes = b"",
+        encrypt_password: bytes = b"",
     ):
         headers = {
             "Cookie ": "; ".join(
@@ -167,7 +167,7 @@ class Downloader(Enum):
             headers=headers,
             max_workers=downloadparams.concurrency,
             callback=monit_callback,
-            encrypt_key=encrypt_key,
+            encrypt_password=encrypt_password,
         )
 
         if task_id is not None:
@@ -282,7 +282,7 @@ def download_file(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: bytes = b"",
+    encrypt_password: bytes = b"",
 ):
     localpath = Path(localdir) / os.path.basename(remotepath)
 
@@ -304,7 +304,7 @@ def download_file(
         api.cookies,
         downloadparams=downloadparams,
         out_cmd=out_cmd,
-        encrypt_key=encrypt_key,
+        encrypt_password=encrypt_password,
     )
 
 
@@ -318,7 +318,7 @@ def download_dir(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams=DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: bytes = b"",
+    encrypt_password: bytes = b"",
 ):
     remotepaths = api.list(remotedir)
     remotepaths = sift(remotepaths, sifters)
@@ -331,7 +331,7 @@ def download_dir(
                 downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
             )
         else:  # is_dir
             _localdir = Path(localdir) / os.path.basename(rp.path)
@@ -345,7 +345,7 @@ def download_dir(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
             )
 
 
@@ -359,7 +359,7 @@ def download(
     downloader: Downloader = DEFAULT_DOWNLOADER,
     downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     out_cmd: bool = False,
-    encrypt_key: bytes = b"",
+    encrypt_password: bytes = b"",
 ):
     """Download `remotepaths` to the `localdir`
 
@@ -369,14 +369,14 @@ def download(
 
     logger.debug(
         "`download`: sifters: %s, recursive: %s, from_index: %s, "
-        "downloader: %s, downloadparams: %s, out_cmd: %s, has encrypt_key: %s",
+        "downloader: %s, downloadparams: %s, out_cmd: %s, has encrypt_password: %s",
         sifters,
         recursive,
         from_index,
         downloader,
         downloadparams,
         out_cmd,
-        bool(encrypt_key),
+        bool(encrypt_password),
     )
     logger.debug(
         "`download`: remotepaths should be uniq %s == %s",
@@ -398,7 +398,7 @@ def download(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
             )
         else:
             _localdir = str(Path(localdir) / os.path.basename(rp))
@@ -412,7 +412,7 @@ def download(
                 downloader=downloader,
                 downloadparams=downloadparams,
                 out_cmd=out_cmd,
-                encrypt_key=encrypt_key,
+                encrypt_password=encrypt_password,
             )
 
     if downloader == Downloader.me:

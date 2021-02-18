@@ -27,7 +27,7 @@ app = FastAPI()
 
 _api: Optional[BaiduPCSApi] = None
 _root_dir: str = "/"
-_encrypt_key: bytes = b""
+_encrypt_password: bytes = b""
 
 # For Auth
 _username: Optional[str] = None
@@ -90,7 +90,9 @@ async def handle_request(
     else:
         while True:
             try:
-                range_request_io = _api.file_stream(_rp, encrypt_key=_encrypt_key)
+                range_request_io = _api.file_stream(
+                    _rp, encrypt_password=_encrypt_password
+                )
                 length = len(range_request_io)
                 break
             except Exception as err:
@@ -161,15 +163,15 @@ def start_server(
     host: str = "localhost",
     port: int = 8000,
     workers: int = CPU_NUM,
-    encrypt_key: bytes = b"",
+    encrypt_password: bytes = b"",
     log_level: str = "info",
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
     """Create a http server on remote `root_dir`"""
 
-    global _encrypt_key
-    _encrypt_key = encrypt_key
+    global _encrypt_password
+    _encrypt_password = encrypt_password
 
     global _root_dir
     _root_dir = root_dir
