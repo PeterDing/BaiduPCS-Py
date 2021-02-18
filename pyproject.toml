@@ -34,6 +34,7 @@ Jinja2 = "^2.11.3"
 cryptography = "^3.4.5"
 filelock = "^3.0.12"
 Cython = "^0.29.21"
+passlib = "^1.7.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.2"
