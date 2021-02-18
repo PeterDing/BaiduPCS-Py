@@ -6,7 +6,6 @@ from io import BytesIO
 from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from random import Random
 
 from baidupcs_py.baidupcs.errors import BaiduPCSError
 from baidupcs_py.baidupcs import BaiduPCSApi, FromTo
@@ -16,12 +15,14 @@ from baidupcs_py.common.event import KeyHandler, KeyboardMonitor
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.concurrent import sure_release, retry
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
+from baidupcs_py.common.crypto import generate_salt, generate_key_iv
 from baidupcs_py.common.io import (
     total_len,
     sample_data,
     rapid_upload_params,
     generate_nonce_or_iv,
     EncryptType,
+    reset_encrypt_io,
 )
 from baidupcs_py.commands.log import get_logger
 
@@ -91,8 +92,7 @@ def upload(
     api: BaiduPCSApi,
     from_to_list: List[FromTo],
     ondup: str = "overwrite",
-    encrypt_key: bytes = b"",
-    salt: bytes = b"",
+    encrypt_password: bytes = b"",
     encrypt_type: EncryptType = EncryptType.No,
     max_workers: int = CPU_NUM,
     slice_size: int = DEFAULT_SLICE_SIZE,
@@ -128,8 +128,7 @@ def upload(
                     api,
                     from_to,
                     ondup,
-                    encrypt_key=encrypt_key,
-                    salt=salt,
+                    encrypt_password=encrypt_password,
                     encrypt_type=encrypt_type,
                     slice_size=slice_size,
                     ignore_existing=ignore_existing,
@@ -161,8 +160,7 @@ def upload_file(
     api: BaiduPCSApi,
     from_to: FromTo,
     ondup: str,
-    encrypt_key: bytes = b"",
-    salt: bytes = b"",
+    encrypt_password: bytes = b"",
     encrypt_type: EncryptType = EncryptType.No,
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
@@ -189,18 +187,8 @@ def upload_file(
 
     logger.debug("`upload`: encrypt_type: %s", encrypt_type)
 
-    # Generate nonce_or_iv
-    if encrypt_key:
-        raw_io = open(localpath, "rb")
-        nonce_or_iv = generate_nonce_or_iv(salt, raw_io)
-        raw_io.close()
-    else:
-        nonce_or_iv = b""
-
+    encrypt_io = encrypt_type.encrypt_io(open(localpath, "rb"), encrypt_password)
     # IO Length
-    encrypt_io = encrypt_type.encrypt_io(
-        open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
-    )
     encrypt_io_len = total_len(encrypt_io)
 
     logger.debug("`upload`: encrypt_io_len: %s", encrypt_io_len)
@@ -224,9 +212,6 @@ def upload_file(
         # Rapid Upload
         logger.debug("`upload`: rapid_upload starts")
         try:
-            encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
-            )
             slice_md5, content_md5, content_crc32, encrypt_io_len = rapid_upload_params(
                 encrypt_io
             )
@@ -238,7 +223,6 @@ def upload_file(
                 remotepath,
                 ondup=ondup,
             )
-            encrypt_io.close()
             if task_id is not None and progress_task_exists(task_id):
                 _progress.update(task_id, completed=encrypt_io_len)
                 _progress.remove_task(task_id)
@@ -265,9 +249,7 @@ def upload_file(
             # Upload file
             logger.debug("`upload`: upload_file starts")
 
-            encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
-            )
+            reset_encrypt_io(encrypt_io)
 
             retry(
                 30,
@@ -281,17 +263,13 @@ def upload_file(
                 ),
             )(api.upload_file)(encrypt_io, remotepath, ondup=ondup, callback=callback)
 
-            encrypt_io.close()
-
             logger.debug("`upload`: upload_file success")
         else:
             # Upload file slice
             logger.debug("`upload`: upload_slice starts")
 
             slice_md5s = []
-            encrypt_io = encrypt_type.encrypt_io(
-                open(localpath, "rb"), encrypt_key, nonce_or_iv=nonce_or_iv
-            )
+            reset_encrypt_io(encrypt_io)
 
             while True:
                 _wait_start()
@@ -328,8 +306,6 @@ def upload_file(
                 slice_md5s.append(slice_md5)
                 slice_completed += size
 
-            encrypt_io.close()
-
             # Combine slices
             retry(
                 30,
@@ -348,5 +324,6 @@ def upload_file(
         logger.warning("`upload`: error: %s", err)
         raise err
     finally:
+        encrypt_io.close()
         if task_id is not None and progress_task_exists(task_id):
             _progress.reset(task_id)
