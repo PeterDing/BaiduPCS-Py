@@ -1,11 +1,14 @@
 from typing import Union, List, Tuple, IO, Any
 import re
-import sys
+import os
 import subprocess
 import random
 from abc import ABC, abstractmethod
 from zlib import crc32
+import hashlib
 from hashlib import md5, sha1
+
+from passlib.crypto.digest import pbkdf1
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.padding import PKCS7
@@ -80,6 +83,12 @@ def random_bytes(size: int, seed: Any = None) -> bytes:
     return bytes(rg.sample(U8_LIST, size))
 
 
+def random_sys_bytes(size: int) -> bytes:
+    """Generate random bytes with `os.urandom`"""
+
+    return os.urandom(size)
+
+
 def padding_key(key: Union[str, bytes], len_: int = 0) -> bytes:
     if isinstance(key, str):
         key = key.encode("utf-8")
@@ -120,6 +129,45 @@ def pkcs7_unpadding(data: bytes, block_size):
 
     unpadder = PKCS7(block_size * 8).unpadder()
     return unpadder.update(data) + unpadder.finalize()
+
+
+def generate_salt(size: int = 8) -> bytes:
+    return random_sys_bytes(size)
+
+
+# Generate key and iv with password and salt
+# https://security.stackexchange.com/a/117654
+# {{{
+def generate_key_iv(
+    password: bytes, salt: bytes, key_size: int, iv_size: int, algo: str = "md5"
+) -> Tuple[bytes, bytes]:
+    def hasher(algo: str, data: bytes) -> bytes:
+        hashes = {
+            "md5": hashlib.md5,
+            "sha256": hashlib.sha256,
+            "sha512": hashlib.sha512,
+        }
+        h = hashes[algo]()
+        h.update(data)
+        return h.digest()
+
+    if algo == "md5":
+        temp = pbkdf1("md5", password, salt, 1, 16)
+    else:
+        temp = b""
+
+    fd = temp
+    while len(fd) < key_size + iv_size:
+        temp = hasher(algo, temp + password + salt)
+        fd += temp
+
+    key = fd[0:key_size]
+    iv = fd[key_size : key_size + iv_size]
+
+    return key, iv
+
+
+# }}}
 
 
 class Cryptography(ABC):
