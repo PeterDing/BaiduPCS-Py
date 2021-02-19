@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple, IO, Any
+from typing import Optional, Union, List, Tuple, IO, Any
 import re
 import os
 import subprocess
@@ -89,12 +89,24 @@ def random_sys_bytes(size: int) -> bytes:
     return os.urandom(size)
 
 
-def padding_key(key: Union[str, bytes], len_: int = 0) -> bytes:
+def padding_key(
+    key: Union[str, bytes], length: int = 0, value: bytes = b"\xff"
+) -> bytes:
+    """padding key with `value`"""
+
+    assert len(value) < 2
+
     if isinstance(key, str):
         key = key.encode("utf-8")
 
-    assert len(key) <= len_
-    return key + b"\xff" * (len_ - len(key))
+    assert len(key) <= length
+
+    pad_len = length - len(key)
+    if value:
+        pad_bytes = value * (pad_len)
+    else:
+        pad_bytes = random_sys_bytes(pad_len)
+    return key + pad_bytes
 
 
 def padding_size(length: int, block_size: int, ceil: bool = True) -> int:
