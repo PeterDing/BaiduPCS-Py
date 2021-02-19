@@ -24,8 +24,8 @@ from baidupcs_py.common.io import (
     EncryptType,
 )
 from baidupcs_py.common.crypto import (
-    generate_salt,
     generate_key_iv,
+    padding_key,
     padding_size,
     random_bytes,
     _md5_cmd,
@@ -52,6 +52,18 @@ def test_join_path():
     a = "foo"
     b = "../bar"
     assert join_path(a, b) == "bar"
+
+
+def test_padding_key():
+    key = os.urandom(5)
+    pad_key = padding_key(key, 10)
+    assert pad_key == key + b"\xff" * 5
+
+    pad_key = padding_key(key, 11, value=b"\x00")
+    assert pad_key == key + b"\x00" * 6
+
+    pad_key = padding_key(key, 12, value=b"")
+    assert len(pad_key) == 12
 
 
 def test_generate_nonce_or_iv():
