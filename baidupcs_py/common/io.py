@@ -216,24 +216,24 @@ class EncryptIO(IO):
 
         self._encrypt_password = encrypt_password
 
-        salt = generate_salt()
-        encrypt_key, iv_for_head = generate_key_iv(encrypt_password, salt, 32, 16)
+        self._salt_for_head = generate_salt()
+        self._encrypt_key_for_head, self._iv_for_head = generate_key_iv(
+            encrypt_password, self._salt_for_head, 32, 16
+        )
 
         # `self._encrypt_key`,`self._nonce_or_iv` is for cryptography
-        self._encrypt_key = encrypt_key
-        self._nonce_or_iv = random_sys_bytes(16)
-
-        self._salt = salt
-
-        # Only use to encrypt total head
-        self._iv_for_head = iv_for_head
+        self._salt = generate_salt()
+        self._encrypt_key, self._nonce_or_iv = generate_key_iv(
+            encrypt_password, self._salt, 32, 16
+        )
 
         # Cryptography
         #
         # Instantiated at each subclass, here is for mypy
         self._crypto: Optional[Cryptography] = None
 
-        self._total_head_len = len(self.total_head())
+        self._total_head = None
+        self._total_head_len = len(self.total_head)
 
     def reset(self):
         """Reset io and crypto"""
@@ -241,6 +241,7 @@ class EncryptIO(IO):
         self._offset = 0
         self._crypto.reset()
 
+    @property
     def total_head(self) -> bytes:
         """
         Version 1:
@@ -253,25 +254,42 @@ class EncryptIO(IO):
         aes256cbc_encrypt(
             `BAIDUPCS_PY_CRYPTO_MAGIC_CODE 32bytes` +
             `encrypt algorithm code 1bytes` +
-            `nonce or iv 16bytes` +
+            `nonce_or_iv 16bytes`
+            `total_origin_len 8bytes`
+        ) +
+        `salt 8bytes`
+
+        Version 3:
+        aes256cbc_encrypt(
+            `BAIDUPCS_PY_CRYPTO_MAGIC_CODE 32bytes` +
+            `encrypt algorithm code 1bytes` +
+            `salt 8bytes` + `random padding 8bytes`
             `total_origin_len 8bytes`
         ) +
         `salt 8bytes`
         """
 
+        if self._total_head:
+            return self._total_head
+
+        assert len(self._salt) == 8
+
         ori_head = padding_key(
             BAIDUPCS_PY_CRYPTO_MAGIC_CODE
             + self.MAGIC_CODE
-            + self._nonce_or_iv
+            + self._salt
+            + random_sys_bytes(8)
             + u64_to_u8x8(self._total_origin_len),
             PADDED_ENCRYPT_HEAD_LEN,
+            value=b"",
         )
 
         # AES256CBC Encrypt head
-        return (
-            aes256cbc_encrypt(ori_head, self._encrypt_key, self._iv_for_head)
-            + self._salt
+        self._total_head = (
+            aes256cbc_encrypt(ori_head, self._encrypt_key_for_head, self._iv_for_head)
+            + self._salt_for_head
         )
+        return self._total_head
 
     def __len__(self) -> int:
         return self._total_head_len + self._io_len
@@ -281,11 +299,11 @@ class EncryptIO(IO):
 
         if self._offset < self._total_head_len:
             if size < 0:
-                data = self.total_head()[self._offset :]
+                data = self.total_head[self._offset :]
                 io_buf = self._io.read()
                 data += self._crypto.encrypt(io_buf)
             else:
-                data = self.total_head()[self._offset : self._offset + size]
+                data = self.total_head[self._offset : self._offset + size]
                 size -= len(data)
                 if size > 0:
                     io_buf = self._io.read(size)
@@ -468,10 +486,10 @@ class AES256CBCEncryptIO(EncryptIO):
     def read(self, size: int = -1) -> Optional[bytes]:
         if self._offset < self._total_head_len:
             if size < 0:
-                data = self.total_head()[self._offset :]
+                data = self.total_head[self._offset :]
                 data += self._takeout()
             else:
-                data = self.total_head()[self._offset : self._offset + size]
+                data = self.total_head[self._offset : self._offset + size]
                 size -= len(data)
                 if size > 0:
                     data += self._takeout(size)
@@ -693,7 +711,7 @@ def parse_head(head: bytes) -> Tuple[bytes, bytes, bytes, bytes]:
     return (
         head[:i],
         head[i : i + 1],  # magic_code
-        head[i + 1 : i + 1 + 16],  # nonce or iv or random
+        head[i + 1 : i + 1 + 16],  # salt + random padding
         head[i + 1 + 16 : i + 1 + 16 + 8],  # total_origin_len
     )
 
@@ -725,26 +743,28 @@ def _decryptio_version1(
         return
 
 
-def _decryptio_version2(
+def _decryptio_version3(
     total_head: bytes, io: IO, encrypt_password: bytes
 ) -> Optional[DecryptIO]:
     if len(total_head) < PADDED_ENCRYPT_HEAD_WITH_SALT_LEN:
         return
 
-    enc_head, salt = (
+    enc_head, salt_for_head = (
         total_head[:PADDED_ENCRYPT_HEAD_LEN],
         total_head[PADDED_ENCRYPT_HEAD_LEN:],
     )
 
-    assert len(enc_head) == PADDED_ENCRYPT_HEAD_LEN
-    assert len(salt) == 8
+    encrypt_key_for_head, iv_for_head = generate_key_iv(
+        encrypt_password, salt_for_head, 32, 16
+    )
 
-    encrypt_key, iv_for_head = generate_key_iv(encrypt_password, salt, 32, 16)
+    head = aes256cbc_decrypt(enc_head, encrypt_key_for_head, iv_for_head)
 
-    head = aes256cbc_decrypt(enc_head, encrypt_key, iv_for_head)
-
-    b_mc, magic_code, nonce_or_iv, total_origin_len = parse_head(head)
+    b_mc, magic_code, padding_salt, total_origin_len = parse_head(head)
     total_origin_len = u8x8_to_u64(total_origin_len)
+
+    salt = padding_salt[:8]
+    encrypt_key, nonce_or_iv = generate_key_iv(encrypt_password, salt, 32, 16)
 
     if b_mc != BAIDUPCS_PY_CRYPTO_MAGIC_CODE:
         return
@@ -773,8 +793,10 @@ def to_decryptio(io: IO, encrypt_password: bytes):
     if eio is not None:
         return eio
 
+    # No support Version 2
+
     total_head += io.read(PADDED_ENCRYPT_HEAD_WITH_SALT_LEN - ENCRYPT_HEAD_LEN)
-    eio = _decryptio_version2(total_head, io, encrypt_password)
+    eio = _decryptio_version3(total_head, io, encrypt_password)
     if eio is not None:
         return eio
 
