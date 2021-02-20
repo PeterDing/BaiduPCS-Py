@@ -61,13 +61,17 @@ logger = get_logger(__name__)
 DEBUG = logger.level == logging.DEBUG
 
 
-def handle_signal(sign_num, frame):
-    logger.debug("`app`: handle_signal: %s", sign_num)
-
+def _exit_progress_bar():
     if _progress.live._started:
         print()
         # Stop _progress, otherwise terminal stdout will be contaminated
         _progress.stop()
+
+
+def handle_signal(sign_num, frame):
+    logger.debug("`app`: handle_signal: %s", sign_num)
+
+    _exit_progress_bar()
 
     # No use sys.exit() which only exits the main thread
     os._exit(1)
@@ -84,19 +88,27 @@ def handle_error(func):
         try:
             return func(*args, **kwargs)
         except BaiduPCSError as err:
+            _exit_progress_bar()
+
             logger.debug("`app`: BaiduPCSError: %s", traceback.format_exc())
 
             print(f"(v{__version__}) [bold red]ERROR[/bold red]: BaiduPCSError: {err}")
             if DEBUG:
                 console = Console()
                 console.print_exception()
+
+            os._exit(1)
         except Exception as err:
+            _exit_progress_bar()
+
             logger.debug("`app`: System Error: %s", traceback.format_exc())
 
             print(f"(v{__version__}) [bold red]System ERROR[/bold red]: {err}")
             if DEBUG:
                 console = Console()
                 console.print_exception()
+
+            os._exit(1)
 
     return wrap
 
@@ -1284,6 +1296,7 @@ def purgetasks(ctx, yes):
 
 @app.command()
 @click.argument("root_dir", type=str, default="/", required=False)
+@click.option("--path", type=str, default="/", help="服务路径，默认为 “/”")
 @click.option("--host", "-h", type=str, default="localhost", help="监听 host")
 @click.option("--port", "-p", type=int, default=8000, help="监听 port")
 @click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
@@ -1295,7 +1308,9 @@ def purgetasks(ctx, yes):
 @click.pass_context
 @handle_error
 @multi_user_do
-def server(ctx, root_dir, host, port, workers, encrypt_password, username, password):
+def server(
+    ctx, root_dir, path, host, port, workers, encrypt_password, username, password
+):
     """开启 HTTP 服务"""
 
     api = _recent_api(ctx)
@@ -1310,6 +1325,7 @@ def server(ctx, root_dir, host, port, workers, encrypt_password, username, passw
     start_server(
         api,
         root_dir=root_dir,
+        path=path,
         host=host,
         port=port,
         workers=workers,

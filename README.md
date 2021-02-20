@@ -694,10 +694,19 @@ BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
 BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --username 'foo' --password 'bar'
 ```
 
+也可以指定服务路径：
+
+```
+BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --path '/my/pan'
+
+# 访问 http://localhost:8000/my/pan/
+```
+
 ### 选项
 
 | Option                        | Description                  |
 | ----------------------------- | ---------------------------- |
+| --path TEXT                   | 服务路径，默认为 “/”         |
 | -h, --host TEXT               | 监听 host                    |
 | -p, --port INTEGER            | 监听 port                    |
 | -w, --workers INTEGER         | 进程数                       |

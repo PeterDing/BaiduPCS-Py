@@ -142,8 +142,8 @@ def to_auth(credentials: HTTPBasicCredentials = Depends(_security)) -> str:
     return credentials.username
 
 
-def make_auth_http_server():
-    @app.get("{remotepath:path}")
+def make_auth_http_server(path: str = ""):
+    @app.get("%s/{remotepath:path}" % path)
     async def auth_http_server(
         username: str = Depends(to_auth), response: Response = Depends(handle_request)
     ):
@@ -151,8 +151,8 @@ def make_auth_http_server():
             return response
 
 
-def make_http_server():
-    @app.get("{remotepath:path}")
+def make_http_server(path: str = ""):
+    @app.get("%s/{remotepath:path}" % path)
     async def http_server(response: Response = Depends(handle_request)):
         return response
 
@@ -160,6 +160,7 @@ def make_http_server():
 def start_server(
     api: BaiduPCSApi,
     root_dir: str = "/",
+    path: str = "",
     host: str = "localhost",
     port: int = 8000,
     workers: int = CPU_NUM,
@@ -188,10 +189,17 @@ def start_server(
     if not _password:
         _password = password
 
-    if _username and _password:
-        make_auth_http_server()
+    if path == "/" or not path:
+        path = ""
     else:
-        make_http_server()
+        path = "/" + path.strip("/")
+
+    print(f"[yellow]Server running on[/yellow] [b]http://{host}:{port}{path}/[/b]")
+
+    if _username and _password:
+        make_auth_http_server(path)
+    else:
+        make_http_server(path)
 
     log_config = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
     log_config["formatters"]["access"][
