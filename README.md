@@ -214,9 +214,9 @@ BaiduPCS-Py 支持以下加密方法：
 - **ChaCha20** 工业级加密算法，速度快，推荐用于加密重要文件。不支持分段下载。
 - **AES256CBC** 工业级加密算法，推荐用于加密重要文件。不支持分段下载。
 
-**注意**：用命令 `encryptpwd` 设置的密码和盐**只是为当前用户**的。
+**注意**：用命令 `encryptpwd` 设置的密码**只是为当前用户**的。
 
-为当前用户设置加密密码和盐:
+为当前用户设置加密密码:
 
 交互添加：
 
@@ -261,7 +261,7 @@ BaiduPCS-Py download /to/here/some-file.mp4 /to/here/some-dir/  --encrypt-passwo
 BaiduPCS-Py play /to/here/some-file.mp4 --encrypt-password 'onlyyou' --use-local-server
 ```
 
-显示当前用户的密钥和盐：
+显示当前用户的密钥：
 
 ```
 BaiduPCS-Py who --show-encrypt-password
