@@ -2,6 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/baidupcs-py.svg)](https://badge.fury.io/py/baidupcs-py)
 ![Build](https://github.com/PeterDing/BaiduPCS-Py/workflows/BaiduPCS-Py%20Build%20&%20Test/badge.svg)
+[![Gitter](https://badges.gitter.im/PeterDing/BaiduPCS-Py.svg)](https://gitter.im/PeterDing/BaiduPCS-Py?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 A BaiduPCS API and An App
 
