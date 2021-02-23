@@ -6,7 +6,6 @@ from pathlib import Path
 import time
 import re
 import json
-import hashlib
 from urllib.parse import urlparse, quote_plus
 
 import requests
@@ -177,7 +176,7 @@ class BaiduPCS:
         return self._request(Method.Get, url, params=params, headers=headers)
 
     def bdstoken(self) -> Optional[str]:
-        bdstoken = hashlib.md5(self._bduss.encode()).hexdigest().lower()
+        bdstoken = calu_md5(self._bduss)
         return bdstoken
 
     @assert_ok
