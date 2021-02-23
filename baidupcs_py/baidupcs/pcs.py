@@ -88,7 +88,7 @@ class BaiduPCS:
         self._bduss = bduss
         self._stoken = stoken
         self._ptoken = ptoken
-        self._bdstoken = ""
+        self._bdstoken = self.bdstoken()
         self._cookies = cookies
         self._session = requests.Session()
         self._session.cookies.update(cookies)
@@ -176,18 +176,8 @@ class BaiduPCS:
         return self._request(Method.Get, url, params=params, headers=headers)
 
     def bdstoken(self) -> Optional[str]:
-        assert self._stoken or self._cookies.get("STOKEN")
-
-        url = "http://pan.baidu.com/disk/home"
-        resp = self._request(Method.Get, url, params=None)
-        cn = resp.text
-        mod = re.search(r'bdstoken[\'":\s]+([0-9a-f]{32})', cn)
-        if mod:
-            s = mod.group(1)
-            self._bdstoken = str(s)
-            return s
-        else:
-            return None
+        bdstoken = calu_md5(self._bduss)
+        return bdstoken
 
     @assert_ok
     def quota(self):
