@@ -823,25 +823,83 @@ class AutoDecryptRequest:
         self._kwargs = kwargs
         self._max_chunk_size = max_chunk_size
         self._encrypt_password = encrypt_password
-        self._remote_len = None
         self._dio = None
         self._has_encrypted = False
         self._total_head_len = 0
         self._decrypted_count = 0
+        self._parsed = False
 
+        # Rapid Upload Infos
+        #
+        # Total raw content length
+        self._content_length: Optional[int] = None
+        # Total raw content md5
+        self._content_md5: Optional[str] = None
+        # Total raw content crc32
+        self._content_crc32: Optional[int] = None
+
+    def _init(self):
+        """Initiate request info"""
+
+        if not self._parsed:
+            self._parse_crypto()
+
+        if self._content_length is None:
+            # To invoke `self._parse_rapid_upload_info`
+            with self._request((0, 1)):
+                pass
+
+    @property
+    def content_length(self) -> int:
+        """Remote content length"""
+
+        self._init()
+        assert self._content_length
+        return self._content_length
+
+    @property
+    def content_md5(self) -> Optional[str]:
+        """Remote content length"""
+
+        self._init()
+        assert self._content_length
+        return self._content_md5
+
+    @property
+    def content_crc32(self) -> Optional[int]:
+        """Remote content length"""
+
+        self._init()
+        assert self._content_length
+        return self._content_crc32
+
+    def _parse_rapid_upload_info(self, resp: Response):
+        if not resp.ok or self._content_length:
+            return
+
+        headers = resp.headers
+        if headers.get("x-bs-file-size"):
+            self._content_length = int(headers["x-bs-file-size"])
+        if not self._content_length and headers.get("Content-Range"):
+            self._content_length = int(headers["Content-Range"].split("/")[-1])
+
+        if headers.get("Content-MD5"):
+            self._content_md5 = headers["Content-MD5"]
+
+        if headers.get("x-bs-meta-crc32"):
+            self._content_crc32 = int(headers["x-bs-meta-crc32"])
+
+    def _parse_crypto(self):
         if self._encrypt_password:
-            self.parse_crypto()
-
-    def parse_crypto(self):
-        if self.remote_len >= ENCRYPT_HEAD_LEN:
             with self._request((0, PADDED_ENCRYPT_HEAD_WITH_SALT_LEN - 1)) as resp:
-                self._dio = to_decryptio(
-                    BytesIO(resp.raw.read()), self._encrypt_password
-                )
-                self._has_encrypted = isinstance(self._dio, DecryptIO)
-                self._total_head_len = (
-                    self._dio._total_head_len if self._has_encrypted else 0
-                )
+                raw_data = resp.raw.read()
+                if len(raw_data) == PADDED_ENCRYPT_HEAD_WITH_SALT_LEN:
+                    self._dio = to_decryptio(BytesIO(raw_data), self._encrypt_password)
+                    self._has_encrypted = isinstance(self._dio, DecryptIO)
+                    self._total_head_len = (
+                        self._dio._total_head_len if self._has_encrypted else 0
+                    )
+        self._parsed = True
 
     def _request(self, _range: Tuple[int, int]) -> Response:
         headers = dict(self._headers or {})
@@ -850,6 +908,7 @@ class AutoDecryptRequest:
             resp = self._session.request(
                 self._method, self._url, headers=headers, **self._kwargs
             )
+            self._parse_rapid_upload_info(resp)
             return resp
         except Exception as err:
             raise IOError(f"{self.__class__.__name__} - Request Error") from err
@@ -857,43 +916,22 @@ class AutoDecryptRequest:
     def rangeable(self) -> bool:
         """Is support uncontinue range request?"""
 
+        self._init()
+
         if self._dio is None:
             return True
         return self._dio.seekable()
 
-    @property
-    def remote_len(self) -> int:
-        """Remote content length"""
-
-        if self._remote_len is not None:
-            return self._remote_len
-
-        with self._request((0, 1)) as resp:
-            resp_headers = resp.headers
-            if not resp_headers.get("Content-Range"):
-                raise IOError(
-                    f"{self.__class__.__name__} - "
-                    "Server does not support `Range` head."
-                    f" Response content: {resp.raw.read(1000)}"
-                )
-
-        try:
-            _, length = resp_headers["Content-Range"].split("/")
-            _remote_len = int(length)
-            self._remote_len = _remote_len
-            return _remote_len
-        except Exception as err:
-            raise IOError(
-                f"{self.__class__.__name__} - "
-                "Can't parse response head `Content-Range`"
-            ) from err
-
     def __len__(self) -> int:
         """The decrypted data length"""
 
-        return self.remote_len - self._total_head_len
+        self._init()
+
+        return self._content_length - self._total_head_len
 
     def read(self, _range: Tuple[int, int]) -> Generator[bytes, None, None]:
+        self._init()
+
         start, end = _range
         if end < 0:
             end = len(self)
