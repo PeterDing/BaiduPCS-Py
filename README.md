@@ -119,6 +119,9 @@ BaiduPCS-Py --help
 | p    | play         |
 | u    | upload       |
 | sn   | sync         |
+| rl   | rplist       |
+| rs   | rpsearch     |
+| rp   | rp           |
 | S    | share        |
 | sl   | shared       |
 | cs   | cancelshared |
@@ -174,6 +177,7 @@ BaiduPCS-Py --users 'o' search 'keyword' / -R
 - play
 - upload
 - sync
+- rp
 - share
 - shared
 - cancelshared
