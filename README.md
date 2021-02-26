@@ -420,7 +420,7 @@ BaiduPCS-Py ls relative/path
 | --show-hash-link, --HL                               | 显示文件秒传连接                                                   |
 | --hash-link-protocol, --hlp [cs3l \| short \| bppan] | 显示文件 hash 链接，并指定协议                                     |
 | --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5。如果检查 md5 会改变文件上传时间 |
-| --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --RL 或 --RS 一起用      |
+| --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用              |
 
 ## 搜索文件
 
@@ -675,6 +675,9 @@ BaiduPCS-Py 会将在命令 `ls`，`upload`，`sync`，`rp` 中遇到的文件�
 ```
 # 默认显示 cs3l 协议连接
 BaiduPCS-Py ls /path/to/file --show-hash-link
+
+# 或者用 --show-hash-link 缩写 --HL
+BaiduPCS-Py ls /path/to/file --HL
 ```
 
 指定特定协议：

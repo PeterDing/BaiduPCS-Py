@@ -541,7 +541,7 @@ def pwd(ctx):
     is_flag=True,
     help="显示文件 cs3l:// 连接时不检查md5。如果检查md5会改变文件上传时间",
 )
-@click.option("--csv", is_flag=True, help="用 csv 格式显示，单行显示，推荐和 --DL 或 --RL 或 --RS 一起用")
+@click.option("--csv", is_flag=True, help="用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用")
 @click.pass_context
 @handle_error
 @multi_user_do
