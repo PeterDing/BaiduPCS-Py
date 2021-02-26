@@ -1,12 +1,22 @@
-from typing import Optional, List, Tuple, Union, Pattern
+from typing import Optional, List, Tuple, Dict, Union, Pattern, Any
 from pathlib import Path
+import os
 import time
 import datetime
 
 
-from baidupcs_py.baidupcs import PcsFile, FromTo, CloudTask, PcsSharedLink, PcsUser
-from baidupcs_py.commands.sifter import Sifter, sift
+from baidupcs_py.baidupcs import (
+    PcsFile,
+    FromTo,
+    CloudTask,
+    PcsSharedLink,
+    PcsUser,
+    PcsRapidUploadInfo,
+)
+from baidupcs_py.commands.sifter import Sifter
 from baidupcs_py.utils import format_date, human_size
+
+_print = print
 
 from rich.console import Console
 from rich.table import Table
@@ -48,29 +58,60 @@ def display_files(
     show_date: bool = False,
     show_md5: bool = False,
     show_absolute_path: bool = False,
+    show_dl_link: bool = False,
+    show_hash_link: bool = False,
+    hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
+    csv: bool = False,
 ):
-    pcs_files = sift(pcs_files, sifters)
     if not pcs_files:
         return
 
     table = Table(box=SIMPLE, padding=0, show_edge=False)
     table.add_column()
+    headers = []  # for csv
+    headers.append("\t")
     if show_size:
-        table.add_column("Size", justify="right")
+        header = "Size"
+        table.add_column(header, justify="right")
+        headers.append(header)
     if show_date:
-        table.add_column("Modified Time", justify="center")
+        header = "Modified Time"
+        table.add_column(header, justify="center")
+        headers.append(header)
     if show_md5:
-        table.add_column("md5", justify="left")
-    table.add_column("Path", justify="left", overflow="fold")
+        header = "md5"
+        table.add_column(header, justify="left")
+        headers.append(header)
+    header = "Path"
+    table.add_column(header, justify="left", overflow="fold")
+    headers.append(header)
+    if show_dl_link:
+        header = "Download Link"
+        table.add_column(header, justify="left", overflow="fold")
+        headers.append(header)
+    if show_hash_link:
+        header = "Hash Link"
+        table.add_column(header, justify="left", overflow="fold")
+        headers.append(header)
+
+    rows = []  # for csv
 
     max_size_str_len = max([len(str(pcs_file.size)) for pcs_file in pcs_files])
     for pcs_file in pcs_files:
         row: List[Union[str, Text]] = []
-        tp = Text("-", style="bold red")
-        row.append(tp)
+
+        if csv:
+            row.append("-")
+        else:
+            tp = Text("-", style="bold red")
+            row.append(tp)
+
         if show_size:
             size = human_size(pcs_file.size) if pcs_file.size else ""
-            row.append(f"{size} {pcs_file.size: >{max_size_str_len}}")
+            if csv:
+                row.append(f"{size} {pcs_file.size}")
+            else:
+                row.append(f"{size} {pcs_file.size: >{max_size_str_len}}")
         if show_date:
             date = format_date(pcs_file.mtime) if pcs_file.mtime else ""
             row.append(date)
@@ -95,15 +136,86 @@ def display_files(
         else:
             _path = Text(path)
 
-        row.append(background + _path)
+        if csv:
+            row.append(path)
+        else:
+            row.append(background + _path)
 
-        table.add_row(*row)
+        if show_dl_link:
+            row.append(pcs_file.dl_link or "")
+
+        rpinfo = pcs_file.rapid_upload_info
+        if show_hash_link:
+            link = ""
+            if rpinfo:
+                link = rpinfo.cs3l()
+            row.append(link)
+
+        if csv:
+            rows.append(row)
+        else:
+            table.add_row(*row)
+
+    if csv:
+        _print(remotepath)
+        _print("\t".join(headers))
+        for row in rows:
+            _print("\t".join(row))  # type: ignore
+    else:
+        console = Console()
+        if remotepath:
+            title = Text(remotepath, style="italic green")
+            console.print(title)
+        console.print(table)
+
+
+def display_rapid_upload_links(
+    infos: List[Dict[str, Any]],
+    hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
+):
+    rpinfos = [
+        (
+            PcsRapidUploadInfo(
+                slice_md5=r["slice_md5"],
+                content_md5=r["content_md5"],
+                content_crc32=r["content_crc32"],
+                content_length=r["content_length"],
+                remotepath=r["remotepath"],
+            ),
+            r["id"],
+        )
+        for r in infos
+    ]
+
+    _print("Id\tRemotepath\tLink")
+    for rpinfo, id in rpinfos:
+        row = [str(id), rpinfo.remotepath or ""]
+        row.append(getattr(rpinfo, hash_link_protocol)())
+
+        _print(*row, sep="\t")
+
+
+def display_rapid_upload_infos(infos: List[Dict[str, Any]]):
+    rpinfos = [
+        PcsRapidUploadInfo(
+            slice_md5=r["slice_md5"],
+            content_md5=r["content_md5"],
+            content_crc32=r["content_crc32"],
+            content_length=r["content_length"],
+            remotepath=r["remotepath"],
+        )
+        for r in infos
+    ]
+
+    panels = []
+    for info, rpinfo in zip(infos, rpinfos):
+        cn = "\n".join([f"{k}: {v}" for k, v in info.items()])
+        cn += "\nHash Links:\n" + "".join(f"  {link}\n" for link in rpinfo.all_links())
+        panel = Panel(cn, highlight=True)
+        panels.append(panel)
 
     console = Console()
-    if remotepath:
-        title = Text(remotepath, style="italic green")
-        console.print(title)
-    console.print(table)
+    console.print(*panels)
 
 
 def display_from_to(*from_to_list: FromTo):
