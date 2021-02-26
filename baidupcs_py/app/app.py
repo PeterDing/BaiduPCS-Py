@@ -1,3 +1,4 @@
+from typing import Optional, List, Tuple
 import os
 
 # Enable UTF-8 Mode for Windows
@@ -5,10 +6,10 @@ import os
 if os.name == "nt":
     os.environ["PYTHONUTF8"] = "1"
 
-from typing import Optional, List
 from collections import OrderedDict
 from functools import wraps
 from multiprocessing import Process
+from pathlib import Path
 import signal
 import time
 import logging
@@ -16,8 +17,9 @@ import traceback
 
 from baidupcs_py import __version__
 from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
+from baidupcs_py.baidupcs.inner import PcsRapidUploadInfo
 from baidupcs_py.app.account import Account, AccountManager
-from baidupcs_py.commands.env import ACCOUNT_DATA_PATH
+from baidupcs_py.commands.env import ACCOUNT_DATA_PATH, RAPIDUPLOADINFO_PATH
 from baidupcs_py.common.progress_bar import _progress
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.net import random_avail_port
@@ -29,8 +31,17 @@ from baidupcs_py.commands.sifter import (
     IsFileSifter,
     IsDirSifter,
 )
-from baidupcs_py.commands.display import display_user_info, display_user_infos
+from baidupcs_py.commands.display import (
+    display_user_info,
+    display_user_infos,
+)
 from baidupcs_py.commands.list_files import list_files
+from baidupcs_py.commands.rapid_upload import (
+    rapid_upload_list,
+    rapid_upload_search,
+    rapid_upload_delete,
+    rapid_upload,
+)
 from baidupcs_py.commands.cat import cat as _cat
 from baidupcs_py.commands import file_operators
 from baidupcs_py.commands.search import search as _search
@@ -177,6 +188,15 @@ def _recent_account(ctx) -> Optional[Account]:
         return None
 
 
+def _recent_user_id_and_name(ctx) -> Tuple[Optional[int], Optional[str]]:
+    account = _recent_account(ctx)
+    user_id, user_name = None, None
+    if account:
+        user_id = account.user.user_id
+        user_name = account.user.user_name
+    return user_id, user_name
+
+
 def _recent_api(ctx) -> Optional[BaiduPCSApi]:
     """Return recent user's `BaiduPCSApi`"""
 
@@ -216,8 +236,15 @@ def _salt(ctx) -> bytes:
         return b""
 
 
+def _rapiduploadinfo_file(ctx) -> str:
+    """Return global `RapidUploadInfo`"""
+
+    return ctx.obj.rapiduploadinfo_file
+
+
 ALIAS = OrderedDict(
     **{
+        # Account
         "w": "who",
         "uu": "updateuser",
         "su": "su",
@@ -225,6 +252,7 @@ ALIAS = OrderedDict(
         "ua": "useradd",
         "ud": "userdel",
         "ep": "encryptpwd",
+        # File Operations
         "l": "ls",
         "f": "search",
         "md": "mkdir",
@@ -236,10 +264,17 @@ ALIAS = OrderedDict(
         "p": "play",
         "u": "upload",
         "sn": "sync",
+        # Rapid Upload
+        "rl": "rplist",
+        "rs": "rpsearch",
+        "rd": "rpdelete",
+        "rp": "rp",
+        # Share
         "S": "share",
         "sl": "shared",
         "cs": "cancelshared",
         "s": "save",
+        # Cloud Task
         "a": "add",
         "t": "tasks",
         "ct": "cleartasks",
@@ -283,17 +318,22 @@ _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
 @click.option(
     "--account-data", type=str, default=ACCOUNT_DATA_PATH, help="Account data file"
 )
+@click.option(
+    "--rapiduploadinfo-file",
+    type=str,
+    default=RAPIDUPLOADINFO_PATH,
+    help="秒传 sqlite3 文件",
+)
 @click.option("--users", type=str, default=None, help="用户名片段，用“,”分割")
 @click.pass_context
-def app(ctx, account_data, users):
+def app(ctx, account_data, rapiduploadinfo_file, users):
     ctx.obj.account_manager = AccountManager.load_data(account_data)
+    ctx.obj.rapiduploadinfo_file = str(Path(rapiduploadinfo_file).expanduser())
     ctx.obj.users = [] if users is None else users.split(",")
 
 
 # Account
 # {{{
-
-
 @app.command()
 @click.argument("user_id", type=int, default=None, required=False)
 @click.option("--show-encrypt-password", "-K", is_flag=True, help="显示加密密码")
@@ -314,7 +354,7 @@ def who(ctx, user_id, show_encrypt_password):
             salt = _salt(ctx)
 
             print(f"[red]encrypt password[/red]: {encrypt_password}")
-            print(f"[red]salt[/red]: {salt}")
+            # print(f"[red]salt[/red]: {salt}")
     else:
         print("[italic red]No recent user, please adding or selecting one[/]")
 
@@ -466,10 +506,8 @@ def pwd(ctx):
 
 # }}}
 
-# Files
+# File Operations
 # {{{
-
-
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.option("--desc", "-r", is_flag=True, help="逆序排列文件")
@@ -488,6 +526,22 @@ def pwd(ctx):
 @click.option("--show-date", "-D", is_flag=True, help="显示文件创建时间")
 @click.option("--show-md5", "-M", is_flag=True, help="显示文件md5")
 @click.option("--show-absolute-path", "-A", is_flag=True, help="显示文件绝对路径")
+@click.option("--show-dl-link", "--DL", is_flag=True, help="显示文件下载连接")
+@click.option("--show-hash-link", "--HL", is_flag=True, help="显示文件秒传连接")
+@click.option(
+    "--hash-link-protocol",
+    "--hlp",
+    type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
+    default=PcsRapidUploadInfo.default_hash_link_protocol(),
+    help="显示文件hash链接，并指定协议",
+)
+@click.option(
+    "--no-check-md5",
+    "--NC",
+    is_flag=True,
+    help="显示文件 cs3l:// 连接时不检查md5。如果检查md5会改变文件上传时间",
+)
+@click.option("--csv", is_flag=True, help="用 csv 格式显示，单行显示，推荐和 --DL 或 --RL 或 --RS 一起用")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -510,8 +564,13 @@ def ls(
     show_date,
     show_md5,
     show_absolute_path,
+    show_dl_link,
+    show_hash_link,
+    hash_link_protocol,
+    no_check_md5,
+    csv,
 ):
-    """列出网盘路径下的文件"""
+    """列出网盘路径下的文件和对应的文件信息"""
 
     api = _recent_api(ctx)
     if not api:
@@ -534,6 +593,10 @@ def ls(
     pwd = _pwd(ctx)
     remotepaths = (join_path(pwd, r) for r in list(remotepaths) or (pwd,))
 
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+
+    user_id, user_name = _recent_user_id_and_name(ctx)
+
     list_files(
         api,
         *remotepaths,
@@ -544,10 +607,18 @@ def ls(
         recursive=recursive,
         sifters=sifters,
         highlight=not no_highlight,
+        rapiduploadinfo_file=rapiduploadinfo_file,
+        user_id=user_id,
+        user_name=user_name,
         show_size=show_size,
         show_date=show_date,
         show_md5=show_md5,
         show_absolute_path=show_absolute_path,
+        show_dl_link=show_dl_link,
+        show_hash_link=show_hash_link,
+        hash_link_protocol=hash_link_protocol,
+        check_md5=not no_check_md5,
+        csv=csv,
     )
 
 
@@ -1013,6 +1084,12 @@ def play(
 @click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
 @click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传已经存在的文件")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
+@click.option(
+    "--check-md5",
+    "--CM",
+    is_flag=True,
+    help="分段上传后检查md5。注意检查上传后大文件的md5，可能会花数分中（2G 的文件需要大约5分钟）",
+)
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1025,6 +1102,7 @@ def upload(
     max_workers,
     no_ignore_existing,
     no_show_progress,
+    check_md5,
 ):
     """上传文件"""
 
@@ -1042,6 +1120,10 @@ def upload(
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
 
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+
+    user_id, user_name = _recent_user_id_and_name(ctx)
+
     from_to_list = from_tos(localpaths, remotedir)
     _upload(
         api,
@@ -1051,6 +1133,10 @@ def upload(
         max_workers=max_workers,
         ignore_existing=not no_ignore_existing,
         show_progress=not no_show_progress,
+        rapiduploadinfo_file=rapiduploadinfo_file,
+        user_id=user_id,
+        user_name=user_name,
+        check_md5=check_md5,
     )
 
 
@@ -1069,6 +1155,12 @@ def upload(
 )
 @click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
+@click.option(
+    "--check-md5",
+    "--CM",
+    is_flag=True,
+    help="分段上传后检查md5。注意检查上传后大文件的md5，可能会花数分中（2G 的文件需要大约5分钟）",
+)
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1080,6 +1172,7 @@ def sync(
     encrypt_type,
     max_workers,
     no_show_progress,
+    check_md5,
 ):
     """同步本地目录到远端"""
 
@@ -1097,6 +1190,10 @@ def sync(
     if encrypt_type != EncryptType.No.name and not encrypt_password:
         raise ValueError(f"Encrypting with {encrypt_type} must have a key")
 
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+
+    user_id, user_name = _recent_user_id_and_name(ctx)
+
     _sync(
         api,
         localdir,
@@ -1105,11 +1202,190 @@ def sync(
         encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
         show_progress=not no_show_progress,
+        rapiduploadinfo_file=rapiduploadinfo_file,
+        user_id=user_id,
+        user_name=user_name,
+        check_md5=check_md5,
     )
 
 
 # }}}
 
+# Rapid Upload
+# {{{
+@app.command()
+@click.argument("ids", nargs=-1, type=int, default=None)
+@click.option("--filename", "-f", is_flag=True, help="按文件名排序")
+@click.option("--time", "-t", is_flag=True, help="按时间排序")
+@click.option("--size", "-s", is_flag=True, help="按文件大小排序")
+@click.option("--localpath", "-l", is_flag=True, help="按本地名排序")
+@click.option("--remotepath", "-r", is_flag=True, help="按远端名排序")
+@click.option("--userid", "-u", is_flag=True, help="按用户id排序")
+@click.option("--username", "-n", is_flag=True, help="按用户名排序")
+@click.option("--desc", "-d", is_flag=True, help="按逆序排序")
+@click.option("--limit", "-L", type=int, default=-1, help="限制列出文件个数")
+@click.option("--offset", "-O", type=int, default=-1, help="列出偏移为")
+@click.option(
+    "--hash-link-protocol",
+    "--hlp",
+    type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
+    default=PcsRapidUploadInfo.default_hash_link_protocol(),
+    help="hash link 协议，默认 cs3l",
+)
+@click.option("--show-all", "--SA", is_flag=True, help="显示文件所有信息")
+@click.pass_context
+@handle_error
+def rplist(
+    ctx,
+    ids,
+    filename,
+    time,
+    size,
+    localpath,
+    remotepath,
+    userid,
+    username,
+    desc,
+    limit,
+    offset,
+    hash_link_protocol,
+    show_all,
+):
+    """列出保存的文件秒传信息"""
+
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+    rapid_upload_list(
+        rapiduploadinfo_file,
+        ids=ids or [],
+        filename=filename,
+        time=time,
+        size=size,
+        localpath=localpath,
+        remotepath=remotepath,
+        user_id=userid,
+        user_name=username,
+        desc=desc,
+        limit=limit,
+        offset=offset,
+        hash_link_protocol=hash_link_protocol,
+        show_all=show_all,
+    )
+
+
+@app.command()
+@click.argument("keyword", nargs=1, type=str)
+@click.option("--filename", "--fn", is_flag=True, help="在文件名中搜索")
+@click.option("--localpath", "--lp", is_flag=True, help="在本地路径中搜索")
+@click.option("--remotepath", "--rp", is_flag=True, help="在远端路径中搜索")
+@click.option("--username", "--un", is_flag=True, help="在用户名中搜索")
+@click.option("--md5", "-m", is_flag=True, help="在md5中搜索。注意保存的文件md5都是小写字符")
+@click.option(
+    "--hash-link-protocol",
+    "--hlp",
+    type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
+    default=PcsRapidUploadInfo.default_hash_link_protocol(),
+    help="hash link 协议",
+)
+@click.option("--show-all", "--SA", is_flag=True, help="显示文件所有信息")
+@click.pass_context
+@handle_error
+def rpsearch(
+    ctx,
+    keyword,
+    filename,
+    localpath,
+    remotepath,
+    username,
+    md5,
+    hash_link_protocol,
+    show_all,
+):
+    """搜索保存的文件秒传信息"""
+
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+    rapid_upload_search(
+        rapiduploadinfo_file,
+        keyword,
+        in_filename=filename,
+        in_localpath=localpath,
+        in_remotepath=remotepath,
+        in_user_name=username,
+        in_md5=md5,
+        hash_link_protocol=hash_link_protocol,
+        show_all=show_all,
+    )
+
+
+@app.command()
+@click.argument("ids", nargs=-1, type=int)
+@click.pass_context
+@handle_error
+def rpdelete(ctx, ids):
+    """按数据库id删除保存的文件秒传信息"""
+
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+    rapid_upload_delete(rapiduploadinfo_file, ids)
+
+
+@app.command()
+@click.argument("remotedir", nargs=1, default="", type=str)
+@click.option("--link", "-l", type=str, help="cs3l:// 协议连接 或 简化连接")
+@click.option("--slice-md5", "--sm", type=str, help="文件前 256KB md5")
+@click.option("--content-md5", "--cm", type=str, help="文件 md5")
+@click.option("--content-crc32", "--cc", type=int, help="文件 crc32, 可以为空")
+@click.option("--content-length", "--cl", type=int, help="文件长度")
+@click.option("--filename", "--fn", type=str, help="文件名，如果这里设置了，将会覆盖 link 中的文件名")
+@click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传且覆盖已经存在的文件")
+@click.pass_context
+@handle_error
+@multi_user_do
+def rp(
+    ctx,
+    remotedir,
+    link,
+    slice_md5,
+    content_md5,
+    content_crc32,
+    content_length,
+    filename,
+    no_ignore_existing,
+):
+    """用秒传连接或参数上传
+
+    如果设置了 --link，那么其他参数都不需要了。
+    如果设置了 --filename，将会覆盖 link 中的文件名。
+    """
+
+    api = _recent_api(ctx)
+    if not api:
+        return
+
+    assert link or all([slice_md5, content_md5, content_length, filename]), "No params"
+
+    pwd = _pwd(ctx)
+    remotedir = join_path(pwd, remotedir)
+
+    rapiduploadinfo_file = _rapiduploadinfo_file(ctx)
+
+    user_id, user_name = _recent_user_id_and_name(ctx)
+
+    rapid_upload(
+        api,
+        remotedir,
+        link=link,
+        slice_md5=slice_md5,
+        content_md5=content_md5,
+        content_crc32=content_crc32,
+        content_length=content_length,
+        filename=filename,
+        no_ignore_existing=no_ignore_existing,
+        rapiduploadinfo_file=rapiduploadinfo_file,
+        user_id=user_id,
+        user_name=user_name,
+    )
+
+
+# }}}
 
 # Share
 # {{{
@@ -1201,8 +1477,6 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 
 # Cloud
 # {{{
-
-
 @app.command()
 @click.argument("task_urls", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
@@ -1291,9 +1565,8 @@ def purgetasks(ctx, yes):
 
 # }}}
 
-# {{{ Server
-
-
+# Server
+# {{{
 @app.command()
 @click.argument("root_dir", type=str, default="/", required=False)
 @click.option("--path", type=str, default="/", help="服务路径，默认为 “/”")
