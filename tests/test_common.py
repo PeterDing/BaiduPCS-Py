@@ -30,10 +30,12 @@ from baidupcs_py.common.crypto import (
     random_bytes,
     _md5_cmd,
     calu_file_md5,
+    calu_md5,
     SimpleCryptography,
     ChaCha20Cryptography,
     AES256CBCCryptography,
 )
+from baidupcs_py.common.localstorage import RapidUploadInfo
 
 
 def test_join_path():
@@ -427,3 +429,66 @@ def test_generate_key_iv():
         == b"l\x04\xcb\xae\xc4\xd7\xa05^\x04\x93\xa2M\xe5\x0ee\\?\xc1C;\xca\xab|Z\xda\x98\xe8\xdb\x01\xdb\xa0"
     )
     assert iv == b"\x8b\xe2\x02\x8e\xee6j\x1cLv\xa2&\xa2\x8a\x1d\xfd"
+
+
+def test_localstorage():
+    db_path = "./test_rapid_upload.db"
+    db = RapidUploadInfo(db_path)
+
+    rows = [
+        (
+            "abc",
+            "/localpath/abc",
+            "/remotepath/abc",
+            calu_md5(b"sdfdf"),
+            calu_md5("ggg"),
+            0,
+            9599,
+            b"pwd",
+            "Simple",
+            None,
+            "peter",
+        ),
+        (
+            "ryhg",
+            "/localpath/ryhg",
+            "/remotepath/ryhg",
+            calu_md5(b"sdfdf"),
+            calu_md5("ggg"),
+            0,
+            959,
+            b"pwd",
+            "Simple",
+            None,
+            "tim",
+        ),
+        (
+            "9553",
+            "/localpath/9553",
+            "/remotepath/9553",
+            calu_md5(b"sdfdf"),
+            calu_md5("ggg"),
+            0,
+            59,
+            b"pwd",
+            "Simple",
+            None,
+            "moo",
+        ),
+    ]
+
+    for r in rows:
+        db.insert(*r)
+
+    r = db.list(desc=False, limit=1, offset=1)
+    for i in r:
+        print(i)
+
+    r = db.search("a")
+    for i in r:
+        print(i)
+
+    db.delete(1)
+    r = db.list()
+    for i in r:
+        print(i)
