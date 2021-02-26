@@ -282,12 +282,20 @@ class BaiduPCS:
         self,
         slice_md5: str,
         content_md5: str,
-        content_crc32: int,
+        content_crc32: int,  # not needed
         io_len: int,
         remotepath: str,
         ondup="overwrite",
     ):
-        """size > 256KB"""
+        """Rapid Upload File
+
+        slice_md5 (32 bytes): the md5 of pre 256KB of content.
+        content_md5 (32 bytes): the md5 of total content.
+        content_crc32 (int): the crc32 of total content (Not Needed),
+            if content_crc32 is 0, the params of the api will be ignored.
+        io_len (int): the length of total content.
+        remotepath (str): the absolute remote path to save the content.
+        """
 
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
 
@@ -304,6 +312,11 @@ class BaiduPCS:
             "content-crc32": content_crc32,
             "ondup": ondup,
         }
+
+        # Not needed
+        if content_crc32 == 0:
+            del data["content-crc32"]
+
         resp = self._request(Method.Post, url, params=params, data=data)
         return resp.json()
 
@@ -832,8 +845,9 @@ class BaiduPCS:
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
+        pcs: bool = False,
     ) -> RangeRequestIO:
-        info = self.download_link(remotepath)
+        info = self.download_link(remotepath, pcs=pcs)
         url = info["urls"][0]["url"]
         headers = {
             "Cookie": "; ".join(

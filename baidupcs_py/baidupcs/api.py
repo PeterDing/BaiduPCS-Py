@@ -1,10 +1,13 @@
 from typing import Optional, Dict, List, Tuple, Callable, IO
 
 from io import BytesIO
+from baidupcs_py.common import constant
+from baidupcs_py.common.crypto import calu_md5
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.baidupcs.pcs import BaiduPCS, BaiduPCSError, M3u8Type
 from baidupcs_py.baidupcs.inner import (
     PcsFile,
+    PcsRapidUploadInfo,
     PcsMagnetFile,
     PcsSharedLink,
     PcsSharedPath,
@@ -89,11 +92,21 @@ class BaiduPCSApi:
         self,
         slice_md5: str,
         content_md5: str,
-        content_crc32: int,
+        content_crc32: int,  # not needed
         io_len: int,
         remotepath: str,
         ondup="overwrite",
     ) -> PcsFile:
+        """Rapid Upload File
+
+        slice_md5 (32 bytes): the md5 of pre 256KB of content.
+        content_md5 (32 bytes): the md5 of total content.
+        content_crc32 (int): the crc32 of total content (Not Needed),
+            if content_crc32 is 0, the params of the api will be ignored.
+        io_len (int): the length of total content.
+        remotepath (str): the absolute remote path to save the content.
+        """
+
         info = self._baidupcs.rapid_upload_file(
             slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
         )
@@ -340,12 +353,14 @@ class BaiduPCSApi:
         max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
+        pcs: bool = False,
     ) -> RangeRequestIO:
         return self._baidupcs.file_stream(
             remotepath,
             max_chunk_size=max_chunk_size,
             callback=callback,
             encrypt_password=encrypt_password,
+            pcs=pcs,
         )
 
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720") -> str:
@@ -355,3 +370,61 @@ class BaiduPCSApi:
         else:
             # Here should be a error
             return ""
+
+    def rapid_upload_info(
+        self, remotepath: str, check: bool = True
+    ) -> Optional[PcsRapidUploadInfo]:
+        pcs_file = self.meta(remotepath)[0]
+        content_length = pcs_file.size
+
+        if content_length < 256 * constant.OneK:
+            return None
+
+        fs = self.file_stream(remotepath, pcs=True)
+
+        data = fs.read(256 * constant.OneK)
+        assert data and len(data) == 256 * constant.OneK
+
+        slice_md5 = calu_md5(data)
+
+        assert (
+            content_length and content_length == fs._auto_decrypt_request.content_length
+        )
+
+        content_md5 = fs._auto_decrypt_request.content_md5
+        content_crc32 = fs._auto_decrypt_request.content_crc32 or 0
+
+        if not content_md5:
+            return None
+
+        block_list = pcs_file.block_list
+        if block_list and len(block_list) == 1 and block_list[0] == pcs_file.md5:
+            return PcsRapidUploadInfo(
+                slice_md5=slice_md5,
+                content_md5=content_md5,
+                content_crc32=content_crc32,
+                content_length=content_length,
+                remotepath=pcs_file.path,
+            )
+
+        if check:
+            try:
+                # Try rapid_upload_file
+                self.rapid_upload_file(
+                    slice_md5,
+                    content_md5,
+                    content_crc32,
+                    content_length,
+                    pcs_file.path,
+                    ondup="overwrite",
+                )
+            except Exception:
+                return None
+
+        return PcsRapidUploadInfo(
+            slice_md5=slice_md5,
+            content_md5=content_md5,
+            content_crc32=content_crc32,
+            content_length=content_length,
+            remotepath=pcs_file.path,
+        )

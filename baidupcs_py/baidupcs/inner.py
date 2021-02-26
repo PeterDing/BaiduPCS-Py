@@ -1,6 +1,53 @@
 from typing import Optional, List, Dict, NamedTuple
 from collections import namedtuple
 
+from base64 import standard_b64encode
+
+import os
+
+
+class PcsRapidUploadInfo(NamedTuple):
+    """Rapid Upload Info"""
+
+    slice_md5: str
+    content_md5: str
+    content_crc32: int
+    content_length: int
+    remotepath: Optional[str] = None
+
+    def cs3l(self) -> str:
+        """cs3l://<content_md5>#<slice_md5>#<content_crc32>#<content_length>#<filename>"""
+
+        filename = os.path.basename(self.remotepath or "")
+        return f"cs3l://{self.content_md5}#{self.slice_md5}#{self.content_crc32}#{self.content_length}#{filename}"
+
+    def short(self) -> str:
+        """<content_md5>#<slice_md5>#<content_length>#<filename>"""
+
+        filename = os.path.basename(self.remotepath or "")
+        return f"{self.content_md5}#{self.slice_md5}#{self.content_length}#{filename}"
+
+    def bppan(self) -> str:
+        """bdpan://{base64(<filename>|<content_length>|<content_md5>|<slice_md5>)}"""
+
+        filename = os.path.basename(self.remotepath or "")
+        return "bppan://" + standard_b64encode(
+            f"{filename}|{self.content_length}|{self.content_md5}|{self.slice_md5}".encode(
+                "utf-8"
+            )
+        ).decode("utf-8")
+
+    def all_links(self) -> List[str]:
+        return [self.cs3l(), self.short(), self.bppan()]
+
+    @staticmethod
+    def hash_link_protocols() -> List[str]:
+        return ["cs3l", "short", "bppan"]
+
+    @staticmethod
+    def default_hash_link_protocol() -> str:
+        return "cs3l"
+
 
 class PcsFile(NamedTuple):
     """
@@ -40,6 +87,9 @@ class PcsFile(NamedTuple):
     server_ctime: Optional[int] = None  # server created time
     server_mtime: Optional[int] = None  # server modifed time
     shared: Optional[bool] = None  # this file is shared if True
+
+    rapid_upload_info: Optional[PcsRapidUploadInfo] = None
+    dl_link: Optional[str] = None
 
     @staticmethod
     def from_(info) -> "PcsFile":
