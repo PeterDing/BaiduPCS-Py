@@ -632,7 +632,7 @@ BaiduPCS-Py 支持 3 种秒传连接(在 BaiduPCS-Py 叫 Hash Link)协议：
 
 1. `cs3l`
 
-`cs3l` 是 <span style="color: red">c</span>ontent_md5 <span style="color:blue">s</span>lice256k_md5 content_crc<span style="color: red">3</span>2 content\_<span style="color: red">l</span>ength 的缩写。
+`cs3l` 是 <b>C</b>ontent_md5 + <b>S</b>lice256k_md5 + content_crc<b>3</b>2 + content\_<b>L</b>ength 的缩写。
 
 格式: `cs3l://<content_md5>#<slice_md5>#<content_crc32>#<content_length>#<filename>`
 
