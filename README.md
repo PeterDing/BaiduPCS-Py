@@ -15,6 +15,9 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [用法](#用法)
 - [命令别名](#命令别名)
 - [对多个帐号进行相同操作](#对多个帐号进行相同操作)
+
+#### 用户相关命令
+
 - [添加用户](#添加用户)
 - [设置文件加密密码](#设置文件加密密码)
 - [显示当前用户的信息](#显示当前用户的信息)
@@ -22,9 +25,12 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [显示所有用户](#显示所有用户)
 - [切换当前用户](#切换当前用户)
 - [删除一个用户](#删除一个用户)
-- [文件操作](#文件操作)
 - [显示当前工作目录](#显示当前工作目录)
 - [切换当前工作目录](#切换当前工作目录)
+
+#### 文件操作相关命令
+
+- [文件操作](#文件操作)
 - [列出网盘路径下的文件](#列出网盘路径下的文件)
 - [搜索文件](#搜索文件)
 - [显示文件内容](#显示文件内容)
@@ -37,15 +43,32 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [播放媒体文件](#播放媒体文件)
 - [上传文件](#上传文件)
 - [同步本地目录到远端](#同步本地目录到远端)
+
+#### 秒传相关命令
+
+- [关于秒传](#关于秒传)
+- [显示网盘中文件的秒传连接](#显示网盘中文件的秒传连接)
+- [列出保存的文件秒传信息](#列出保存的文件秒传信息)
+- [搜索保存的文件秒传信息](#搜索保存的文件秒传信息)
+- [用快速上传连接或参数上传](#用快速上传连接或参数上传)
+
+#### 分享相关命令
+
 - [分享文件](#分享文件)
 - [列出分享链接](#列出分享链接)
 - [取消分享链接](#取消分享链接)
 - [保存其他用户分享的链接](#保存其他用户分享的链接)
+
+#### 离线下载相关命令
+
 - [添加离线下载任务](#添加离线下载任务)
 - [列出离线下载任务](#列出离线下载任务)
 - [清除已经下载完和下载失败的任务](#清除已经下载完和下载失败的任务)
 - [取消下载任务](#取消下载任务)
 - [删除所有离线下载任务](#删除所有离线下载任务)
+
+#### HTTP 服务
+
 - [开启 HTTP 服务](#开启-HTTP-服务)
 
 ## 安装
@@ -371,24 +394,29 @@ BaiduPCS-Py ls relative/path
 
 ### 选项
 
-| Option                     | Description                          |
-| -------------------------- | ------------------------------------ |
-| -r, --desc                 | 逆序排列文件                         |
-| -n, --name                 | 依名字排序                           |
-| -t, --time                 | 依时间排序                           |
-| -s, --size                 | 依文件大小排序                       |
-| -R, --recursive            | 递归列出文件                         |
-| -I, --include TEXT         | 筛选包含这个字符串的文件             |
-| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件         |
-| -E, --exclude TEXT         | 筛选 **不** 包含这个字符串的文件     |
-| --exclude-regex, --ER TEXT | 筛选 **不** 包含这个正则表达式的文件 |
-| -f, --is-file              | 筛选 **非** 目录文件                 |
-| -d, --is-dir               | 筛选目录文件                         |
-| --no-highlight, --NH       | 取消匹配高亮                         |
-| -S, --show-size            | 显示文件大小                         |
-| -D, --show-date            | 显示文件创建时间                     |
-| -M, --show-md5             | 显示文件 md5                         |
-| -A, --show-absolute-path   | 显示文件绝对路径                     |
+| Option                                               | Description                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------ |
+| -r, --desc                                           | 逆序排列文件                                                       |
+| -n, --name                                           | 依名字排序                                                         |
+| -t, --time                                           | 依时间排序                                                         |
+| -s, --size                                           | 依文件大小排序                                                     |
+| -R, --recursive                                      | 递归列出文件                                                       |
+| -I, --include TEXT                                   | 筛选包含这个字符串的文件                                           |
+| --include-regex, --IR TEXT                           | 筛选包含这个正则表达式的文件                                       |
+| -E, --exclude TEXT                                   | 筛选 **不** 包含这个字符串的文件                                   |
+| --exclude-regex, --ER TEXT                           | 筛选 **不** 包含这个正则表达式的文件                               |
+| -f, --is-file                                        | 筛选 **非** 目录文件                                               |
+| -d, --is-dir                                         | 筛选目录文件                                                       |
+| --no-highlight, --NH                                 | 取消匹配高亮                                                       |
+| -S, --show-size                                      | 显示文件大小                                                       |
+| -D, --show-date                                      | 显示文件创建时间                                                   |
+| -M, --show-md5                                       | 显示文件 md5                                                       |
+| -A, --show-absolute-path                             | 显示文件绝对路径                                                   |
+| --show-dl-link, --DL                                 | 显示文件下载连接                                                   |
+| --show-hash-link, --HL                               | 显示文件秒传连接                                                   |
+| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | 显示文件 hash 链接，并指定协议                                     |
+| --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5。如果检查 md5 会改变文件上传时间 |
+| --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --RL 或 --RS 一起用      |
 
 ## 搜索文件
 
@@ -563,13 +591,14 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 
 ### 选项
 
-| Option                                                     | Description                    |
-| ---------------------------------------------------------- | ------------------------------ |
-| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的   |
-| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
-| -w, --max-workers INTEGER                                  | 同时上传文件数                 |
-| --no-ignore-existing, --NI                                 | 上传已经存在的文件             |
-| --no-show-progress, --NP                                   | 不显示上传进度                 |
+| Option                                                     | Description                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的                                                               |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密                                                             |
+| -w, --max-workers INTEGER                                  | 同时上传文件数                                                                             |
+| --no-ignore-existing, --NI                                 | 上传已经存在的文件                                                                         |
+| --no-show-progress, --NP                                   | 不显示上传进度                                                                             |
+| --check-md5, --CM                                          | 分段上传后检查 md5。注意检查上传后大文件的 md5，可能会花数分中（2G 的文件需要大约 5 分钟） |
 
 ## 同步本地目录到远端
 
@@ -583,12 +612,161 @@ BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
 
 ### 选项
 
-| Option                                                     | Description                    |
-| ---------------------------------------------------------- | ------------------------------ |
-| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的   |
-| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密 |
-| -w, --max-workers INTEGER                                  | 同时上传文件数                 |
-| --no-show-progress, --NP                                   | 不显示上传进度                 |
+| Option                                                     | Description                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的                                                               |
+| -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密                                                             |
+| -w, --max-workers INTEGER                                  | 同时上传文件数                                                                             |
+| --no-show-progress, --NP                                   | 不显示上传进度                                                                             |
+| --check-md5, --CM                                          | 分段上传后检查 md5。注意检查上传后大文件的 md5，可能会花数分中（2G 的文件需要大约 5 分钟） |
+
+## 关于秒传
+
+百度网盘在服务器上对于一份文件只储存一份。如果一份文件已经存在于百度网盘的服务器中，用户无需重新上传源文件，只需要提供文件的特征参数就可完成上传，这种上传文件的方法百度叫做“**秒传**”。
+
+运用“秒传”的功能，我们将一份文件变成一组特征参数。只要获得这组特征参数，我们就可以在百度网盘中“生成”这组特征参数对应的唯一文件。
+
+BaiduPCS-Py 可以获取百度网盘中文件的特征参数，并将其转化为一串连接。使用这个连接，使用者可以在任何帐号中“生成”对应文件，达到文件分享的功能。
+
+BaiduPCS-Py 支持 3 种秒传连接(在 BaiduPCS-Py 叫 Hash Link)协议：
+
+1. `cs3l`
+
+`cs3l` 是 <span style="color: red">c</span>ontent_md5 <span style="color:blue">s</span>lice256k_md5 content_crc<span style="color: red">3</span>2 content\_<span style="color: red">l</span>ength 的缩写。
+
+格式: `cs3l://<content_md5>#<slice_md5>#<content_crc32>#<content_length>#<filename>`
+
+例如: `cs3l://ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#2518837112#33251183#test.gz`
+
+BaiduPCS-Py 默认使用 `cs3l` 协议连接。
+
+2. `short`
+
+`short` 是 `cs3l` 格式的缩写版。最早出自于[梦姬度盘标准提取码](https://blog.jixun.moe/du-code-gen)。
+
+格式: `<content_md5>#<slice_md5>#<content_length>#<filename>`
+
+例如: `ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#33251183#test.gz`
+
+3. `bppan`
+
+`bppan` 是 pandownload 使用的协议连接。
+
+格式: `bdpan://{base64(<filename>|<content_length>|<content_md5>|<slice_md5>)}`
+
+例如: `bppan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM=`
+
+BaiduPCS-Py 会将在命令 `ls`，`upload`，`sync`，`rp` 中遇到的文件特征参数存储于本地 sqlite3 数据库 `~/.baidupcs-py/rapiduploadinfo.sqlite3`。使用 `rplist`，`rpsearch` 命令可以查看这些信息。
+
+## 显示网盘中文件的秒传连接
+
+使用 `ls` 命令显示秒传连接默认会对文件进行秒传检查，已确认服务器是否已经将文件特征记录。
+
+> 注意：秒传检查会将文件的服务器端的创建时间改为当前时间。
+
+对于才上传的大文件，服务器不会立刻计算完文件的特征参数，这个过程可能持续数天的时间。在此期间秒传无法进行。
+
+如果想略过秒传检查，用户可以用 `--no-check-md5` 选项。但这样生成的秒传连接可能是无效的。
+
+```
+# 默认显示 cs3l 协议连接
+BaiduPCS-Py ls /path/to/file --show-hash-link
+```
+
+指定特定协议：
+
+```
+BaiduPCS-Py ls /path/to/file --show-hash-link --hash-link-protocol bppan
+```
+
+如果连接过长，可以加选项 `--csv`，让输出变为 csv 格式。
+
+```
+BaiduPCS-Py ls /path/to/file --show-hash-link --csv
+```
+
+## 列出保存的文件秒传信息
+
+```
+BaiduPCS-Py rplist [OPTIONS] [IDS]...
+```
+
+如果不给出 ids，默认为对所有数据进行操作。
+
+### 选项
+
+| Option                                               | Description               |
+| ---------------------------------------------------- | ------------------------- |
+| -f, --filename                                       | 按文件名排序              |
+| -t, --time                                           | 按时间排序                |
+| -s, --size                                           | 按文件大小排序            |
+| -l, --localpath                                      | 按本地名排序              |
+| -r, --remotepath                                     | 按远端名排序              |
+| -u, --userid                                         | 按用户 id 排序            |
+| -n, --username                                       | 按用户名排序              |
+| -d, --desc                                           | 按逆序排序                |
+| -L, --limit INTEGER                                  | 限制列出文件个数          |
+| -O, --offset INTEGER                                 | 列出偏移为                |
+| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l |
+| --show-all, --SA                                     | 显示文件所有信息          |
+
+## 搜索保存的文件秒传信息
+
+```
+BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
+```
+
+### 选项
+
+| Option                                               | Description                                    |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| --filename, --fn                                     | 在文件名中搜索                                 |
+| --localpath, --lp                                    | 在本地路径中搜索                               |
+| --remotepath, --rp                                   | 在远端路径中搜索                               |
+| --username, --un                                     | 在用户名中搜索                                 |
+| -m, --md5                                            | 在 md5 中搜索。注意保存的文件 md5 都是小写字符 |
+| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l                      |
+| --show-all, --SA                                     | 显示文件所有信息                               |
+
+## 用快速上传连接或参数上传
+
+```
+BaiduPCS-Py rp [OPTIONS] [REMOTEDIR]
+```
+
+使用秒传连接：
+
+```
+BaiduPCS-Py rp /path/to/save --link 'cs3l://ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#2518837112#33251183#test.gz'
+
+BaiduPCS-Py rp /path/to/save --link 'ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#33251183#test.gz'
+
+BaiduPCS-Py rp /path/to/save --link 'bppan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM='
+```
+
+使用特征参数：
+
+```
+BaiduPCS-Py rp /path/to/save \
+    --content-md5 'ced58db7aedce8e1c887754fccccde03' \
+    --slice-md5 '0d02589467f34bdd86d08221e93b2783' \
+    --content-length '33251183' \
+    --filename 'test.gz'
+```
+
+如果同时有 `--link` 和 `--filename`，那么 `--filename` 值将代替 link 中的文件名。
+
+### 选项
+
+| Option                         | Description                                      |
+| ------------------------------ | ------------------------------------------------ |
+| -l, --link TEXT                | cs3l:// 协议连接 或 简化连接                     |
+| --slice-md5, --sm TEXT         | 文件前 256KB md5                                 |
+| --content-md5, --cm TEXT       | 文件 md5                                         |
+| --content-crc32, --cc INTEGER  | 文件 crc32, 可以为空                             |
+| --content-length, --cl INTEGER | 文件长度                                         |
+| --filename, --fn TEXT          | 文件名，如果这里设置了，将会覆盖 link 中的文件名 |
+| --no-ignore-existing, --NI     | 上传且覆盖已经存在的文件                         |
 
 ## 分享文件
 
