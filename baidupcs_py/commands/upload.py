@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional, List
 
 import os
 import time
@@ -15,12 +15,10 @@ from baidupcs_py.common.event import KeyHandler, KeyboardMonitor
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.concurrent import sure_release, retry
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
-from baidupcs_py.common.crypto import generate_salt, generate_key_iv
+from baidupcs_py.common.localstorage import save_rapid_upload_info
 from baidupcs_py.common.io import (
     total_len,
-    sample_data,
     rapid_upload_params,
-    generate_nonce_or_iv,
     EncryptType,
     reset_encrypt_io,
 )
@@ -41,6 +39,8 @@ DEFAULT_SLICE_SIZE = 50 * constant.OneM
 
 
 UPLOAD_STOP = False
+
+_rapiduploadinfo_file: Optional[str] = None
 
 
 def _toggle_stop(*args, **kwargs):
@@ -98,6 +98,10 @@ def upload(
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
     show_progress: bool = True,
+    rapiduploadinfo_file: Optional[str] = None,
+    user_id: Optional[int] = None,
+    user_name: Optional[str] = None,
+    check_md5: bool = False,
 ):
     """Upload from_tos
 
@@ -106,7 +110,17 @@ def upload(
         slice_size (int): The size of slice for uploading slices.
         ignore_existing (bool): Ignoring these localpath which of remotepath exist.
         show_progress (bool): Show uploading progress.
+
+        check_md5 (bool): To fix the content md5 after `combine_slices`
+            `combine_slices` always not return correct content md5. To fix it,
+            we need to use `rapid_upload_file` re-upload the content.
+            Warning, if content length is large, it could take some minutes,
+            e.g. it takes 5 minutes about 2GB.
     """
+
+    global _rapiduploadinfo_file
+    if _rapiduploadinfo_file is None:
+        _rapiduploadinfo_file = rapiduploadinfo_file
 
     excepts = {}
     semaphore = Semaphore(max_workers)
@@ -133,6 +147,9 @@ def upload(
                     slice_size=slice_size,
                     ignore_existing=ignore_existing,
                     task_id=task_id,
+                    user_id=user_id,
+                    user_name=user_name,
+                    check_md5=check_md5,
                 )
                 futs[fut] = from_to
 
@@ -155,6 +172,70 @@ def upload(
         _progress.console.print(table)
 
 
+def _check_md5(
+    api: BaiduPCSApi,
+    localpath: str,
+    remotepath: str,
+    slice_md5: str,
+    content_md5: str,
+    content_crc32: int,  # not needed
+    content_length: int,
+    encrypt_password: bytes = b"",
+    encrypt_type: str = "",
+    user_id: Optional[int] = None,
+    user_name: Optional[str] = None,
+):
+    """Fix remote content md5 with rapid upload
+
+    There is a delay for server to handle uploaded data after `combine_slices`,
+    so we retry fix it.
+    """
+
+    i = 0
+    while True:
+        logger.debug(
+            f"`upload`: `check_md5`: retry: {i}: "
+            "slice_md5: %s, content_md5: %s, content_crc32: %s, io_len: %s, remotepath: %s",
+            slice_md5,
+            content_md5,
+            content_crc32,
+            content_length,
+            remotepath,
+        )
+        i += 1
+
+        try:
+            api.rapid_upload_file(
+                slice_md5,
+                content_md5,
+                content_crc32,  # not needed
+                content_length,
+                remotepath,
+                ondup="overwrite",
+            )
+            logger.warning("`upload`: `check_md5` successes")
+
+            if _rapiduploadinfo_file:
+                save_rapid_upload_info(
+                    _rapiduploadinfo_file,
+                    slice_md5,
+                    content_md5,
+                    content_crc32,
+                    content_length,
+                    localpath=localpath,
+                    remotepath=remotepath,
+                    encrypt_password=encrypt_password,
+                    encrypt_type=encrypt_type,
+                    user_id=user_id,
+                    user_name=user_name,
+                )
+            return
+        except Exception as err:
+            logger.warning("`upload`: `check_md5` fails: %s", err)
+            time.sleep(2)
+            continue
+
+
 @retry(-1)
 def upload_file(
     api: BaiduPCSApi,
@@ -165,6 +246,9 @@ def upload_file(
     slice_size: int = DEFAULT_SLICE_SIZE,
     ignore_existing: bool = True,
     task_id: Optional[TaskID] = None,
+    user_id: Optional[int] = None,
+    user_name: Optional[str] = None,
+    check_md5: bool = False,
 ):
     _wait_start()
 
@@ -185,7 +269,12 @@ def upload_file(
                 _progress.remove_task(task_id)
             raise err
 
-    logger.debug("`upload`: encrypt_type: %s", encrypt_type)
+    logger.debug(
+        "`upload`: encrypt_type: %s, localpath: %s, remotepath, %s",
+        encrypt_type,
+        localpath,
+        remotepath,
+    )
 
     encrypt_io = encrypt_type.encrypt_io(open(localpath, "rb"), encrypt_password)
     # IO Length
@@ -208,21 +297,42 @@ def upload_file(
         if task_id is not None and progress_task_exists(task_id):
             _progress.update(task_id, completed=slice_completed + monitor.bytes_read)
 
+    slice256k_md5 = ""
+    content_md5 = ""
+    content_crc32 = 0
+    io_len = 0
+
     if encrypt_io_len > 256 * constant.OneK:
         # Rapid Upload
         logger.debug("`upload`: rapid_upload starts")
         try:
-            slice_md5, content_md5, content_crc32, encrypt_io_len = rapid_upload_params(
+            slice256k_md5, content_md5, content_crc32, io_len = rapid_upload_params(
                 encrypt_io
             )
             api.rapid_upload_file(
-                slice_md5,
+                slice256k_md5,
                 content_md5,
-                content_crc32,
+                0,  # not needed
                 encrypt_io_len,
                 remotepath,
                 ondup=ondup,
             )
+
+            if _rapiduploadinfo_file:
+                save_rapid_upload_info(
+                    _rapiduploadinfo_file,
+                    slice256k_md5,
+                    content_md5,
+                    content_crc32,
+                    io_len,
+                    localpath=localpath,
+                    remotepath=remotepath,
+                    encrypt_password=encrypt_password,
+                    encrypt_type=encrypt_type.value,
+                    user_id=user_id,
+                    user_name=user_name,
+                )
+
             if task_id is not None and progress_task_exists(task_id):
                 _progress.update(task_id, completed=encrypt_io_len)
                 _progress.remove_task(task_id)
@@ -260,8 +370,24 @@ def upload_file(
                         fail_count,
                     ),
                     _wait_start(),
+                    reset_encrypt_io(encrypt_io),
                 ),
             )(api.upload_file)(encrypt_io, remotepath, ondup=ondup, callback=callback)
+
+            if content_md5 and _rapiduploadinfo_file:
+                save_rapid_upload_info(
+                    _rapiduploadinfo_file,
+                    slice256k_md5,
+                    content_md5,
+                    content_crc32,
+                    io_len,
+                    localpath=localpath,
+                    remotepath=remotepath,
+                    encrypt_password=encrypt_password,
+                    encrypt_type=encrypt_type.value,
+                    user_id=user_id,
+                    user_name=user_name,
+                )
 
             logger.debug("`upload`: upload_file success")
         else:
@@ -317,6 +443,23 @@ def upload_file(
             )(api.combine_slices)(slice_md5s, remotepath, ondup=ondup)
 
             logger.debug("`upload`: upload_slice and combine_slices success")
+
+            # `combine_slices` can not get right content md5.
+            # We need to check whether server updates by hand.
+            if check_md5:
+                _check_md5(
+                    api,
+                    localpath,
+                    remotepath,
+                    slice256k_md5,
+                    content_md5,
+                    content_crc32,
+                    io_len,
+                    encrypt_password=encrypt_password,
+                    encrypt_type=encrypt_type.value,
+                    user_id=user_id,
+                    user_name=user_name,
+                )
 
         if task_id is not None and progress_task_exists(task_id):
             _progress.remove_task(task_id)

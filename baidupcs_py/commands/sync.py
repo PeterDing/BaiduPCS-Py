@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union, Any
+from typing import Optional, List, Tuple, Union
 from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -44,6 +44,10 @@ def sync(
     max_workers: int = CPU_NUM,
     slice_size: int = DEFAULT_SLICE_SIZE,
     show_progress: bool = True,
+    rapiduploadinfo_file: Optional[str] = None,
+    user_id: Optional[int] = None,
+    user_name: Optional[str] = None,
+    check_md5: bool = False,
 ):
     localdir = Path(localdir).as_posix()
     remotedir = Path(remotedir).as_posix()
@@ -95,6 +99,10 @@ def sync(
         slice_size=slice_size,
         ignore_existing=False,
         show_progress=show_progress,
+        rapiduploadinfo_file=rapiduploadinfo_file,
+        user_id=user_id,
+        user_name=user_name,
+        check_md5=check_md5,
     )
 
     to_deletes = []
