@@ -50,7 +50,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [显示网盘中文件的秒传连接](#显示网盘中文件的秒传连接)
 - [列出保存的文件秒传信息](#列出保存的文件秒传信息)
 - [搜索保存的文件秒传信息](#搜索保存的文件秒传信息)
-- [用快速上传连接或参数上传](#用快速上传连接或参数上传)
+- [用秒传连接或参数上传](#用秒传连接或参数上传)
 
 #### 分享相关命令
 
@@ -732,7 +732,7 @@ BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
 | --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l                      |
 | --show-all, --SA                                     | 显示文件所有信息                               |
 
-## 用快速上传连接或参数上传
+## 用秒传连接或参数上传
 
 ```
 BaiduPCS-Py rp [OPTIONS] [REMOTEDIR]
@@ -741,6 +741,7 @@ BaiduPCS-Py rp [OPTIONS] [REMOTEDIR]
 使用秒传连接：
 
 ```
+# 将秒传连接指向的文件保存到远端路径 /path/to/save
 BaiduPCS-Py rp /path/to/save --link 'cs3l://ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#2518837112#33251183#test.gz'
 
 BaiduPCS-Py rp /path/to/save --link 'ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#33251183#test.gz'
