@@ -1,3 +1,3 @@
 from baidupcs_py.baidupcs import BaiduPCS, BaiduPCSApi
 
-__version__ = "0.5.19"
+__version__ = "0.6.0"
