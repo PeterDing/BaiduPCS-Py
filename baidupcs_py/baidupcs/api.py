@@ -205,7 +205,7 @@ class BaiduPCSApi:
 
     def shared_password(self, share_id: int) -> Optional[str]:
         info = self._baidupcs.shared_password(share_id)
-        p = info["pwd"]
+        p = info.get("pwd", "0")  # If "pwd" is not in info, error is 分享已过期
         if p == "0":
             return None
         return p
