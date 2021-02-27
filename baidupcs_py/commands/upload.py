@@ -276,6 +276,9 @@ def upload_file(
         remotepath,
     )
 
+    stat = Path(localpath).stat()
+    local_ctime, local_mtime = int(stat.st_ctime), int(stat.st_mtime)
+
     encrypt_io = encrypt_type.encrypt_io(open(localpath, "rb"), encrypt_password)
     # IO Length
     encrypt_io_len = total_len(encrypt_io)
@@ -315,6 +318,8 @@ def upload_file(
                 0,  # not needed
                 encrypt_io_len,
                 remotepath,
+                local_ctime=local_ctime,
+                local_mtime=local_mtime,
                 ondup=ondup,
             )
 
@@ -355,111 +360,79 @@ def upload_file(
                     _progress.reset(task_id)
 
     try:
-        if encrypt_io_len < slice_size:
-            # Upload file
-            logger.debug("`upload`: upload_file starts")
+        # Upload file slice
+        logger.debug("`upload`: upload_slice starts")
 
-            reset_encrypt_io(encrypt_io)
+        slice_md5s = []
+        reset_encrypt_io(encrypt_io)
 
-            retry(
-                30,
+        while True:
+            _wait_start()
+
+            logger.debug("`upload`: upload_slice: slice_completed: %s", slice_completed)
+
+            size = min(slice_size, encrypt_io_len - slice_completed)
+            if size == 0:
+                break
+
+            data = encrypt_io.read(size) or b""
+            io = BytesIO(data)
+
+            logger.debug(
+                "`upload`: upload_slice: size should be %s == %s", size, len(data)
+            )
+
+            # Retry upload until success
+            slice_md5 = retry(
+                -1,
                 except_callback=lambda err, fail_count: (
+                    io.seek(0, 0),
                     logger.warning(
-                        "`upload`: `upload_file`: error: %s, fail_count: %s",
+                        "`upload`: `upload_slice`: error: %s, fail_count: %s",
                         err,
                         fail_count,
                     ),
                     _wait_start(),
-                    reset_encrypt_io(encrypt_io),
                 ),
-            )(api.upload_file)(encrypt_io, remotepath, ondup=ondup, callback=callback)
+            )(api.upload_slice)(io, callback=callback_for_slice)
 
-            if content_md5 and _rapiduploadinfo_file:
-                save_rapid_upload_info(
-                    _rapiduploadinfo_file,
-                    slice256k_md5,
-                    content_md5,
-                    content_crc32,
-                    io_len,
-                    localpath=localpath,
-                    remotepath=remotepath,
-                    encrypt_password=encrypt_password,
-                    encrypt_type=encrypt_type.value,
-                    user_id=user_id,
-                    user_name=user_name,
-                )
+            slice_md5s.append(slice_md5)
+            slice_completed += size
 
-            logger.debug("`upload`: upload_file success")
-        else:
-            # Upload file slice
-            logger.debug("`upload`: upload_slice starts")
+        # Combine slices
+        retry(
+            30,
+            except_callback=lambda err, fail_count: logger.warning(
+                "`upload`: `combine_slices`: error: %s, fail_count: %s",
+                err,
+                fail_count,
+            ),
+        )(api.combine_slices)(
+            slice_md5s,
+            remotepath,
+            local_ctime=local_ctime,
+            local_mtime=local_mtime,
+            ondup=ondup,
+        )
 
-            slice_md5s = []
-            reset_encrypt_io(encrypt_io)
+        logger.debug("`upload`: upload_slice and combine_slices success")
 
-            while True:
-                _wait_start()
-
-                logger.debug(
-                    "`upload`: upload_slice: slice_completed: %s", slice_completed
-                )
-
-                size = min(slice_size, encrypt_io_len - slice_completed)
-                if size == 0:
-                    break
-
-                data = encrypt_io.read(size) or b""
-                io = BytesIO(data)
-
-                logger.debug(
-                    "`upload`: upload_slice: size should be %s == %s", size, len(data)
-                )
-
-                # Retry upload until success
-                slice_md5 = retry(
-                    -1,
-                    except_callback=lambda err, fail_count: (
-                        io.seek(0, 0),
-                        logger.warning(
-                            "`upload`: `upload_slice`: error: %s, fail_count: %s",
-                            err,
-                            fail_count,
-                        ),
-                        _wait_start(),
-                    ),
-                )(api.upload_slice)(io, callback=callback_for_slice)
-
-                slice_md5s.append(slice_md5)
-                slice_completed += size
-
-            # Combine slices
-            retry(
-                30,
-                except_callback=lambda err, fail_count: logger.warning(
-                    "`upload`: `combine_slices`: error: %s, fail_count: %s",
-                    err,
-                    fail_count,
-                ),
-            )(api.combine_slices)(slice_md5s, remotepath, ondup=ondup)
-
-            logger.debug("`upload`: upload_slice and combine_slices success")
-
-            # `combine_slices` can not get right content md5.
-            # We need to check whether server updates by hand.
-            if check_md5:
-                _check_md5(
-                    api,
-                    localpath,
-                    remotepath,
-                    slice256k_md5,
-                    content_md5,
-                    content_crc32,
-                    io_len,
-                    encrypt_password=encrypt_password,
-                    encrypt_type=encrypt_type.value,
-                    user_id=user_id,
-                    user_name=user_name,
-                )
+        # `combine_slices` can not get right content md5.
+        # We need to check whether server updates by hand.
+        if check_md5:
+            _check_md5(
+                api,
+                localpath,
+                remotepath,
+                slice256k_md5,
+                content_md5,
+                content_crc32,
+                io_len,
+                encrypt_password=encrypt_password,
+                encrypt_type=encrypt_type.value,
+                user_id=user_id,
+                user_name=user_name,
+            )
 
         if task_id is not None and progress_task_exists(task_id):
             _progress.remove_task(task_id)
