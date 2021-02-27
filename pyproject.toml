@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "BaiduPCS-Py"
 homepage = "https://github.com/PeterDing/BaiduPCS-Py"
-version = "0.6.1"
+version = "0.6.2"
 description = "Baidu Pcs App"
 authors = ["PeterDing <dfhayst@gmail.com>"]
 license = "MIT"

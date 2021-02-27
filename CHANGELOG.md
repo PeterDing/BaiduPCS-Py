@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.6.2 - 2021-02-27
+
+### Added
+
+- `rp` 命令支持 `--input-file`
+
+### Fixed
+
+- 修复打印错误
+
+### Changed
+
+- 本地储存表 `rapid_upload` 移除 `content_crc32` 作为 key。
+- 选项 `--SA` 改为 `-A`，`--hlp` 改为 `--HLP`。
+
 ## v0.6.1 - 2021-02-26
 
 ### Fixed
