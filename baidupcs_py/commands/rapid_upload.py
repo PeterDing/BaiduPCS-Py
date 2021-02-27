@@ -100,14 +100,21 @@ def _parse_link(link: str) -> Any:
     """
 
     if link.startswith("cs3l://"):
-        link = link[7:]
-
-    if link.startswith("bdpan://"):
+        chunks = link[7:].split("#", 4)
+        assert len(chunks) == 5
+    elif link.startswith("bdpan://"):
         link = b64decode(link[8:]).decode("utf-8")
-        chunks = link.split("|")
-        link = "#".join((chunks[2], chunks[3], chunks[1], chunks[0]))
+        link = link[::-1]
+        chunks = link.split("|", 3)
 
-    chunks = link.split("#")
+        assert len(chunks) == 4
+
+        chunks = [c[::-1] for c in chunks]
+        chunks = [chunks[1], chunks[0], chunks[2], chunks[3]]
+    else:
+        chunks = link.split("#", 3)
+        assert len(chunks) == 4
+
     if len(chunks) == 4:
         content_crc32 = "0"
         content_md5, slice_md5, content_length, filename = chunks
@@ -115,7 +122,9 @@ def _parse_link(link: str) -> Any:
         content_md5, slice_md5, content_crc32, content_length, filename = chunks
         content_crc32 = content_crc32 or "0"  # content_crc32 can be ''
     else:
-        return [None] * 5
+        raise RuntimeError("Here is Unreachable")
+
+    assert len(content_md5) == len(slice_md5) == 32
 
     return (slice_md5, content_md5, int(content_crc32), int(content_length), filename)
 
@@ -143,6 +152,7 @@ def rapid_upload(
         slice_md5, content_md5, content_crc32, content_length, _filename = _parse_link(
             link
         )
+        content_crc32 = content_crc32 or 0
         filename = filename or _filename
 
     remotepath = join_path(remotedir, filename)
@@ -157,7 +167,12 @@ def rapid_upload(
 
     try:
         pcs_file = api.rapid_upload_file(
-            slice_md5, content_md5, 0, content_length, remotepath, ondup="overwrite"
+            slice_md5,
+            content_md5,
+            content_crc32,
+            content_length,
+            remotepath,
+            ondup="overwrite",
         )
         if rapiduploadinfo_file:
             save_rapid_upload_info(
@@ -173,3 +188,26 @@ def rapid_upload(
         print(f"[i blue]Save to[/i blue] {pcs_file.path}")
     except Exception:
         pass
+
+
+def rapid_upload_links(
+    api: BaiduPCSApi,
+    remotedir: str,
+    links: List[str] = [],
+    no_ignore_existing: bool = False,
+    rapiduploadinfo_file: Optional[str] = None,
+    user_id: Optional[int] = None,
+    user_name: Optional[str] = None,
+):
+    """Rapid Upload multi links"""
+
+    for link in links:
+        rapid_upload(
+            api,
+            remotedir,
+            link=link,
+            no_ignore_existing=no_ignore_existing,
+            rapiduploadinfo_file=rapiduploadinfo_file,
+            user_id=user_id,
+            user_name=user_name,
+        )
