@@ -608,7 +608,7 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 
 同步本地目录到远端。
 
-如果本地文件 md5 和远端不同则上传文件。对于本地不存在的文件但远端存在则删除远端文件。
+如果本地文件最后修改时间或大小和远端不同则上传文件。对于本地不存在的文件但远端存在则删除远端文件。
 
 ```
 BaiduPCS-Py sync [OPTIONS] LOCALDIR REMOTEDIR
