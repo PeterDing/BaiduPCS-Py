@@ -27,22 +27,22 @@ class PcsRapidUploadInfo(NamedTuple):
         filename = os.path.basename(self.remotepath or "")
         return f"{self.content_md5}#{self.slice_md5}#{self.content_length}#{filename}"
 
-    def bppan(self) -> str:
+    def bdpan(self) -> str:
         """bdpan://{base64(<filename>|<content_length>|<content_md5>|<slice_md5>)}"""
 
         filename = os.path.basename(self.remotepath or "")
-        return "bppan://" + standard_b64encode(
+        return "bdpan://" + standard_b64encode(
             f"{filename}|{self.content_length}|{self.content_md5}|{self.slice_md5}".encode(
                 "utf-8"
             )
         ).decode("utf-8")
 
     def all_links(self) -> List[str]:
-        return [self.cs3l(), self.short(), self.bppan()]
+        return [self.cs3l(), self.short(), self.bdpan()]
 
     @staticmethod
     def hash_link_protocols() -> List[str]:
-        return ["cs3l", "short", "bppan"]
+        return ["cs3l", "short", "bdpan"]
 
     @staticmethod
     def default_hash_link_protocol() -> str:

@@ -418,7 +418,7 @@ BaiduPCS-Py ls relative/path
 | -A, --show-absolute-path                             | 显示文件绝对路径                                                   |
 | --show-dl-link, --DL                                 | 显示文件下载连接                                                   |
 | --show-hash-link, --HL                               | 显示文件秒传连接                                                   |
-| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | 显示文件 hash 链接，并指定协议                                     |
+| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                                     |
 | --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5。如果检查 md5 会改变文件上传时间 |
 | --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用              |
 
@@ -652,13 +652,13 @@ BaiduPCS-Py 默认使用 `cs3l` 协议连接。
 
 例如: `ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#33251183#test.gz`
 
-3. `bppan`
+3. `bdpan`
 
-`bppan` 是 pandownload 使用的协议连接。
+`bdpan` 是 pandownload 使用的协议连接。
 
 格式: `bdpan://{base64(<filename>|<content_length>|<content_md5>|<slice_md5>)}`
 
-例如: `bppan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM=`
+例如: `bdpan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM=`
 
 BaiduPCS-Py 会将在命令 `ls`，`upload`，`sync`，`rp` 中遇到的文件特征参数存储于本地 sqlite3 数据库 `~/.baidupcs-py/rapiduploadinfo.sqlite3`。使用 `rplist`，`rpsearch` 命令可以查看这些信息。
 
@@ -683,7 +683,7 @@ BaiduPCS-Py ls /path/to/file --HL
 指定特定协议：
 
 ```
-BaiduPCS-Py ls /path/to/file --show-hash-link --hash-link-protocol bppan
+BaiduPCS-Py ls /path/to/file --show-hash-link --hash-link-protocol bdpan
 ```
 
 如果连接过长，可以加选项 `--csv`，让输出变为 csv 格式。
@@ -714,7 +714,7 @@ BaiduPCS-Py rplist [OPTIONS] [IDS]...
 | -d, --desc                                           | 按逆序排序                |
 | -L, --limit INTEGER                                  | 限制列出文件个数          |
 | -O, --offset INTEGER                                 | 列出偏移位                |
-| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l |
+| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l |
 | --show-all, -A                                       | 显示文件所有信息          |
 
 ## 搜索保存的文件秒传信息
@@ -732,7 +732,7 @@ BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
 | --remotepath, --rp                                   | 在远端路径中搜索                               |
 | --username, --un                                     | 在用户名中搜索                                 |
 | -m, --md5                                            | 在 md5 中搜索。注意保存的文件 md5 都是小写字符 |
-| --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l                      |
+| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l                      |
 | --show-all, -A                                       | 显示文件所有信息                               |
 
 ## 用秒传连接或参数上传
@@ -749,7 +749,7 @@ BaiduPCS-Py rp /path/to/save --link 'cs3l://ced58db7aedce8e1c887754fccccde03#0d0
 
 BaiduPCS-Py rp /path/to/save --link 'ced58db7aedce8e1c887754fccccde03#0d02589467f34bdd86d08221e93b2783#33251183#test.gz'
 
-BaiduPCS-Py rp /path/to/save --link 'bppan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM='
+BaiduPCS-Py rp /path/to/save --link 'bdpan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM='
 ```
 
 使用特征参数：
