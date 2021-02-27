@@ -3,10 +3,11 @@ from typing_extensions import Literal
 from enum import Enum
 
 from pathlib import Path
+from urllib.parse import urlparse, quote_plus
+from base64 import standard_b64encode
 import time
 import re
 import json
-from urllib.parse import urlparse, quote_plus
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
@@ -48,10 +49,18 @@ class Method(Enum):
 
 
 class PcsNode(Enum):
+    """Pan Nodes which use pcs.baidu.com"""
+
     Quota = "rest/2.0/pcs/quota"
     File = "rest/2.0/pcs/file"
-    PcsCloud = "rest/2.0/pcs/services/cloud_dl"
-    PanCloud = "rest/2.0/services/cloud_dl"
+
+    def url(self) -> str:
+        return f"{PCS_BAIDU_COM}/{self.value}"
+
+
+class PanNode(Enum):
+    """Pan Nodes which use pan.baidu.com"""
+
     TransferShared = "share/transfer"
     Share = "share/set"
     SharedPathList = "share/list"
@@ -59,7 +68,11 @@ class PcsNode(Enum):
     SharedCancel = "share/cancel"
     SharedPassword = "share/surlinfoinrecord"
     Getcaptcha = "api/getcaptcha"
+    Cloud = "rest/2.0/services/cloud_dl"
     UserProducts = "rest/2.0/membership/user"
+
+    def url(self) -> str:
+        return f"{PAN_BAIDU_COM}/{self.value}"
 
 
 class BaiduPCS:
@@ -88,7 +101,14 @@ class BaiduPCS:
         self._bduss = bduss
         self._stoken = stoken
         self._ptoken = ptoken
-        self._bdstoken = self.bdstoken()
+        self._bdstoken = calu_md5(bduss)
+        self._logid = None
+        self._baiduid = cookies.get("BAIDUID")
+        if self._baiduid:
+            self._logid = standard_b64encode(self._baiduid.encode("ascii")).decode(
+                "utf-8"
+            )
+
         self._cookies = cookies
         self._session = requests.Session()
         self._session.cookies.update(cookies)
@@ -105,10 +125,6 @@ class BaiduPCS:
     @property
     def cookies(self) -> Dict[str, Optional[str]]:
         return self._session.cookies.get_dict()
-
-    @staticmethod
-    def _form_url(node: PcsNode, domain: str = PCS_BAIDU_COM):
-        return f"{domain}/{node.value}"
 
     @staticmethod
     def _app_id(url: str):
@@ -175,15 +191,11 @@ class BaiduPCS:
     ) -> requests.Response:
         return self._request(Method.Get, url, params=params, headers=headers)
 
-    def bdstoken(self) -> Optional[str]:
-        bdstoken = calu_md5(self._bduss)
-        return bdstoken
-
     @assert_ok
     def quota(self):
         """Quota space information"""
 
-        url = self._form_url(PcsNode.Quota)
+        url = PcsNode.Quota.url()
         params = {"method": "info"}
         resp = self._request(Method.Get, url, params=params)
         return resp.json()
@@ -230,7 +242,7 @@ class BaiduPCS:
         time: bool = False,
         size: bool = False,
     ):
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         orderby = None
         if name:
             orderby = "name"
@@ -259,10 +271,15 @@ class BaiduPCS:
         ondup="overwrite",
         callback: Callable[[MultipartEncoderMonitor], None] = None,
     ):
+        """Upload the content of io to remotepath
+
+        WARNING: This api can not set local_ctime and local_mtime
+        """
+
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
         remotePath = Path(remotepath)
 
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {
             "method": "upload",
             "ondup": ondup,
@@ -285,6 +302,8 @@ class BaiduPCS:
         content_crc32: int,  # not needed
         io_len: int,
         remotepath: str,
+        local_ctime: Optional[int] = None,
+        local_mtime: Optional[int] = None,
         ondup="overwrite",
     ):
         """Rapid Upload File
@@ -299,7 +318,7 @@ class BaiduPCS:
 
         assert remotepath.startswith("/"), "`remotepath` must be an absolute path"
 
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {
             "method": "rapidupload",
             "BDUSS": self._bduss,
@@ -310,6 +329,8 @@ class BaiduPCS:
             "content-md5": content_md5,
             "slice-md5": slice_md5,
             "content-crc32": content_crc32,
+            "local_ctime": str(local_ctime or int(time.time())),
+            "local_mtime": str(local_mtime or int(time.time())),
             "ondup": ondup,
         }
 
@@ -324,7 +345,7 @@ class BaiduPCS:
     def upload_slice(
         self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None
     ):
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {
             "method": "upload",
             "type": "tmpfile",
@@ -338,21 +359,32 @@ class BaiduPCS:
         return resp.json()
 
     @assert_ok
-    def combine_slices(self, slice_md5s: List[str], remotepath: str, ondup="overwrite"):
-        url = self._form_url(PcsNode.File)
+    def combine_slices(
+        self,
+        slice_md5s: List[str],
+        remotepath: str,
+        local_ctime: Optional[int] = None,
+        local_mtime: Optional[int] = None,
+        ondup="overwrite",
+    ):
+        url = PcsNode.File.url()
         params = {
             "method": "createsuperfile",
             "path": remotepath,
             "ondup": ondup,
             "BDUSS": self._bduss,
         }
-        data = {"param": dump_json({"block_list": slice_md5s})}
+        data = {
+            "param": dump_json({"block_list": slice_md5s}),
+            "local_ctime": str(local_ctime or int(time.time())),
+            "local_mtime": str(local_mtime or int(time.time())),
+        }
         resp = self._request(Method.Post, url, params=params, data=data)
         return resp.json()
 
     @assert_ok
     def search(self, keyword: str, remotepath: str, recursive: bool = False):
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {
             "method": "search",
             "path": remotepath,
@@ -364,7 +396,7 @@ class BaiduPCS:
 
     @assert_ok
     def makedir(self, directory: str):
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {
             "method": "mkdir",
             "path": directory,
@@ -373,7 +405,7 @@ class BaiduPCS:
         return resp.json()
 
     def file_operate(self, operate: str, param: List[Dict[str, str]]):
-        url = self._form_url(PcsNode.File)
+        url = PcsNode.File.url()
         params = {"method": operate}
         data = {"param": dump_json({"list": param})}
         resp = self._request(Method.Post, url, params=params, data=data)
@@ -457,7 +489,7 @@ class BaiduPCS:
 
     @assert_ok
     def cloud_operate(self, params: Dict[str, str]):
-        url = self._form_url(PcsNode.PanCloud, domain=PAN_BAIDU_COM)
+        url = PanNode.Cloud.url()
         resp = self._request(Method.Get, url, params=params)
         return resp.json()
 
@@ -528,12 +560,12 @@ class BaiduPCS:
         meta = self.meta(*remotepaths)
         fs_ids = [i["fs_id"] for i in meta["list"]]
 
-        url = self._form_url(PcsNode.Share, domain=PAN_BAIDU_COM)
+        url = PanNode.Share.url()
         params = {
             "channel": "chunlei",
             "clienttype": "0",
             "web": "1",
-            "bdstoken": self.bdstoken() or "",
+            "bdstoken": self._bdstoken,
         }
         data = {
             "fid_list": dump_json(fs_ids),
@@ -560,7 +592,7 @@ class BaiduPCS:
             - 4, with password
         """
 
-        url = self._form_url(PcsNode.SharedRecord, domain=PAN_BAIDU_COM)
+        url = PanNode.SharedRecord.url()
         params = {
             "page": str(page),
             "desc": "1",
@@ -575,7 +607,7 @@ class BaiduPCS:
         Only return password
         """
 
-        url = self._form_url(PcsNode.SharedPassword, domain=PAN_BAIDU_COM)
+        url = PanNode.SharedPassword.url()
         params = {
             "shareid": str(share_id),
             "sign": calu_md5(f"{share_id}_sharesurlinfo!@#"),
@@ -585,7 +617,7 @@ class BaiduPCS:
 
     @assert_ok
     def cancel_shared(self, *share_ids: int):
-        url = self._form_url(PcsNode.SharedCancel, domain=PAN_BAIDU_COM)
+        url = PanNode.SharedCancel.url()
         data = {
             "shareid_list": dump_json(share_ids),
         }
@@ -627,7 +659,7 @@ class BaiduPCS:
 
     @assert_ok
     def getcaptcha(self, shared_url: str) -> str:
-        url = self._form_url(PcsNode.Getcaptcha, domain=PAN_BAIDU_COM)
+        url = PanNode.Getcaptcha.url()
         params = {
             "prod": "shareverify",
             "channel": "chunlei",
@@ -670,7 +702,7 @@ class BaiduPCS:
     def list_shared_paths(self, sharedpath: str, uk: int, share_id: int):
         assert self._stoken, "`STOKEN` is not in `cookies`"
 
-        url = self._form_url(PcsNode.SharedPathList, domain=PAN_BAIDU_COM)
+        url = PanNode.SharedPathList.url()
         params = {
             "channel": "chunlei",
             "clienttype": "0",
@@ -700,7 +732,7 @@ class BaiduPCS:
     ):
         """`remotedir` must exist"""
 
-        url = self._form_url(PcsNode.TransferShared, domain=PAN_BAIDU_COM)
+        url = PanNode.TransferShared.url()
         params = {
             "shareid": str(share_id),
             "from": str(uk),
@@ -791,7 +823,7 @@ class BaiduPCS:
 
     @assert_ok
     def user_products(self):
-        url = self._form_url(PcsNode.UserProducts, domain=PAN_BAIDU_COM)
+        url = PanNode.UserProducts.url()
         params = {
             "method": "query",
         }
@@ -826,7 +858,7 @@ class BaiduPCS:
             enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid
         )
 
-        url = self._form_url(PcsNode.File, domain=PCS_BAIDU_COM)
+        url = PcsNode.File.url()
         params = {
             "method": "locatedownload",
             "ver": "2",
@@ -871,7 +903,7 @@ class BaiduPCS:
     def m3u8_stream(self, remotepath: str, type: M3u8Type = "M3U8_AUTO_720"):
         """Get content of the m3u8 stream file"""
 
-        url = self._form_url(PcsNode.File, domain=PCS_BAIDU_COM)
+        url = PcsNode.File.url()
         params = {
             "method": "streaming",
             "path": remotepath,
