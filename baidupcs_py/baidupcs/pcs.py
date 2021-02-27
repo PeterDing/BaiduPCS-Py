@@ -5,13 +5,13 @@ from enum import Enum
 from pathlib import Path
 from urllib.parse import urlparse, quote_plus
 from base64 import standard_b64encode
-import time
 import re
 import json
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
+from baidupcs_py.common.date import now_timestamp
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.common.cache import timeout_cache
 from baidupcs_py.common.crypto import calu_md5, calu_sha1
@@ -323,14 +323,17 @@ class BaiduPCS:
             "method": "rapidupload",
             "BDUSS": self._bduss,
         }
+
+        ntp = now_timestamp()
+
         data = {
             "path": remotepath,
             "content-length": io_len,
             "content-md5": content_md5,
             "slice-md5": slice_md5,
             "content-crc32": content_crc32,
-            "local_ctime": str(local_ctime or int(time.time())),
-            "local_mtime": str(local_mtime or int(time.time())),
+            "local_ctime": str(local_ctime or ntp),
+            "local_mtime": str(local_mtime or ntp),
             "ondup": ondup,
         }
 
@@ -374,10 +377,13 @@ class BaiduPCS:
             "ondup": ondup,
             "BDUSS": self._bduss,
         }
+
+        ntp = now_timestamp()
+
         data = {
             "param": dump_json({"block_list": slice_md5s}),
-            "local_ctime": str(local_ctime or int(time.time())),
-            "local_mtime": str(local_mtime or int(time.time())),
+            "local_ctime": str(local_ctime or ntp),
+            "local_mtime": str(local_mtime or ntp),
         }
         resp = self._request(Method.Post, url, params=params, data=data)
         return resp.json()
@@ -638,7 +644,7 @@ class BaiduPCS:
         init_url = self.shared_init_url(shared_url)
         params = {
             "surl": init_url.split("surl=")[-1],
-            "t": str(int(time.time() * 1000)),
+            "t": str(now_timestamp() * 1000),
             "channel": "chunlei",
             "web": "1",
             "bdstoken": "null",
@@ -709,12 +715,12 @@ class BaiduPCS:
             "web": "1",
             "num": "10000",
             "dir": sharedpath,
-            "t": str(int(time.time() * 1000)),
+            "t": str(now_timestamp() * 1000),
             "uk": str(uk),
             "shareid": str(share_id),
             # 'desc': 1,   ## reversely
             "order": "name",  # sort by name, or size, time
-            "_": str(int(time.time() * 1000)),
+            "_": str(now_timestamp() * 1000),
             # 'bdstoken': self._get_bdstoken()
         }
         resp = self._request(Method.Get, url, params=params)
@@ -757,7 +763,7 @@ class BaiduPCS:
     @assert_ok
     def user_info(self):
         bduss = self._bduss
-        timestamp = str(int(time.time()))
+        timestamp = str(now_timestamp())
         model = get_phone_model(bduss)
         phoneIMEIStr = sum_IMEI(bduss)
 
@@ -815,7 +821,7 @@ class BaiduPCS:
             "Cookie": "ka=open",
             "net": "1",
             "User-Agent": "bdtb for Android 6.9.2.1",
-            "client_logid": str(int(time.time() * 1000)),
+            "client_logid": str(now_timestamp() * 1000),
             "Connection": "Keep-Alive",
         }
         resp = requests.get(url, headers=headers, params=None)
@@ -850,7 +856,7 @@ class BaiduPCS:
         bduss = self._bduss
         uid = str(self._user_id) or ""
 
-        timestamp = str(int(time.time() * 1000))
+        timestamp = str(now_timestamp() * 1000)
         devuid = "0|" + calu_md5(bduss).upper()
 
         enc = calu_sha1(bduss)
