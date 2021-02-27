@@ -40,11 +40,32 @@ class BaiduPCSApi:
         )
 
     @property
+    def bduss(self) -> str:
+        return self._baidupcs._bduss
+
+    @property
+    def bdstoken(self) -> str:
+        return self._baidupcs._bdstoken
+
+    @property
+    def stoken(self) -> Optional[str]:
+        return self._baidupcs._stoken
+
+    @property
+    def ptoken(self) -> Optional[str]:
+        return self._baidupcs._ptoken
+
+    @property
+    def baiduid(self) -> Optional[str]:
+        return self._baidupcs._baiduid
+
+    @property
+    def logid(self) -> Optional[str]:
+        return self._baidupcs._logid
+
+    @property
     def cookies(self) -> Dict[str, Optional[str]]:
         return self._baidupcs.cookies
-
-    def bdstoken(self) -> Optional[str]:
-        return self._baidupcs.bdstoken()
 
     def quota(self) -> PcsQuota:
         info = self._baidupcs.quota()
@@ -95,6 +116,8 @@ class BaiduPCSApi:
         content_crc32: int,  # not needed
         io_len: int,
         remotepath: str,
+        local_ctime: Optional[int] = None,
+        local_mtime: Optional[int] = None,
         ondup="overwrite",
     ) -> PcsFile:
         """Rapid Upload File
@@ -108,7 +131,14 @@ class BaiduPCSApi:
         """
 
         info = self._baidupcs.rapid_upload_file(
-            slice_md5, content_md5, content_crc32, io_len, remotepath, ondup=ondup
+            slice_md5,
+            content_md5,
+            content_crc32,
+            io_len,
+            remotepath,
+            local_ctime=local_ctime,
+            local_mtime=local_mtime,
+            ondup=ondup,
         )
         return PcsFile.from_(info)
 
@@ -119,9 +149,20 @@ class BaiduPCSApi:
         return info["md5"]
 
     def combine_slices(
-        self, slice_md5s: List[str], remotepath: str, ondup="overwrite"
+        self,
+        slice_md5s: List[str],
+        remotepath: str,
+        local_ctime: Optional[int] = None,
+        local_mtime: Optional[int] = None,
+        ondup="overwrite",
     ) -> PcsFile:
-        info = self._baidupcs.combine_slices(slice_md5s, remotepath, ondup=ondup)
+        info = self._baidupcs.combine_slices(
+            slice_md5s,
+            remotepath,
+            local_ctime=local_ctime,
+            local_mtime=local_mtime,
+            ondup=ondup,
+        )
         return PcsFile.from_(info)
 
     def search(
