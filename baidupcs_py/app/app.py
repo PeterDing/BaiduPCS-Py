@@ -41,6 +41,7 @@ from baidupcs_py.commands.rapid_upload import (
     rapid_upload_search,
     rapid_upload_delete,
     rapid_upload,
+    rapid_upload_links,
 )
 from baidupcs_py.commands.cat import cat as _cat
 from baidupcs_py.commands import file_operators
@@ -1224,7 +1225,7 @@ def sync(
 @click.option("--username", "-n", is_flag=True, help="按用户名排序")
 @click.option("--desc", "-d", is_flag=True, help="按逆序排序")
 @click.option("--limit", "-L", type=int, default=-1, help="限制列出文件个数")
-@click.option("--offset", "-O", type=int, default=-1, help="列出偏移为")
+@click.option("--offset", "-O", type=int, default=-1, help="列出偏移位")
 @click.option(
     "--hash-link-protocol",
     "--hlp",
@@ -1232,7 +1233,7 @@ def sync(
     default=PcsRapidUploadInfo.default_hash_link_protocol(),
     help="hash link 协议，默认 cs3l",
 )
-@click.option("--show-all", "--SA", is_flag=True, help="显示文件所有信息")
+@click.option("--show-all", "-A", is_flag=True, help="显示文件所有信息")
 @click.pass_context
 @handle_error
 def rplist(
@@ -1278,15 +1279,15 @@ def rplist(
 @click.option("--localpath", "--lp", is_flag=True, help="在本地路径中搜索")
 @click.option("--remotepath", "--rp", is_flag=True, help="在远端路径中搜索")
 @click.option("--username", "--un", is_flag=True, help="在用户名中搜索")
-@click.option("--md5", "-m", is_flag=True, help="在md5中搜索。注意保存的文件md5都是小写字符")
+@click.option("--md5", "-m", is_flag=True, help="在md5中搜索；注意保存的文件md5都是小写字符")
 @click.option(
     "--hash-link-protocol",
     "--hlp",
     type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
     default=PcsRapidUploadInfo.default_hash_link_protocol(),
-    help="hash link 协议",
+    help="hash link 协议，默认 cs3l",
 )
-@click.option("--show-all", "--SA", is_flag=True, help="显示文件所有信息")
+@click.option("--show-all", "-A", is_flag=True, help="显示文件所有信息")
 @click.pass_context
 @handle_error
 def rpsearch(
@@ -1329,7 +1330,8 @@ def rpdelete(ctx, ids):
 
 @app.command()
 @click.argument("remotedir", nargs=1, default="", type=str)
-@click.option("--link", "-l", type=str, help="cs3l:// 协议连接 或 简化连接")
+@click.option("--link", "-l", type=str, help="秒传连接")
+@click.option("--input-file", "-i", type=str, help="从指定文件获取要使用的秒传连接；只能是一行一个秒传连接")
 @click.option("--slice-md5", "--sm", type=str, help="文件前 256KB md5")
 @click.option("--content-md5", "--cm", type=str, help="文件 md5")
 @click.option("--content-crc32", "--cc", type=int, help="文件 crc32, 可以为空")
@@ -1343,6 +1345,7 @@ def rp(
     ctx,
     remotedir,
     link,
+    input_file,
     slice_md5,
     content_md5,
     content_crc32,
@@ -1352,6 +1355,7 @@ def rp(
 ):
     """用秒传连接或参数上传
 
+    如果设置了 --input-file，将会忽略 `--link` 和 指定的特征参数。
     如果设置了 --link，那么其他参数都不需要了。
     如果设置了 --filename，将会覆盖 link 中的文件名。
     """
@@ -1369,20 +1373,33 @@ def rp(
 
     user_id, user_name = _recent_user_id_and_name(ctx)
 
-    rapid_upload(
-        api,
-        remotedir,
-        link=link,
-        slice_md5=slice_md5,
-        content_md5=content_md5,
-        content_crc32=content_crc32,
-        content_length=content_length,
-        filename=filename,
-        no_ignore_existing=no_ignore_existing,
-        rapiduploadinfo_file=rapiduploadinfo_file,
-        user_id=user_id,
-        user_name=user_name,
-    )
+    if input_file and os.path.exists(input_file):
+        lines = open(input_file).readlines()
+        links = [line.strip() for line in lines if line.strip()]
+        rapid_upload_links(
+            api,
+            remotedir,
+            links=links,
+            no_ignore_existing=no_ignore_existing,
+            rapiduploadinfo_file=rapiduploadinfo_file,
+            user_id=user_id,
+            user_name=user_name,
+        )
+    else:
+        rapid_upload(
+            api,
+            remotedir,
+            link=link,
+            slice_md5=slice_md5,
+            content_md5=content_md5,
+            content_crc32=content_crc32,
+            content_length=content_length,
+            filename=filename,
+            no_ignore_existing=no_ignore_existing,
+            rapiduploadinfo_file=rapiduploadinfo_file,
+            user_id=user_id,
+            user_name=user_name,
+        )
 
 
 # }}}
@@ -1415,7 +1432,7 @@ def share(ctx, remotepaths, password):
 
 
 @app.command()
-@click.option("--show-all", "-S", is_flag=True, help="显示所有分享的链接，默认只显示有效的分享链接")
+@click.option("--show-all", "-A", is_flag=True, help="显示所有分享的链接，默认只显示有效的分享链接")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1546,7 +1563,7 @@ def canceltasks(ctx, task_ids):
 
 
 @app.command()
-@click.option("--yes", is_flag=True, help="确定直接运行")
+@click.option("--yes", is_flag=True, help="确认并直接运行")
 @click.pass_context
 @handle_error
 @multi_user_do
