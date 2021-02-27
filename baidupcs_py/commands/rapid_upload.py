@@ -126,6 +126,7 @@ def _parse_link(link: str) -> Any:
 
     assert len(content_md5) == len(slice_md5) == 32
 
+    filename = filename.replace("%20", " ")
     return (slice_md5, content_md5, int(content_crc32), int(content_length), filename)
 
 

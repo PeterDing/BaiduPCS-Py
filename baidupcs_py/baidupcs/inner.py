@@ -15,22 +15,29 @@ class PcsRapidUploadInfo(NamedTuple):
     content_length: int
     remotepath: Optional[str] = None
 
+    def _filename(self) -> str:
+        filename = os.path.basename(self.remotepath or "")
+        if not filename:
+            return ""
+        else:
+            return filename.replace(" ", "%20")
+
     def cs3l(self) -> str:
         """cs3l://<content_md5>#<slice_md5>#<content_crc32>#<content_length>#<filename>"""
 
-        filename = os.path.basename(self.remotepath or "")
+        filename = self._filename()
         return f"cs3l://{self.content_md5}#{self.slice_md5}#{self.content_crc32}#{self.content_length}#{filename}"
 
     def short(self) -> str:
         """<content_md5>#<slice_md5>#<content_length>#<filename>"""
 
-        filename = os.path.basename(self.remotepath or "")
+        filename = self._filename()
         return f"{self.content_md5}#{self.slice_md5}#{self.content_length}#{filename}"
 
     def bdpan(self) -> str:
         """bdpan://{base64(<filename>|<content_length>|<content_md5>|<slice_md5>)}"""
 
-        filename = os.path.basename(self.remotepath or "")
+        filename = self._filename()
         return "bdpan://" + standard_b64encode(
             f"{filename}|{self.content_length}|{self.content_md5}|{self.slice_md5}".encode(
                 "utf-8"
