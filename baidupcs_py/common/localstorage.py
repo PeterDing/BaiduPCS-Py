@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS {RAPID_UPLOAD_TABLE}
 
     record_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(slice_md5, content_md5, content_crc32, content_length, filename)
+    UNIQUE(slice_md5, content_md5, content_length, filename)
 )
 """
 
