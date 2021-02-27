@@ -531,7 +531,7 @@ def pwd(ctx):
 @click.option("--show-hash-link", "--HL", is_flag=True, help="显示文件秒传连接")
 @click.option(
     "--hash-link-protocol",
-    "--hlp",
+    "--HLP",
     type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
     default=PcsRapidUploadInfo.default_hash_link_protocol(),
     help="显示文件hash链接，并指定协议",
@@ -1228,7 +1228,7 @@ def sync(
 @click.option("--offset", "-O", type=int, default=-1, help="列出偏移位")
 @click.option(
     "--hash-link-protocol",
-    "--hlp",
+    "--HLP",
     type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
     default=PcsRapidUploadInfo.default_hash_link_protocol(),
     help="hash link 协议，默认 cs3l",
@@ -1282,7 +1282,7 @@ def rplist(
 @click.option("--md5", "-m", is_flag=True, help="在md5中搜索；注意保存的文件md5都是小写字符")
 @click.option(
     "--hash-link-protocol",
-    "--hlp",
+    "--HLP",
     type=click.Choice(PcsRapidUploadInfo.hash_link_protocols()),
     default=PcsRapidUploadInfo.default_hash_link_protocol(),
     help="hash link 协议，默认 cs3l",

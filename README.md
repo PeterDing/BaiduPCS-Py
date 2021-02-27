@@ -418,7 +418,7 @@ BaiduPCS-Py ls relative/path
 | -A, --show-absolute-path                             | 显示文件绝对路径                                                   |
 | --show-dl-link, --DL                                 | 显示文件下载连接                                                   |
 | --show-hash-link, --HL                               | 显示文件秒传连接                                                   |
-| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                                     |
+| --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                                     |
 | --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5。如果检查 md5 会改变文件上传时间 |
 | --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用              |
 
@@ -714,7 +714,7 @@ BaiduPCS-Py rplist [OPTIONS] [IDS]...
 | -d, --desc                                           | 按逆序排序                |
 | -L, --limit INTEGER                                  | 限制列出文件个数          |
 | -O, --offset INTEGER                                 | 列出偏移位                |
-| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l |
+| --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l |
 | --show-all, -A                                       | 显示文件所有信息          |
 
 ## 搜索保存的文件秒传信息
@@ -732,7 +732,7 @@ BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
 | --remotepath, --rp                                   | 在远端路径中搜索                               |
 | --username, --un                                     | 在用户名中搜索                                 |
 | -m, --md5                                            | 在 md5 中搜索。注意保存的文件 md5 都是小写字符 |
-| --hash-link-protocol, --hlp [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l                      |
+| --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l                      |
 | --show-all, -A                                       | 显示文件所有信息                               |
 
 ## 用秒传连接或参数上传
