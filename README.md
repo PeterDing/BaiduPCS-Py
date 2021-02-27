@@ -585,7 +585,7 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 
 上传一些本地文件或目录到网盘目录。
 
-BaiduPCS-Py 首先会尝试快速上传。如果快速上传失败，会使用分片上传上传文件。
+BaiduPCS-Py 首先会尝试秒传。如果秒传失败，会使用分片上传上传文件。
 
 上传过程中，按 “p” 可以暂停或继续上传。
 
@@ -713,9 +713,9 @@ BaiduPCS-Py rplist [OPTIONS] [IDS]...
 | -n, --username                                       | 按用户名排序              |
 | -d, --desc                                           | 按逆序排序                |
 | -L, --limit INTEGER                                  | 限制列出文件个数          |
-| -O, --offset INTEGER                                 | 列出偏移为                |
+| -O, --offset INTEGER                                 | 列出偏移位                |
 | --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l |
-| --show-all, --SA                                     | 显示文件所有信息          |
+| --show-all, -A                                       | 显示文件所有信息          |
 
 ## 搜索保存的文件秒传信息
 
@@ -733,7 +733,7 @@ BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
 | --username, --un                                     | 在用户名中搜索                                 |
 | -m, --md5                                            | 在 md5 中搜索。注意保存的文件 md5 都是小写字符 |
 | --hash-link-protocol, --hlp [cs3l \| short \| bppan] | hash link 协议, 默认 cs3l                      |
-| --show-all, --SA                                     | 显示文件所有信息                               |
+| --show-all, -A                                       | 显示文件所有信息                               |
 
 ## 用秒传连接或参数上传
 
@@ -800,7 +800,7 @@ BaiduPCS-Py shared
 
 | Option         | Description                                  |
 | -------------- | -------------------------------------------- |
-| -S, --show-all | 显示所有分享的链接，默认只显示有效的分享链接 |
+| -A, --show-all | 显示所有分享的链接，默认只显示有效的分享链接 |
 
 ## 取消分享链接
 
@@ -861,9 +861,9 @@ BaiduPCS-Py purgetasks
 
 ### 选项
 
-| Option | Description  |
-| ------ | ------------ |
-| --yes  | 确定直接运行 |
+| Option | Description    |
+| ------ | -------------- |
+| --yes  | 确认并直接运行 |
 
 ## 开启 HTTP 服务
 
