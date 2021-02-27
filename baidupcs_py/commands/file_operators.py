@@ -1,4 +1,4 @@
-from baidupcs_py.baidupcs import BaiduPCSApi
+from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.commands.display import display_files, display_from_to
 
 
@@ -34,4 +34,8 @@ def copy(api: BaiduPCSApi, *remotepaths: str, show: bool = False):
 
 
 def remove(api: BaiduPCSApi, *remotepaths: str):
-    api.remove(*remotepaths)
+    try:
+        api.remove(*remotepaths)
+    except BaiduPCSError as err:
+        if err.error_code != 31066:
+            raise err
