@@ -1,17 +1,17 @@
 from typing import Optional, List, Tuple, Union
 from pathlib import Path
-from threading import Semaphore
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsFile, FromTo
 from baidupcs_py.common.path import walk, join_path
 from baidupcs_py.common.crypto import calu_file_md5
-from baidupcs_py.common.concurrent import sure_release
 from baidupcs_py.common.constant import CPU_NUM
 from baidupcs_py.common.io import EncryptType
 from baidupcs_py.commands.upload import upload as _upload, DEFAULT_SLICE_SIZE
+from baidupcs_py.commands.log import get_logger
 
 from rich import print
+
+logger = get_logger(__name__)
 
 
 def recursive_list(api: BaiduPCSApi, remotedir: Union[str, PcsFile]) -> List[PcsFile]:
@@ -75,20 +75,41 @@ def sync(
         else:
             check_list.append((localpath, all_pcs_files[path]))
 
-    # Compare localpath content md5 with remotepath content md5
-    semaphore = Semaphore(max_workers)
-    with ThreadPoolExecutor(max_workers=CPU_NUM) as executor:
-        tasks = {}
-        for lp, pf in check_list:
-            semaphore.acquire()
-            fut = executor.submit(sure_release, semaphore, check_file_md5, lp, pf)
-            tasks[fut] = (lp, pf)
+    for lp, pf in check_list:
+        lstat = Path(lp).stat()
+        if int(lstat.st_mtime) != pf.local_mtime or lstat.st_size != pf.size:
+            fts.append(FromTo(lp, pf.path))
 
-        for fut in as_completed(tasks):
-            is_equal = fut.result()
-            lp, pf = tasks[fut]
-            if not is_equal:
-                fts.append(FromTo(lp, pf.path))
+    to_deletes = []
+    for rp in all_pcs_files.keys():
+        if rp not in all_localpaths:
+            to_deletes.append(all_pcs_files[rp].path)
+
+    logger.debug(
+        "`sync`: all localpaths: %s, "
+        "localpaths needed to upload: %s, "
+        "remotepaths needed to delete: %s",
+        len(all_localpaths),
+        len(fts),
+        len(to_deletes),
+    )
+
+    # The md5 of remote file is incorrect at most time, so we don't compare md5
+    #
+    # # Compare localpath content md5 with remotepath content md5
+    # semaphore = Semaphore(max_workers)
+    # with ThreadPoolExecutor(max_workers=CPU_NUM) as executor:
+    #     tasks = {}
+    #     for lp, pf in check_list:
+    #         semaphore.acquire()
+    #         fut = executor.submit(sure_release, semaphore, check_file_md5, lp, pf)
+    #         tasks[fut] = (lp, pf)
+    #
+    #     for fut in as_completed(tasks):
+    #         is_equal = fut.result()
+    #         lp, pf = tasks[fut]
+    #         if not is_equal:
+    #             fts.append(FromTo(lp, pf.path))
 
     _upload(
         api,
@@ -104,11 +125,6 @@ def sync(
         user_name=user_name,
         check_md5=check_md5,
     )
-
-    to_deletes = []
-    for rp in all_pcs_files.keys():
-        if rp not in all_localpaths:
-            to_deletes.append(all_pcs_files[rp].path)
 
     if to_deletes:
         api.remove(*to_deletes)
