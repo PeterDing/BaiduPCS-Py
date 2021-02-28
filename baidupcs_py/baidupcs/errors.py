@@ -102,9 +102,12 @@ ERRORS = {
     31299: "服务器返回值KEY不存在",
     31304: "file type is not supported",
     31341: "be transcoding, please wait and retry",
+    31326: "user is not authorized, hitcode:117",  # Hit when request download link
+    31626: "user is not authorized, hitcode:122",  # Hit when request download link
     36001: "离线下载错误",
     36032: "hit sexy spam",
     36037: "source url not support",
+    100001: "文件被封",
 }
 
 UNKNOWN_ERROR = "未知错误"
