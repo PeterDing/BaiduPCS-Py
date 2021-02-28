@@ -11,6 +11,7 @@ from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.download import USER_AGENT
 from baidupcs_py.commands.errors import CommandError
+from baidupcs_py.commands.display import display_blocked_remotepath
 
 _print = print
 
@@ -191,6 +192,9 @@ def play_file(
 
     print(f"[italic blue]Play[/italic blue]: {remotepath} {'(m3u8)' if m3u8 else ''}")
 
+    # For typing
+    url: Optional[str] = None
+
     if m3u8:
         m3u8_cn = api.m3u8_stream(remotepath)
         with open(DEFAULT_TEMP_M3U8, "w") as fd:
@@ -198,11 +202,15 @@ def play_file(
         url = DEFAULT_TEMP_M3U8
 
     use_local_server = bool(local_server)
+
     if use_local_server:
         url = f"{local_server}{remotepath}"
         print("url:", url)
     else:
         url = api.download_link(remotepath)
+        if not url:
+            display_blocked_remotepath(remotepath)
+            return
 
     player.play(
         url,

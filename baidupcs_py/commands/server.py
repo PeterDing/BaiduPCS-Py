@@ -88,16 +88,18 @@ async def handle_request(
         )
         return HTMLResponse(cn)
     else:
-        while True:
-            try:
-                range_request_io = _api.file_stream(
-                    _rp, encrypt_password=_encrypt_password
-                )
-                length = len(range_request_io)
-                break
-            except Exception as err:
-                print("Error:", err)
-                await asyncio.sleep(1)
+        try:
+            fs = _api.file_stream(_rp, encrypt_password=_encrypt_password)
+        except Exception as err:
+            print("Error:", err)
+            raise HTTPException(
+                status_code=500, detail=f"Error: {err}, remotepath: {_rp}"
+            )
+
+        if not fs:
+            raise HTTPException(status_code=404, detail=f"No download link: {_rp}")
+
+        length = len(fs)
 
         headers: Dict[str, str] = {
             "accept-ranges": "bytes",
@@ -111,18 +113,18 @@ async def handle_request(
         if content_type:
             headers["content-type"] = content_type
 
-        if _range and range_request_io.seekable():
+        if _range and fs.seekable():
             assert _range.startswith("bytes=")
 
             status_code = 206
             start, end = _range[6:].split("-")
             _s, _e = int(start or 0), int(end or length - 1) + 1
-            _iter_io = fake_io(range_request_io, _s, _e)
+            _iter_io = fake_io(fs, _s, _e)
             headers["content-range"] = f"bytes {_s}-{_e-1}/{length}"
             headers["content-length"] = str(_e - _s)
         else:
             status_code = 200
-            _iter_io = fake_io(range_request_io)
+            _iter_io = fake_io(fs)
             headers["content-length"] = str(length)
         return StreamingResponse(_iter_io, status_code=status_code, headers=headers)
 

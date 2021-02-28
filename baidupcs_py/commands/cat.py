@@ -2,6 +2,7 @@ from typing import Optional
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.common.io import DEFAULT_MAX_CHUNK_SIZE
+from baidupcs_py.commands.display import display_blocked_remotepath
 
 import chardet
 
@@ -13,8 +14,12 @@ def cat(
     encoding: Optional[str] = None,
     encrypt_password: bytes = b"",
 ):
-    rangeRequestIO = api.file_stream(remotepath, encrypt_password=encrypt_password)
-    cn = rangeRequestIO.read()
+    fs = api.file_stream(remotepath, encrypt_password=encrypt_password)
+    if not fs:
+        display_blocked_remotepath(remotepath)
+        return
+
+    cn = fs.read()
     if cn:
         if encoding:
             print(cn.decode(encoding))
