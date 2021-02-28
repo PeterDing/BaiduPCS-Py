@@ -1,6 +1,8 @@
 from typing import Optional, Dict, List, Tuple, Callable, IO
 
+import time
 from io import BytesIO
+
 from baidupcs_py.common import constant
 from baidupcs_py.common.crypto import calu_md5
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
@@ -62,6 +64,10 @@ class BaiduPCSApi:
     @property
     def logid(self) -> Optional[str]:
         return self._baidupcs._logid
+
+    @property
+    def user_id(self) -> Optional[int]:
+        return self._baidupcs._user_id
 
     @property
     def cookies(self) -> Dict[str, Optional[str]]:
@@ -381,12 +387,8 @@ class BaiduPCSApi:
         level = info["level_info"]["current_level"]
         return pds, level
 
-    def download_link(self, remotepath: str, pcs: bool = False) -> str:
-        info = self._baidupcs.download_link(remotepath, pcs=pcs)
-        assert bool(
-            info.get("urls")
-        ), "Remote entry should be blocked. Server returns no download link."
-        return info["urls"][0]["url"]
+    def download_link(self, remotepath: str, pcs: bool = False) -> Optional[str]:
+        return self._baidupcs.download_link(remotepath, pcs=pcs)
 
     def file_stream(
         self,
@@ -395,7 +397,7 @@ class BaiduPCSApi:
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
         pcs: bool = False,
-    ) -> RangeRequestIO:
+    ) -> Optional[RangeRequestIO]:
         return self._baidupcs.file_stream(
             remotepath,
             max_chunk_size=max_chunk_size,
@@ -421,7 +423,9 @@ class BaiduPCSApi:
         if content_length < 256 * constant.OneK:
             return None
 
-        fs = self.file_stream(remotepath, pcs=True)
+        fs = self.file_stream(remotepath, pcs=False)
+        if not fs:
+            return None
 
         data = fs.read(256 * constant.OneK)
         assert data and len(data) == 256 * constant.OneK
@@ -457,9 +461,14 @@ class BaiduPCSApi:
                     content_crc32,
                     content_length,
                     pcs_file.path,
+                    local_ctime=pcs_file.local_ctime,
+                    local_mtime=pcs_file.local_mtime,
                     ondup="overwrite",
                 )
-            except Exception:
+            except BaiduPCSError as err:
+                # 31079: "未找到文件MD5"
+                if err.error_code != 31079:
+                    raise err
                 return None
 
         return PcsRapidUploadInfo(

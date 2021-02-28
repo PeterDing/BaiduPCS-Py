@@ -7,6 +7,7 @@ from urllib.parse import urlparse, quote_plus
 from base64 import standard_b64encode
 import re
 import json
+import time
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
@@ -836,46 +837,55 @@ class BaiduPCS:
         resp = self._request(Method.Get, url, params=params)
         return resp.json()
 
-    @assert_ok
     @timeout_cache(1 * 60 * 60)  # 1 hour timeout
-    def download_link(self, remotepath: str, pcs: bool = False):
+    def download_link(self, remotepath: str, pcs: bool = False) -> Optional[str]:
         if pcs:
-            return {
-                "errno": 0,
-                "urls": [
-                    {
-                        "url": (
-                            "http://c.pcs.baidu.com/rest/2.0/pcs/file"
-                            f"?method=download&app_id={PCS_APP_ID}&path={quote_plus(remotepath)}"
-                            "&ver=2.0&clienttype=1"
-                        )
-                    }
-                ],
-            }
+            return (
+                "http://c.pcs.baidu.com/rest/2.0/pcs/file"
+                f"?method=download&app_id={PCS_APP_ID}&path={quote_plus(remotepath)}"
+                "&ver=2.0&clienttype=1"
+            )
 
         bduss = self._bduss
         uid = str(self._user_id) or ""
-
-        timestamp = str(now_timestamp() * 1000)
         devuid = "0|" + calu_md5(bduss).upper()
-
         enc = calu_sha1(bduss)
-        rand = calu_sha1(
-            enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid
-        )
 
-        url = PcsNode.File.url()
-        params = {
-            "method": "locatedownload",
-            "ver": "2",
-            "path": remotepath,
-            "time": timestamp,
-            "rand": rand,
-            "devuid": devuid,
-        }
+        while True:
+            timestamp = str(now_timestamp() * 1000)
 
-        resp = self._request(Method.Get, url, params=params)
-        return resp.json()
+            rand = calu_sha1(
+                enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid
+            )
+
+            url = PcsNode.File.url()
+            params = {
+                "method": "locatedownload",
+                "ver": "2",
+                "path": remotepath,
+                "time": timestamp,
+                "rand": rand,
+                "devuid": devuid,
+            }
+
+            resp = self._request(Method.Get, url, params=params)
+
+            # Error: "user is not authorized"
+            # This error occurs when the method is called by too many times
+            if not resp.ok:
+                time.sleep(2)
+                continue
+
+            info = resp.json()
+
+            # This error is gotten when remote path is blocked
+            if info.get("host") == "issuecdn.baidupcs.com":
+                return None
+
+            if not info.get("urls"):
+                return None
+            else:
+                return info["urls"][0]["url"]
 
     def file_stream(
         self,
@@ -884,9 +894,11 @@ class BaiduPCS:
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
         pcs: bool = False,
-    ) -> RangeRequestIO:
-        info = self.download_link(remotepath, pcs=pcs)
-        url = info["urls"][0]["url"]
+    ) -> Optional[RangeRequestIO]:
+        url = self.download_link(remotepath, pcs=pcs)
+        if not url:
+            return None
+
         headers = {
             "Cookie": "; ".join(
                 [f"{k}={v if v is not None else ''}" for k, v in self._cookies.items()]
