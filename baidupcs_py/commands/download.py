@@ -14,6 +14,7 @@ from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.log import get_logger
+from baidupcs_py.commands.display import display_blocked_remotepath
 
 _print = print
 
@@ -295,6 +296,9 @@ def download_file(
         return
 
     dlink = api.download_link(remotepath)
+    if not dlink:
+        display_blocked_remotepath(remotepath)
+        return
 
     if downloader != Downloader.me:
         print(f"[italic blue]Download[/italic blue]: {remotepath} to {localpath}")
