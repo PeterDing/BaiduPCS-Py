@@ -1,10 +1,39 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
+
+from threading import Semaphore
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from baidupcs_py.baidupcs import BaiduPCSApi
-from baidupcs_py.baidupcs.inner import PcsRapidUploadInfo
+from baidupcs_py.baidupcs.inner import PcsFile, PcsRapidUploadInfo
+from baidupcs_py.common.concurrent import sure_release
 from baidupcs_py.common.localstorage import save_rapid_upload_info
+from baidupcs_py.commands.log import get_logger
 from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.display import display_files
+
+from rich.console import Console
+
+logger = get_logger(__name__)
+
+DEFAULT_MAX_WORKERS = 10
+
+
+def _get_download_link_and_rapid_upload_info(
+    api: BaiduPCSApi,
+    pcs_file: PcsFile,
+    show_dl_link: bool = False,
+    show_hash_link: bool = False,
+    check_md5: bool = True,
+) -> Tuple[Optional[str], Optional[PcsRapidUploadInfo]]:
+    dl_link = None
+    if show_dl_link:
+        dl_link = api.download_link(pcs_file.path)
+
+    rpinfo = None
+    if show_hash_link:
+        rpinfo = api.rapid_upload_info(pcs_file.path, check=check_md5)
+
+    return dl_link, rpinfo
 
 
 def list_file(
@@ -40,28 +69,52 @@ def list_file(
     if not pcs_files:
         return
 
-    for i in range(len(pcs_files)):
-        pcs_file = pcs_files[i]
-        dl_link = None
-        if show_dl_link:
-            dl_link = api.download_link(pcs_file.path)
+    # Concurrently request rapiduploadinfo
+    max_workers = DEFAULT_MAX_WORKERS
+    semaphore = Semaphore(max_workers)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futs = {}
+        for i in range(len(pcs_files)):
+            if pcs_files[i].is_dir:
+                continue
 
-        rpinfo = None
-        if show_hash_link:
-            rpinfo = api.rapid_upload_info(pcs_file.path, check=check_md5)
-            if rapiduploadinfo_file and rpinfo:
-                save_rapid_upload_info(
-                    rapiduploadinfo_file,
-                    rpinfo.slice_md5,
-                    rpinfo.content_md5,
-                    rpinfo.content_crc32,
-                    rpinfo.content_length,
-                    remotepath=pcs_file.path,
-                    user_id=user_id,
-                    user_name=user_name,
+            semaphore.acquire()
+            fut = executor.submit(
+                sure_release,
+                semaphore,
+                _get_download_link_and_rapid_upload_info,
+                api,
+                pcs_files[i],
+                show_dl_link=show_dl_link,
+                show_hash_link=show_hash_link,
+                check_md5=check_md5,
+            )
+            futs[fut] = i
+
+        for fut in as_completed(futs):
+            i = futs[fut]
+            e = fut.exception()
+            if e is None:
+                dl_link, rpinfo = fut.result()
+                if rapiduploadinfo_file and rpinfo:
+                    save_rapid_upload_info(
+                        rapiduploadinfo_file,
+                        rpinfo.slice_md5,
+                        rpinfo.content_md5,
+                        rpinfo.content_crc32,
+                        rpinfo.content_length,
+                        remotepath=pcs_files[i].path,
+                        user_id=user_id,
+                        user_name=user_name,
+                    )
+                pcs_files[i] = pcs_files[i]._replace(
+                    dl_link=dl_link, rapid_upload_info=rpinfo
                 )
-
-        pcs_files[i] = pcs_file._replace(rapid_upload_info=rpinfo, dl_link=dl_link)
+            else:
+                logger.error(
+                    "`list_file`: `_get_download_link_and_rapid_upload_info` error: %s",
+                    e,
+                )
 
     display_files(
         pcs_files,
