@@ -1,9 +1,14 @@
 from typing import Optional, List, Dict, Any
 
+from threading import Semaphore
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from base64 import b64decode
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.baidupcs.inner import PcsRapidUploadInfo
+from baidupcs_py.common.constant import CPU_NUM
+from baidupcs_py.common.concurrent import sure_release
 from baidupcs_py.common.localstorage import RapidUploadInfo
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.localstorage import save_rapid_upload_info
@@ -187,8 +192,17 @@ def rapid_upload(
                 user_name=user_name,
             )
         print(f"[i blue]Save to[/i blue] {pcs_file.path}")
-    except Exception:
-        pass
+    except Exception as err:
+        link = PcsRapidUploadInfo(
+            slice_md5=slice_md5,
+            content_md5=content_md5,
+            content_crc32=content_crc32,
+            content_length=content_length,
+            remotepath=remotepath,
+        ).cs3l()
+        print(
+            f"[i yellow]Rapid Upload fails[/i yellow]: error: {err} link: {link}",
+        )
 
 
 def rapid_upload_links(
@@ -199,16 +213,32 @@ def rapid_upload_links(
     rapiduploadinfo_file: Optional[str] = None,
     user_id: Optional[int] = None,
     user_name: Optional[str] = None,
+    max_workers: int = CPU_NUM,
 ):
     """Rapid Upload multi links"""
 
-    for link in links:
-        rapid_upload(
-            api,
-            remotedir,
-            link=link,
-            no_ignore_existing=no_ignore_existing,
-            rapiduploadinfo_file=rapiduploadinfo_file,
-            user_id=user_id,
-            user_name=user_name,
-        )
+    semaphore = Semaphore(max_workers)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futs = []
+        for link in links:
+            link = link.strip()
+            if not link:
+                continue
+
+            semaphore.acquire()
+            fut = executor.submit(
+                sure_release,
+                semaphore,
+                rapid_upload,
+                api,
+                remotedir,
+                link=link,
+                no_ignore_existing=no_ignore_existing,
+                rapiduploadinfo_file=rapiduploadinfo_file,
+                user_id=user_id,
+                user_name=user_name,
+            )
+            futs.append(fut)
+
+        for fut in as_completed(futs):
+            pass
