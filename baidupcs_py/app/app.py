@@ -540,7 +540,7 @@ def pwd(ctx):
     "--no-check-md5",
     "--NC",
     is_flag=True,
-    help="显示文件 cs3l:// 连接时不检查md5。如果检查md5会改变文件上传时间",
+    help="显示文件 cs3l:// 连接时不检查md5",
 )
 @click.option("--csv", is_flag=True, help="用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用")
 @click.pass_context
@@ -1338,6 +1338,7 @@ def rpdelete(ctx, ids):
 @click.option("--content-length", "--cl", type=int, help="文件长度")
 @click.option("--filename", "--fn", type=str, help="文件名，如果这里设置了，将会覆盖 link 中的文件名")
 @click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传且覆盖已经存在的文件")
+@click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1352,6 +1353,7 @@ def rp(
     content_length,
     filename,
     no_ignore_existing,
+    max_workers,
 ):
     """用秒传连接或参数上传
 
@@ -1364,7 +1366,9 @@ def rp(
     if not api:
         return
 
-    assert link or all([slice_md5, content_md5, content_length, filename]), "No params"
+    assert (
+        link or input_file or all([slice_md5, content_md5, content_length, filename])
+    ), "No params"
 
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
@@ -1384,6 +1388,7 @@ def rp(
             rapiduploadinfo_file=rapiduploadinfo_file,
             user_id=user_id,
             user_name=user_name,
+            max_workers=max_workers,
         )
     else:
         rapid_upload(
