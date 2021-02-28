@@ -398,29 +398,29 @@ BaiduPCS-Py ls relative/path
 
 ### 选项
 
-| Option                                               | Description                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------ |
-| -r, --desc                                           | 逆序排列文件                                                       |
-| -n, --name                                           | 依名字排序                                                         |
-| -t, --time                                           | 依时间排序                                                         |
-| -s, --size                                           | 依文件大小排序                                                     |
-| -R, --recursive                                      | 递归列出文件                                                       |
-| -I, --include TEXT                                   | 筛选包含这个字符串的文件                                           |
-| --include-regex, --IR TEXT                           | 筛选包含这个正则表达式的文件                                       |
-| -E, --exclude TEXT                                   | 筛选 **不** 包含这个字符串的文件                                   |
-| --exclude-regex, --ER TEXT                           | 筛选 **不** 包含这个正则表达式的文件                               |
-| -f, --is-file                                        | 筛选 **非** 目录文件                                               |
-| -d, --is-dir                                         | 筛选目录文件                                                       |
-| --no-highlight, --NH                                 | 取消匹配高亮                                                       |
-| -S, --show-size                                      | 显示文件大小                                                       |
-| -D, --show-date                                      | 显示文件创建时间                                                   |
-| -M, --show-md5                                       | 显示文件 md5                                                       |
-| -A, --show-absolute-path                             | 显示文件绝对路径                                                   |
-| --show-dl-link, --DL                                 | 显示文件下载连接                                                   |
-| --show-hash-link, --HL                               | 显示文件秒传连接                                                   |
-| --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                                     |
-| --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5。如果检查 md5 会改变文件上传时间 |
-| --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用              |
+| Option                                               | Description                                           |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| -r, --desc                                           | 逆序排列文件                                          |
+| -n, --name                                           | 依名字排序                                            |
+| -t, --time                                           | 依时间排序                                            |
+| -s, --size                                           | 依文件大小排序                                        |
+| -R, --recursive                                      | 递归列出文件                                          |
+| -I, --include TEXT                                   | 筛选包含这个字符串的文件                              |
+| --include-regex, --IR TEXT                           | 筛选包含这个正则表达式的文件                          |
+| -E, --exclude TEXT                                   | 筛选 **不** 包含这个字符串的文件                      |
+| --exclude-regex, --ER TEXT                           | 筛选 **不** 包含这个正则表达式的文件                  |
+| -f, --is-file                                        | 筛选 **非** 目录文件                                  |
+| -d, --is-dir                                         | 筛选目录文件                                          |
+| --no-highlight, --NH                                 | 取消匹配高亮                                          |
+| -S, --show-size                                      | 显示文件大小                                          |
+| -D, --show-date                                      | 显示文件创建时间                                      |
+| -M, --show-md5                                       | 显示文件 md5                                          |
+| -A, --show-absolute-path                             | 显示文件绝对路径                                      |
+| --show-dl-link, --DL                                 | 显示文件下载连接                                      |
+| --show-hash-link, --HL                               | 显示文件秒传连接                                      |
+| --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                        |
+| --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5                     |
+| --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用 |
 
 ## 搜索文件
 
@@ -666,11 +666,11 @@ BaiduPCS-Py 会将在命令 `ls`，`upload`，`sync`，`rp` 中遇到的文件�
 
 使用 `ls` 命令显示秒传连接默认会对文件进行秒传检查，已确认服务器是否已经将文件特征记录。
 
-> 注意：秒传检查会将文件的服务器端的创建时间改为当前时间。
-
 对于才上传的大文件，服务器不会立刻计算完文件的特征参数，这个过程可能持续数天的时间。在此期间秒传无法进行。
 
 如果想略过秒传检查，用户可以用 `--no-check-md5` 选项。但这样生成的秒传连接可能是无效的。
+
+> 注意：显示秒传连接需要请求文件 256KB 的内容。如果用户是非 svip 且请求的文件很多，那么这个过程要花很长时间。BaidPCS-Py 使用 10 个线程来请求，如果是非 svip，每个文件请求可能要花 5 秒。
 
 ```
 # 默认显示 cs3l 协议连接
@@ -752,6 +752,12 @@ BaiduPCS-Py rp /path/to/save --link 'ced58db7aedce8e1c887754fccccde03#0d02589467
 BaiduPCS-Py rp /path/to/save --link 'bdpan://Q29udGVudHMtYW1kNjQuZ3p8MzMyNTExODN8Y2VkNThkYjdhZWRjZThlMWM4ODc3NTRmY2NjY2RlMDN8MGQwMjU4OTQ2N2YzNGJkZDg2ZDA4MjIxZTkzYjI3ODM='
 ```
 
+从指定文件获取要使用的秒传连接，文件中一行一个秒传连接。
+
+```
+BaiduPCS-Py rp /path/to/save --input-file links.txt --max-workers 5
+```
+
 使用特征参数：
 
 ```
@@ -766,15 +772,17 @@ BaiduPCS-Py rp /path/to/save \
 
 ### 选项
 
-| Option                         | Description                                      |
-| ------------------------------ | ------------------------------------------------ |
-| -l, --link TEXT                | cs3l:// 协议连接 或 简化连接                     |
-| --slice-md5, --sm TEXT         | 文件前 256KB md5                                 |
-| --content-md5, --cm TEXT       | 文件 md5                                         |
-| --content-crc32, --cc INTEGER  | 文件 crc32, 可以为空                             |
-| --content-length, --cl INTEGER | 文件长度                                         |
-| --filename, --fn TEXT          | 文件名，如果这里设置了，将会覆盖 link 中的文件名 |
-| --no-ignore-existing, --NI     | 上传且覆盖已经存在的文件                         |
+| Option                         | Description                                            |
+| ------------------------------ | ------------------------------------------------------ |
+| -l, --link TEXT                | cs3l:// 协议连接 或 简化连接                           |
+| -i, --input-file TEXT          | 从指定文件获取要使用的秒传连接；只能是一行一个秒传连接 |
+| --slice-md5, --sm TEXT         | 文件前 256KB md5                                       |
+| --content-md5, --cm TEXT       | 文件 md5                                               |
+| --content-crc32, --cc INTEGER  | 文件 crc32, 可以为空                                   |
+| --content-length, --cl INTEGER | 文件长度                                               |
+| --filename, --fn TEXT          | 文件名，如果这里设置了，将会覆盖 link 中的文件名       |
+| --no-ignore-existing, --NI     | 上传且覆盖已经存在的文件                               |
+| -w, --max-workers INTEGER      | 同时上传文件数                                         |
 
 ## 分享文件
 
