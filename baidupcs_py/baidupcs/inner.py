@@ -26,7 +26,8 @@ class PcsRapidUploadInfo(NamedTuple):
         """cs3l://<content_md5>#<slice_md5>#<content_crc32>#<content_length>#<filename>"""
 
         filename = self._filename()
-        return f"cs3l://{self.content_md5}#{self.slice_md5}#{self.content_crc32}#{self.content_length}#{filename}"
+        content_crc32 = self.content_crc32 or "0"
+        return f"cs3l://{self.content_md5}#{self.slice_md5}#{content_crc32}#{self.content_length}#{filename}"
 
     def short(self) -> str:
         """<content_md5>#<slice_md5>#<content_length>#<filename>"""
