@@ -7,6 +7,7 @@ from random import Random
 import os
 import hashlib
 import logging
+import time
 
 from baidupcs_py.common import constant
 from baidupcs_py.common.number import u64_to_u8x8, u8x8_to_u64
@@ -28,9 +29,15 @@ from baidupcs_py.common.crypto import (
     calu_md5,
     calu_crc32_and_md5,
 )
+from baidupcs_py.common.log import LogLevels, get_logger
 
 import requests
 from requests import Response
+
+_LOG_LEVEL = os.getenv("LOG_LEVEL", "CRITICAL").upper()
+if _LOG_LEVEL not in LogLevels:
+    _LOG_LEVEL = "CRITICAL"
+logger = get_logger(__name__, level=_LOG_LEVEL)
 
 READ_SIZE = 1 * constant.OneK
 DEFAULT_MAX_CHUNK_SIZE = 10 * constant.OneM
@@ -904,14 +911,44 @@ class AutoDecryptRequest:
     def _request(self, _range: Tuple[int, int]) -> Response:
         headers = dict(self._headers or {})
         headers["Range"] = "bytes={}-{}".format(*_range)
-        try:
-            resp = self._session.request(
-                self._method, self._url, headers=headers, **self._kwargs
+
+        while True:
+            try:
+                resp = self._session.request(
+                    self._method, self._url, headers=headers, **self._kwargs
+                )
+                if not resp.ok:
+                    logger.warning(
+                        "`%s._request` request error: status_code: %s, body: %s",
+                        self.__class__.__name__,
+                        resp.status_code,
+                        resp.content[:1000],
+                    )
+
+                    # Error: 31626: user is not authorized, hitcode:122
+                    # Error: 31326: user is not authorized, hitcode:117
+                    # Request is temporally blocked.
+                    # This error occurs when url is from `BaiduPCS.download_link(..., pcs=True)`
+                    if b"user is not authorized" in resp.content:
+                        time.sleep(2)
+                        continue
+                self._parse_rapid_upload_info(resp)
+                break
+            except Exception as err:
+                logger.warning(
+                    "`%s._request` request error: %s",
+                    self.__class__.__name__,
+                    err,
+                )
+                raise IOError(f"{self.__class__.__name__} - Request Error") from err
+
+        if not resp.ok:
+            raise IOError(
+                f"{self.__class__.__name__} - Response is not ok: "
+                f"status_code: {resp.status_code}, body: {resp.content[:1000]}"
             )
-            self._parse_rapid_upload_info(resp)
-            return resp
-        except Exception as err:
-            raise IOError(f"{self.__class__.__name__} - Request Error") from err
+
+        return resp
 
     def rangeable(self) -> bool:
         """Is support uncontinue range request?"""
