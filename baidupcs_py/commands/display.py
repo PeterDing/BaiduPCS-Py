@@ -25,6 +25,7 @@ from rich.text import Text
 from rich.highlighter import Highlighter as RichHighlighter
 from rich.panel import Panel
 from rich.style import Style
+from rich import print
 
 
 class Highlighter(RichHighlighter):
@@ -122,8 +123,11 @@ def display_files(
         path = pcs_file.path if show_absolute_path else Path(pcs_file.path).name
         background = Text()
         if pcs_file.is_dir:
-            tp._text = ["d"]
-            background.style = "blue"
+            if csv:
+                row[0] = "d"
+            else:
+                tp._text = ["d"]
+                background.style = "blue"
 
         if highlight and sifters:
             pats: List[Union[Pattern, str]] = list(
@@ -382,3 +386,7 @@ def display_user_infos(
 
     console = Console()
     console.print(table)
+
+
+def display_blocked_remotepath(remotepath: str):
+    print(f"[i yellow]Remote path is blocked[/i yellow]: {remotepath}")
