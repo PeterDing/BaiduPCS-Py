@@ -543,6 +543,8 @@ def pwd(ctx):
     help="显示文件 cs3l:// 连接时不检查md5",
 )
 @click.option("--csv", is_flag=True, help="用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用")
+@click.option("--only-dl-link", "--ODL", is_flag=True, help="只显示文件下载连接")
+@click.option("--only-hash-link", "--OHL", is_flag=True, help="只显示文件秒传连接")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -570,6 +572,8 @@ def ls(
     hash_link_protocol,
     no_check_md5,
     csv,
+    only_dl_link,
+    only_hash_link,
 ):
     """列出网盘路径下的文件和对应的文件信息"""
 
@@ -620,6 +624,8 @@ def ls(
         hash_link_protocol=hash_link_protocol,
         check_md5=not no_check_md5,
         csv=csv,
+        only_dl_link=only_dl_link,
+        only_hash_link=only_hash_link,
     )
 
 
@@ -1234,6 +1240,7 @@ def sync(
     help="hash link 协议，默认 cs3l",
 )
 @click.option("--show-all", "-A", is_flag=True, help="显示文件所有信息")
+@click.option("--only-hash-link", "--OHL", is_flag=True, help="只显示文件秒传连接")
 @click.pass_context
 @handle_error
 def rplist(
@@ -1251,6 +1258,7 @@ def rplist(
     offset,
     hash_link_protocol,
     show_all,
+    only_hash_link,
 ):
     """列出保存的文件秒传信息"""
 
@@ -1270,6 +1278,7 @@ def rplist(
         offset=offset,
         hash_link_protocol=hash_link_protocol,
         show_all=show_all,
+        only_hash_link=only_hash_link,
     )
 
 
@@ -1288,6 +1297,7 @@ def rplist(
     help="hash link 协议，默认 cs3l",
 )
 @click.option("--show-all", "-A", is_flag=True, help="显示文件所有信息")
+@click.option("--only-hash-link", "--OHL", is_flag=True, help="只显示文件秒传连接")
 @click.pass_context
 @handle_error
 def rpsearch(
@@ -1300,6 +1310,7 @@ def rpsearch(
     md5,
     hash_link_protocol,
     show_all,
+    only_hash_link,
 ):
     """搜索保存的文件秒传信息"""
 
@@ -1314,6 +1325,7 @@ def rpsearch(
         in_md5=md5,
         hash_link_protocol=hash_link_protocol,
         show_all=show_all,
+        only_hash_link=only_hash_link,
     )
 
 

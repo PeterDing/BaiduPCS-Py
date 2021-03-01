@@ -11,7 +11,7 @@ from baidupcs_py.commands.log import get_logger
 from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.display import display_files
 
-from rich.console import Console
+from rich import print
 
 logger = get_logger(__name__)
 
@@ -58,6 +58,8 @@ def list_file(
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
     check_md5: bool = True,
     csv: bool = False,
+    only_dl_link: bool = False,
+    only_hash_link: bool = False,
 ):
     is_dir = api.is_dir(remotepath)
     if is_dir:
@@ -110,26 +112,32 @@ def list_file(
                 pcs_files[i] = pcs_files[i]._replace(
                     dl_link=dl_link, rapid_upload_info=rpinfo
                 )
+                if only_dl_link and dl_link:
+                    print(dl_link)
+                if only_hash_link and rpinfo:
+                    hash_link = getattr(rpinfo, hash_link_protocol)()
+                    print(hash_link)
             else:
                 logger.error(
                     "`list_file`: `_get_download_link_and_rapid_upload_info` error: %s",
                     e,
                 )
 
-    display_files(
-        pcs_files,
-        remotepath,
-        sifters=sifters,
-        highlight=highlight,
-        show_size=show_size,
-        show_date=show_date,
-        show_md5=show_md5,
-        show_absolute_path=show_absolute_path,
-        show_dl_link=show_dl_link,
-        show_hash_link=show_hash_link,
-        hash_link_protocol=hash_link_protocol,
-        csv=csv,
-    )
+    if not only_dl_link and not only_hash_link:
+        display_files(
+            pcs_files,
+            remotepath,
+            sifters=sifters,
+            highlight=highlight,
+            show_size=show_size,
+            show_date=show_date,
+            show_md5=show_md5,
+            show_absolute_path=show_absolute_path,
+            show_dl_link=show_dl_link,
+            show_hash_link=show_hash_link,
+            hash_link_protocol=hash_link_protocol,
+            csv=csv,
+        )
 
     if is_dir and recursive:
         for pcs_file in pcs_files:
@@ -156,6 +164,8 @@ def list_file(
                     hash_link_protocol=hash_link_protocol,
                     check_md5=check_md5,
                     csv=csv,
+                    only_dl_link=only_dl_link,
+                    only_hash_link=only_hash_link,
                 )
 
 
@@ -181,6 +191,8 @@ def list_files(
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
     check_md5: bool = True,
     csv: bool = False,
+    only_dl_link: bool = False,
+    only_hash_link: bool = False,
 ):
     for rp in remotepaths:
         list_file(
@@ -205,4 +217,6 @@ def list_files(
             hash_link_protocol=hash_link_protocol,
             check_md5=check_md5,
             csv=csv,
+            only_dl_link=only_dl_link,
+            only_hash_link=only_hash_link,
         )

@@ -114,7 +114,7 @@ def display_files(
             else:
                 row.append(f"{size} {pcs_file.size: >{max_size_str_len}}")
         if show_date:
-            date = format_date(pcs_file.mtime) if pcs_file.mtime else ""
+            date = format_date(pcs_file.local_mtime) if pcs_file.local_mtime else ""
             row.append(date)
         if show_md5:
             md5 = pcs_file.md5 or ""
@@ -176,6 +176,7 @@ def display_files(
 def display_rapid_upload_links(
     infos: List[Dict[str, Any]],
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
+    only_hash_link: bool = False,
 ):
     rpinfos = [
         (
@@ -190,6 +191,12 @@ def display_rapid_upload_links(
         )
         for r in infos
     ]
+
+    if only_hash_link:
+        for rpinfo, id in rpinfos:
+            link = getattr(rpinfo, hash_link_protocol)()
+            print(link)
+        return
 
     _print("Id\tRemotepath\tLink")
     for rpinfo, id in rpinfos:

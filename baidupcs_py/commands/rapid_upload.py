@@ -24,11 +24,14 @@ def _display(
     rows: List[Dict[str, Any]],
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
     show_all: bool = False,
+    only_hash_link: bool = False,
 ):
-    if show_all:
+    if show_all and not only_hash_link:
         display_rapid_upload_infos(rows)
     else:
-        display_rapid_upload_links(rows, hash_link_protocol=hash_link_protocol)
+        display_rapid_upload_links(
+            rows, hash_link_protocol=hash_link_protocol, only_hash_link=only_hash_link
+        )
 
 
 def rapid_upload_list(
@@ -46,6 +49,7 @@ def rapid_upload_list(
     offset: int = -1,
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
     show_all: bool = False,
+    only_hash_link: bool = False,
 ):
     rapiduploadinfo = RapidUploadInfo(rapiduploadinfo_file)
     rows = rapiduploadinfo.list(
@@ -61,7 +65,12 @@ def rapid_upload_list(
         limit=limit,
         offset=offset,
     )
-    _display(rows, hash_link_protocol=hash_link_protocol, show_all=show_all)
+    _display(
+        rows,
+        hash_link_protocol=hash_link_protocol,
+        show_all=show_all,
+        only_hash_link=only_hash_link,
+    )
 
 
 def rapid_upload_search(
@@ -74,6 +83,7 @@ def rapid_upload_search(
     in_md5: bool = False,
     hash_link_protocol: str = PcsRapidUploadInfo.default_hash_link_protocol(),
     show_all: bool = False,
+    only_hash_link: bool = False,
 ):
     rapiduploadinfo = RapidUploadInfo(rapiduploadinfo_file)
     rows = rapiduploadinfo.search(
@@ -84,7 +94,12 @@ def rapid_upload_search(
         in_user_name=in_user_name,
         in_md5=in_md5,
     )
-    _display(rows, hash_link_protocol=hash_link_protocol, show_all=show_all)
+    _display(
+        rows,
+        hash_link_protocol=hash_link_protocol,
+        show_all=show_all,
+        only_hash_link=only_hash_link,
+    )
 
 
 def rapid_upload_delete(rapiduploadinfo_file: str, ids: List[int]):
