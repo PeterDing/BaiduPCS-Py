@@ -70,8 +70,8 @@ class PcsFile(NamedTuple):
     block_list: Optional[List[str]] = None  # block md5 list
     category: Optional[int] = None
     user_id: Optional[int] = None
-    ctime: Optional[int] = None  # created time
-    mtime: Optional[int] = None  # modifed time
+    ctime: Optional[int] = None  # server created time
+    mtime: Optional[int] = None  # server modifed time
     local_ctime: Optional[int] = None  # local created time
     local_mtime: Optional[int] = None  # local modifed time
     server_ctime: Optional[int] = None  # server created time
@@ -88,8 +88,8 @@ class PcsFile(NamedTuple):
     block_list: Optional[List[str]] = None  # block md5 list
     category: Optional[int] = None
     user_id: Optional[int] = None
-    ctime: Optional[int] = None  # created time
-    mtime: Optional[int] = None  # modifed time
+    ctime: Optional[int] = None  # server created time
+    mtime: Optional[int] = None  # server modifed time
     local_ctime: Optional[int] = None  # local created time
     local_mtime: Optional[int] = None  # local modifed time
     server_ctime: Optional[int] = None  # server created time
