@@ -1,7 +1,7 @@
 import time
 
 
-def now_timestamp() -> float:
+def now_timestamp() -> int:
     """Now timestamp (Second)"""
 
     return int(time.time())
