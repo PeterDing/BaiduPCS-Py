@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Set
+from typing import Optional, List, Dict, Set
 import os
 from pathlib import Path
 from collections import deque
@@ -14,25 +14,23 @@ def share_files(api: BaiduPCSApi, *remotepaths: str, password: Optional[str] = N
     display_shared_links(shared_link)
 
 
-def list_shared(api: BaiduPCSApi, page: int = 1, show_all=True):
-    _shared_links = api.list_shared(page=page)
-    if not _shared_links:
-        return
+def list_shared(api: BaiduPCSApi, show_all=True):
+    page = 1
+    while True:
+        shared_links = api.list_shared(page=page)
+        if not shared_links:
+            break
 
-    shared_links = []
-    for sl in _shared_links:
-        if sl.has_password():
-            assert sl.share_id
-            pwd = api.shared_password(sl.share_id)
-            sl = sl._replace(password=pwd)
+        page += 1
 
-        if show_all:
-            shared_links.append(sl)
-            continue
+        for sl in shared_links:
+            if sl.has_password():
+                assert sl.share_id
+                pwd = api.shared_password(sl.share_id)
+                sl = sl._replace(password=pwd)
 
-        if sl.available():
-            shared_links.append(sl)
-    display_shared_links(*shared_links)
+            if show_all or sl.available():
+                display_shared_links(sl)
 
 
 def cancel_shared(api: BaiduPCSApi, *share_ids: int):
@@ -88,7 +86,7 @@ def save_shared(
             if err.error_code not in (12, -33):
                 raise err
 
-            if err.error_code == 12:  # -33: '一次支持操作999个，减点试试吧'
+            if err.error_code == 12:  # 12: "文件已经存在"
                 print(f"[yellow]WARNING[/]: {shared_path.path} has be in {rd}")
             if err.error_code == -33:  # -33: '一次支持操作999个，减点试试吧'
                 print(
@@ -96,8 +94,34 @@ def save_shared(
                     "has more items and need to transfer one by one"
                 )
 
-        sub_paths = api.list_shared_paths(shared_path.path, uk, share_id, bdstoken)
-        rd = (Path(rd) / os.path.basename(shared_path.path)).as_posix()
-        for sp in sub_paths:
-            _remotedirs[sp] = rd
-        shared_paths.extendleft(sub_paths[::-1])
+        if shared_path.is_dir:
+            # Take all sub paths
+            sub_paths = list_all_sub_paths(
+                api, shared_path.path, uk, share_id, bdstoken
+            )
+
+            rd = (Path(rd) / os.path.basename(shared_path.path)).as_posix()
+            for sp in sub_paths:
+                _remotedirs[sp] = rd
+            shared_paths.extendleft(sub_paths[::-1])
+
+
+def list_all_sub_paths(
+    api: BaiduPCSApi,
+    sharedpath: str,
+    uk: int,
+    share_id: int,
+    bdstoken: str,
+) -> List[PcsSharedPath]:
+    sub_paths = []
+    page = 1
+    size = 100
+    while True:
+        sps = api.list_shared_paths(
+            sharedpath, uk, share_id, bdstoken, page=page, size=size
+        )
+        sub_paths += sps
+        if len(sps) < 100:
+            break
+        page += 1
+    return sub_paths
