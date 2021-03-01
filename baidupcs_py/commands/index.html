@@ -328,7 +328,7 @@ Modifications:  Adapted to rclone markup -->
                         <td class="hideable">&mdash;</td>
                         <td class="hideable"></td>
                     </tr>
-                    {% for is_dir, name, size, mtime in entries %}
+                    {% for is_dir, name, size, local_mtime in entries %}
                     <tr class="file">
                         <td>
                         </td>
@@ -355,8 +355,8 @@ Modifications:  Adapted to rclone markup -->
                             <size>{{ size }}</size>
                         </td>
                         {% endif %}
-                        {% if mtime %}
-                        <td class="hideable"><time datetime="{{ mtime }}">{{ mtime }}</time></td>
+                        {% if local_mtime %}
+                        <td class="hideable"><time datetime="{{ local_mtime }}">{{ local_mtime }}</time></td>
                         {% else %}
                         <td class="hideable">—</td>
                         {% endif %}
