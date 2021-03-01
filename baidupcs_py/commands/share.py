@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import deque
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsSharedPath, BaiduPCSError
-from baidupcs_py.commands.display import display_shared_links
+from baidupcs_py.commands.display import display_shared_links, display_shared_paths
 
 from rich import print
 
@@ -125,3 +125,41 @@ def list_all_sub_paths(
             break
         page += 1
     return sub_paths
+
+
+def list_shared_paths(
+    api: BaiduPCSApi,
+    shared_url: str,
+    password: Optional[str] = None,
+    show_vcode: bool = True,
+):
+    # Vertify with password
+    if password:
+        api.access_shared(shared_url, password, show_vcode=show_vcode)
+
+    all_shared_paths: List[PcsSharedPath] = []
+
+    shared_paths = deque(api.shared_paths(shared_url))
+    all_shared_paths += shared_paths
+
+    while shared_paths:
+        shared_path = shared_paths.popleft()
+
+        uk, share_id, bdstoken = (
+            shared_path.uk,
+            shared_path.share_id,
+            shared_path.bdstoken,
+        )
+        assert uk
+        assert share_id
+        assert bdstoken
+
+        if shared_path.is_dir:
+            # Take all sub paths
+            sub_paths = list_all_sub_paths(
+                api, shared_path.path, uk, share_id, bdstoken
+            )
+            all_shared_paths += sub_paths
+            shared_paths.extendleft(sub_paths[::-1])
+
+    display_shared_paths(*all_shared_paths)

@@ -274,6 +274,7 @@ ALIAS = OrderedDict(
         "S": "share",
         "sl": "shared",
         "cs": "cancelshared",
+        "lsp": "listsharedpaths",
         "s": "save",
         # Cloud Task
         "a": "add",
@@ -1476,6 +1477,30 @@ def cancelshared(ctx, share_ids):
         return
 
     _share.cancel_shared(api, *share_ids)
+
+
+@app.command()
+@click.argument("shared_url", nargs=1, type=str)
+@click.option("--password", "-p", type=str, help="链接密码，如果没有不用设置")
+@click.option("--no-show-vcode", "--NV", is_flag=True, help="不显示验证码")
+@click.pass_context
+@handle_error
+@multi_user_do
+def listsharedpaths(ctx, shared_url, password, no_show_vcode):
+    """列出其他用户分享链接中的文件"""
+
+    assert not password or len(password) == 4, "`password` must be 4 letters"
+
+    api = _recent_api(ctx)
+    if not api:
+        return
+
+    _share.list_shared_paths(
+        api,
+        shared_url,
+        password=password,
+        show_vcode=not no_show_vcode,
+    )
 
 
 @app.command()

@@ -57,6 +57,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 - [分享文件](#分享文件)
 - [列出分享链接](#列出分享链接)
 - [取消分享链接](#取消分享链接)
+- [列出其他用户分享链接中的文件](#列出其他用户分享链接中的文件)
 - [保存其他用户分享的链接](#保存其他用户分享的链接)
 
 #### 离线下载相关命令
@@ -99,38 +100,39 @@ BaiduPCS-Py --help
 
 可以用下面的命令别名代替原来的命令名。
 
-| 别名 | 原名         |
-| ---- | ------------ |
-| w    | who          |
-| uu   | updateuser   |
-| su   | su           |
-| ul   | userlist     |
-| ua   | useradd      |
-| ep   | encryptpwd   |
-| ud   | userdel      |
-| l    | ls           |
-| f    | search       |
-| md   | mkdir        |
-| mv   | move         |
-| rn   | rename       |
-| cp   | copy         |
-| rm   | remove       |
-| d    | download     |
-| p    | play         |
-| u    | upload       |
-| sn   | sync         |
-| rl   | rplist       |
-| rs   | rpsearch     |
-| rp   | rp           |
-| S    | share        |
-| sl   | shared       |
-| cs   | cancelshared |
-| s    | save         |
-| a    | add          |
-| t    | tasks        |
-| ct   | cleartasks   |
-| cct  | canceltasks  |
-| sv   | server       |
+| 别名 | 原名            |
+| ---- | --------------- |
+| w    | who             |
+| uu   | updateuser      |
+| su   | su              |
+| ul   | userlist        |
+| ua   | useradd         |
+| ep   | encryptpwd      |
+| ud   | userdel         |
+| l    | ls              |
+| f    | search          |
+| md   | mkdir           |
+| mv   | move            |
+| rn   | rename          |
+| cp   | copy            |
+| rm   | remove          |
+| d    | download        |
+| p    | play            |
+| u    | upload          |
+| sn   | sync            |
+| rl   | rplist          |
+| rs   | rpsearch        |
+| rp   | rp              |
+| S    | share           |
+| sl   | shared          |
+| cs   | cancelshared    |
+| lsp  | listsharedpaths |
+| s    | save            |
+| a    | add             |
+| t    | tasks           |
+| ct   | cleartasks      |
+| cct  | canceltasks     |
+| sv   | server          |
 
 ## 对多个帐号进行相同操作
 
@@ -819,6 +821,21 @@ BaiduPCS-Py shared
 ```
 BaiduPCS-Py cancelshared [OPTIONS] [SHARE_IDS]...
 ```
+
+## 列出其他用户分享链接中的文件
+
+**注意：使用这个命令需要 cookies 中含有 `STOKEN` 值。**
+
+```
+BaiduPCS-Py listsharedpaths [OPTIONS] SHARED_URL
+```
+
+### 选项
+
+| Option                | Description                        |
+| --------------------- | ---------------------------------- |
+| -p, --password TEXT   | 链接密码，如果没有不用设置         |
+| --no-show-vcode, --NV | 不显示验证码，如果需要验证码则报错 |
 
 ## 保存其他用户分享的链接
 

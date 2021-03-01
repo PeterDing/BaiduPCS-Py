@@ -10,6 +10,7 @@ from baidupcs_py.baidupcs import (
     FromTo,
     CloudTask,
     PcsSharedLink,
+    PcsSharedPath,
     PcsUser,
     PcsRapidUploadInfo,
 )
@@ -305,6 +306,38 @@ def display_shared_links(*shared_links: PcsSharedLink):
 
     console = Console()
     console.print(*panels)
+
+
+def display_shared_paths(*shared_paths: PcsSharedPath):
+    table = Table(box=SIMPLE, padding=0, show_edge=False)
+    table.add_column()
+    table.add_column("Size", justify="right")
+    table.add_column("Path", justify="left", overflow="fold")
+
+    max_size_str_len = max([len(str(shared_path.size)) for shared_path in shared_paths])
+    for shared_path in shared_paths:
+        row: List[Union[str, Text]] = []
+
+        # Is file
+        tp = Text("-", style="bold red")
+        row.append(tp)
+
+        size = human_size(shared_path.size) if shared_path.size else ""
+        row.append(f"{size} {shared_path.size: >{max_size_str_len}}")
+
+        path = shared_path.path
+        background = Text()
+        if shared_path.is_dir:
+            tp._text = ["d"]
+            background.style = "blue"
+
+        _path = Text(path)
+        row.append(background + _path)
+
+        table.add_row(*row)
+
+    console = Console()
+    console.print(table)
 
 
 def display_user_info(user_info: PcsUser):
