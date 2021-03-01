@@ -314,9 +314,17 @@ class BaiduPCSApi:
         ]
 
     def list_shared_paths(
-        self, sharedpath: str, uk: int, share_id: int, bdstoken: str
+        self,
+        sharedpath: str,
+        uk: int,
+        share_id: int,
+        bdstoken: str,
+        page: int = 1,
+        size: int = 100,
     ) -> List[PcsSharedPath]:
-        info = self._baidupcs.list_shared_paths(sharedpath, uk, share_id)
+        info = self._baidupcs.list_shared_paths(
+            sharedpath, uk, share_id, page=page, size=size
+        )
         return [
             PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken)
             for v in info["list"]

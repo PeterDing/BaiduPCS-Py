@@ -8,6 +8,7 @@ from base64 import standard_b64encode
 import re
 import json
 import time
+import random
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
@@ -248,7 +249,7 @@ class BaiduPCS:
         if name:
             orderby = "name"
         elif time:
-            orderby = "time"
+            orderby = "time"  # 服务器最后修改时间
         elif size:
             orderby = "size"
         else:
@@ -706,7 +707,9 @@ class BaiduPCS:
         return json.loads(shared_data)
 
     @assert_ok
-    def list_shared_paths(self, sharedpath: str, uk: int, share_id: int):
+    def list_shared_paths(
+        self, sharedpath: str, uk: int, share_id: int, page: int = 1, size: int = 100
+    ):
         assert self._stoken, "`STOKEN` is not in `cookies`"
 
         url = PanNode.SharedPathList.url()
@@ -714,15 +717,16 @@ class BaiduPCS:
             "channel": "chunlei",
             "clienttype": "0",
             "web": "1",
-            "num": "10000",
+            "page": str(page),  # from 1
+            "num": str(size),  # max is 100
             "dir": sharedpath,
-            "t": str(now_timestamp() * 1000),
+            "t": str(random.random()),
             "uk": str(uk),
             "shareid": str(share_id),
-            # 'desc': 1,   ## reversely
-            "order": "name",  # sort by name, or size, time
-            "_": str(now_timestamp() * 1000),
-            # 'bdstoken': self._get_bdstoken()
+            "desc": "1",  # reversely
+            "order": "other",  # sort by name, or size, time
+            "bdstoken": "null",
+            "showempty": "0",
         }
         resp = self._request(Method.Get, url, params=params)
         return resp.json()
