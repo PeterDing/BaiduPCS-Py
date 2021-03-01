@@ -421,6 +421,8 @@ BaiduPCS-Py ls relative/path
 | --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | 显示文件 hash 链接，并指定协议                        |
 | --no-check-md5, --NC                                 | 显示文件 cs3l:// 连接时不检查 md5                     |
 | --csv                                                | 用 csv 格式显示，单行显示，推荐和 --DL 或 --HL 一起用 |
+| --only-dl-link, --ODL                                | 只显示文件下载连接                                    |
+| --only-hash-link, --OHL                              | 只显示文件秒传连接                                    |
 
 ## 搜索文件
 
@@ -716,6 +718,7 @@ BaiduPCS-Py rplist [OPTIONS] [IDS]...
 | -O, --offset INTEGER                                 | 列出偏移位                |
 | --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l |
 | --show-all, -A                                       | 显示文件所有信息          |
+| --only-hash-link, --OHL                              | 只显示文件秒传连接        |
 
 ## 搜索保存的文件秒传信息
 
@@ -734,6 +737,7 @@ BaiduPCS-Py rpsearch [OPTIONS] KEYWORD
 | -m, --md5                                            | 在 md5 中搜索。注意保存的文件 md5 都是小写字符 |
 | --hash-link-protocol, --HLP [cs3l \| short \| bdpan] | hash link 协议, 默认 cs3l                      |
 | --show-all, -A                                       | 显示文件所有信息                               |
+| --only-hash-link, --OHL                              | 只显示文件秒传连接                             |
 
 ## 用秒传连接或参数上传
 
