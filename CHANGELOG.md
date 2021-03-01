@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.5 - 2021-03-01
+
+### Added
+
+- 为只显示下载连接或秒传连接，`ls`，`rplist`，`rpsearch` 命令增加 `--only-dl-link`, `--only-hash-link` 选项。
+
+### Changed
+
+- `ls` 和 `server` 显示的文件修改时间从服务器文件修改时间改为本地文件修改时间。
+
 ## v0.6.4 - 2021-02-28
 
 ### Added
