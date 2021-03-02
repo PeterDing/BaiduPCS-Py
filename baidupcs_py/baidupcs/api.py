@@ -1,6 +1,5 @@
 from typing import Optional, Dict, List, Tuple, Callable, IO
 
-import time
 from io import BytesIO
 
 from baidupcs_py.common import constant
