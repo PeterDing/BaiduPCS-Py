@@ -870,6 +870,28 @@ BaiduPCS-Py save [OPTIONS] SHARED_URL REMOTEDIR
 BaiduPCS-Py add [TASK_URLS]... REMOTEDIR
 ```
 
+百度网盘支持添加 magnet 和 http/s 的离线任务。
+
+如果添加 magnet 连接需要指定要下载的文件类型：
+
+- m: 媒体文件 (默认)
+- i: 图片文件
+- d: 文档文件
+- c: 压缩文件
+- a: 所有文件
+
+比如，要下载所有的媒体文件和文档文件：
+
+```
+BaiduPCS-Py add 'magnet:?xt=urn:btih:8e54536d364ad24f8a9b7ab0c08d52436341f131' /to/path --file-type 'm,d'
+```
+
+### 选项
+
+| Option               | Description                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| -t, --file-type TEXT | 要下载的文件类型，m:媒体文件，i:图片文件，d:文档文件，c:压缩文件，a:所有文件。用','分割。 |
+
 ## 列出离线下载任务
 
 ```
