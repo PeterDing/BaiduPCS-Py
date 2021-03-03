@@ -46,7 +46,7 @@ class BaiduPCSApi:
 
     @property
     def bdstoken(self) -> str:
-        return self._baidupcs._bdstoken
+        return self._baidupcs.bdstoken
 
     @property
     def stoken(self) -> Optional[str]:
@@ -217,6 +217,12 @@ class BaiduPCSApi:
 
     def add_task(self, task_url: str, remotedir: str) -> str:
         info = self._baidupcs.add_task(task_url, remotedir)
+        return str(info["task_id"])
+
+    def add_magnet_task(
+        self, task_url: str, remotedir: str, selected_idx: List[int]
+    ) -> str:
+        info = self._baidupcs.add_magnet_task(task_url, remotedir, selected_idx)
         return str(info["task_id"])
 
     def tasks(self, *task_ids: str) -> List[CloudTask]:

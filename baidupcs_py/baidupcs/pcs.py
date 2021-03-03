@@ -17,6 +17,7 @@ from baidupcs_py.common.date import now_timestamp
 from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
 from baidupcs_py.common.cache import timeout_cache
 from baidupcs_py.common.crypto import calu_md5, calu_sha1
+from baidupcs_py.common.url import is_magnet
 from baidupcs_py.baidupcs.errors import BaiduPCSError, parse_errno
 from baidupcs_py.baidupcs.phone import get_phone_model, sum_IMEI
 from baidupcs_py.baidupcs.errors import assert_ok
@@ -103,7 +104,7 @@ class BaiduPCS:
         self._bduss = bduss
         self._stoken = stoken
         self._ptoken = ptoken
-        self._bdstoken = calu_md5(bduss)
+        self._bdstoken = ""
         self._logid = None
         self._baiduid = cookies.get("BAIDUID")
         if self._baiduid:
@@ -136,6 +137,23 @@ class BaiduPCS:
             return PCS_APP_ID
         else:
             return PAN_APP_ID
+
+    @property
+    def bdstoken(self) -> str:
+        assert self._stoken or self._cookies.get("STOKEN")
+
+        if self._bdstoken:
+            return self._bdstoken
+
+        url = "http://pan.baidu.com/disk/home"
+        resp = self._request(Method.Get, url, params=None)
+        cn = resp.text
+        mod = re.search(r'bdstoken[\'":\s]+([0-9a-f]{32})', cn)
+        if mod:
+            s = mod.group(1)
+            self._bdstoken = str(s)
+            return s
+        return ""
 
     @staticmethod
     def _headers(url: str):
@@ -496,9 +514,14 @@ class BaiduPCS:
         return self.file_operate("delete", param)
 
     @assert_ok
-    def cloud_operate(self, params: Dict[str, str]):
+    def cloud_operate(
+        self, params: Dict[str, str], data: Optional[Dict[str, str]] = None
+    ):
         url = PanNode.Cloud.url()
-        resp = self._request(Method.Get, url, params=params)
+        if data:
+            resp = self._request(Method.Post, url, params=params, data=data)
+        else:
+            resp = self._request(Method.Get, url, params=params)
         return resp.json()
 
     def magnet_info(self, magnet: str):
@@ -521,13 +544,58 @@ class BaiduPCS:
         return self.cloud_operate(params)
 
     def add_task(self, task_url: str, remotedir: str):
+        """Add cloud task for http/s and ed2k url
+
+        Warning: `STOKEN` must be in `cookies`
+        """
+
+        assert self._stoken, "`STOKEN` is not in `cookies`"
+
         params = {
+            "channel": "chunlei",
+            "web": "1",
+            "app_id": "250528",
+            "bdstoken": self.bdstoken,  # Must be set
+            # "logid": self._logid,
+            "clienttype": "0",
+        }
+        data = {
             "method": "add_task",
+            "app_id": "250528",
             "save_path": remotedir,
             "source_url": task_url,
-            "timeout": "2147483647",
         }
-        return self.cloud_operate(params)
+        return self.cloud_operate(params, data=data)
+
+    def add_magnet_task(self, task_url: str, remotedir: str, selected_idx: List[int]):
+        """Add cloud task for magnet
+
+        Warning: `STOKEN` must be in `cookies`
+        """
+
+        assert self._stoken, "`STOKEN` is not in `cookies`"
+
+        params = {
+            "channel": "chunlei",
+            "web": "1",
+            "app_id": "250528",
+            "bdstoken": self.bdstoken,  # Must be set
+            # "logid": self._logid,
+            "clienttype": "0",
+        }
+        data = {
+            "method": "add_task",
+            "app_id": "250528",
+            "save_path": remotedir,
+            "source_url": task_url,
+            # "timeout": "2147483647",
+            "type": "4",
+            "t": str(int(time.time() * 1000)),
+            "file_sha1": "",
+            "selected_idx": ",".join([str(i) for i in selected_idx or []]),
+            "task_from": "1",
+        }
+        return self.cloud_operate(params, data=data)
 
     def tasks(self, *task_ids: str):
         params = {
@@ -573,7 +641,7 @@ class BaiduPCS:
             "channel": "chunlei",
             "clienttype": "0",
             "web": "1",
-            "bdstoken": self._bdstoken,
+            "bdstoken": self.bdstoken,
         }
         data = {
             "fid_list": dump_json(fs_ids),
