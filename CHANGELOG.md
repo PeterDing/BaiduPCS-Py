@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.7 - 2021-03-03
+
+### Fixed
+
+- 修复添加离线下载任务总是显示 “资源存在但下载失败”。
+
+### Changed
+
+- `BaiduPCSApi.add_task` 只能添加 http/s 任务。
+- 用 `BaiduPCSApi.add_magnet_task` 添加 magnet 任务。
+
 ## v0.6.6 - 2021-03-01
 
 ### Added
