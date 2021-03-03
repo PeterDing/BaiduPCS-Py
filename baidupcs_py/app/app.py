@@ -1539,11 +1539,30 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 @app.command()
 @click.argument("task_urls", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
+@click.option(
+    "--file-type",
+    "-t",
+    type=str,
+    default="m",
+    help="要下载的文件类型，m:媒体文件，i:图片文件，d:文档文件，c:压缩文件，a:所有文件。用','分割。",
+)
 @click.pass_context
 @handle_error
 @multi_user_do
-def add(ctx, task_urls, remotedir):
-    """添加离线下载任务"""
+def add(ctx, task_urls, remotedir, file_type):
+    """添加离线下载任务
+
+    \b
+    如果添加 magnet 连接需要指定要下载的文件类型：
+    m:媒体文件 (默认)
+    i:图片文件
+    d:文档文件
+    c:压缩文件
+    a:所有文件
+
+    比如要下载所有的媒体文件和文档文件：
+    --file-type 'm,d'
+    """
 
     api = _recent_api(ctx)
     if not api:
@@ -1552,8 +1571,10 @@ def add(ctx, task_urls, remotedir):
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
 
+    file_types = [_cloud.FileType.from_(addr) for addr in file_type.split(",")]
+
     for url in task_urls:
-        _cloud.add_task(api, url, remotedir)
+        _cloud.add_task(api, url, remotedir, file_types=file_types)
 
 
 @app.command()
