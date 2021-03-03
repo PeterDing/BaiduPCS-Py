@@ -12,56 +12,11 @@ from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.download import USER_AGENT
 from baidupcs_py.commands.errors import CommandError
 from baidupcs_py.commands.display import display_blocked_remotepath
+from baidupcs_py.common.file_type import MEDIA_EXTS
 
 _print = print
 
 from rich import print
-
-
-MEDIA_EXTS = set(
-    [
-        ".wma",
-        ".wav",
-        ".mp3",
-        ".aac",
-        ".ra",
-        ".ram",
-        ".mp2",
-        ".ogg",
-        ".aif",
-        ".mpega",
-        ".amr",
-        ".mid",
-        ".midi",
-        ".m4a",
-        ".m4v",
-        ".wmv",
-        ".rmvb",
-        ".mpeg4",
-        ".mpeg2",
-        ".flv",
-        ".avi",
-        ".3gp",
-        ".mpga",
-        ".qt",
-        ".rm",
-        ".wmz",
-        ".wmd",
-        ".wvx",
-        ".wmx",
-        ".wm",
-        ".swf",
-        ".mpg",
-        ".mp4",
-        ".mkv",
-        ".mpeg",
-        ".mov",
-        ".mdf",
-        ".iso",
-        ".asf",
-        ".vob",
-    ]
-)
 
 
 def _with_media_ext(path: str) -> bool:
