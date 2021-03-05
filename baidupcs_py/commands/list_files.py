@@ -67,61 +67,62 @@ def list_file(
     else:
         pcs_files = api.meta(remotepath)
 
-    pcs_files = sift(pcs_files, sifters)
+    pcs_files = sift(pcs_files, sifters, recursive=recursive)
     if not pcs_files:
         return
 
-    # Concurrently request rapiduploadinfo
-    max_workers = DEFAULT_MAX_WORKERS
-    semaphore = Semaphore(max_workers)
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futs = {}
-        for i in range(len(pcs_files)):
-            if pcs_files[i].is_dir:
-                continue
+    if show_dl_link or show_hash_link:
+        # Concurrently request rapiduploadinfo
+        max_workers = DEFAULT_MAX_WORKERS
+        semaphore = Semaphore(max_workers)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futs = {}
+            for i in range(len(pcs_files)):
+                if pcs_files[i].is_dir:
+                    continue
 
-            semaphore.acquire()
-            fut = executor.submit(
-                sure_release,
-                semaphore,
-                _get_download_link_and_rapid_upload_info,
-                api,
-                pcs_files[i],
-                show_dl_link=show_dl_link,
-                show_hash_link=show_hash_link,
-                check_md5=check_md5,
-            )
-            futs[fut] = i
+                semaphore.acquire()
+                fut = executor.submit(
+                    sure_release,
+                    semaphore,
+                    _get_download_link_and_rapid_upload_info,
+                    api,
+                    pcs_files[i],
+                    show_dl_link=show_dl_link,
+                    show_hash_link=show_hash_link,
+                    check_md5=check_md5,
+                )
+                futs[fut] = i
 
-        for fut in as_completed(futs):
-            i = futs[fut]
-            e = fut.exception()
-            if e is None:
-                dl_link, rpinfo = fut.result()
-                if rapiduploadinfo_file and rpinfo:
-                    save_rapid_upload_info(
-                        rapiduploadinfo_file,
-                        rpinfo.slice_md5,
-                        rpinfo.content_md5,
-                        rpinfo.content_crc32,
-                        rpinfo.content_length,
-                        remotepath=pcs_files[i].path,
-                        user_id=user_id,
-                        user_name=user_name,
+            for fut in as_completed(futs):
+                i = futs[fut]
+                e = fut.exception()
+                if e is None:
+                    dl_link, rpinfo = fut.result()
+                    if rapiduploadinfo_file and rpinfo:
+                        save_rapid_upload_info(
+                            rapiduploadinfo_file,
+                            rpinfo.slice_md5,
+                            rpinfo.content_md5,
+                            rpinfo.content_crc32,
+                            rpinfo.content_length,
+                            remotepath=pcs_files[i].path,
+                            user_id=user_id,
+                            user_name=user_name,
+                        )
+                    pcs_files[i] = pcs_files[i]._replace(
+                        dl_link=dl_link, rapid_upload_info=rpinfo
                     )
-                pcs_files[i] = pcs_files[i]._replace(
-                    dl_link=dl_link, rapid_upload_info=rpinfo
-                )
-                if only_dl_link and dl_link:
-                    print(dl_link)
-                if only_hash_link and rpinfo:
-                    hash_link = getattr(rpinfo, hash_link_protocol)()
-                    print(hash_link)
-            else:
-                logger.error(
-                    "`list_file`: `_get_download_link_and_rapid_upload_info` error: %s",
-                    e,
-                )
+                    if only_dl_link and dl_link:
+                        print(dl_link)
+                    if only_hash_link and rpinfo:
+                        hash_link = getattr(rpinfo, hash_link_protocol)()
+                        print(hash_link)
+                else:
+                    logger.error(
+                        "`list_file`: `_get_download_link_and_rapid_upload_info` error: %s",
+                        e,
+                    )
 
     if not only_dl_link and not only_hash_link:
         display_files(
