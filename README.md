@@ -607,6 +607,18 @@ BaiduPCS-Py 首先会尝试秒传。如果秒传失败，会使用分片上传�
 BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 ```
 
+### 注意：upload 上传本地目录有改变
+
+- 小于 v0.6.8 的版本，如果上传本地目录 `localdir` 到远端目录 `remotedir`，BaiduPCS-Py 是将 `localdir` 下的所有文件（包括下级目录）上传到远端目录 `remotedir` 下。
+
+  比如，`localdir` 下有 2 个文件 `a`，`b` 和一个下级目录 `sub/`，如果运行 `BaiduPCS-Py upload localdir remotedir`，结果是远端目录 `remotedir` 下增加了 2 个文件 `a`，`b` 和一个下级目录 `sub/`。
+
+- 大于或等于 v0.6.8 的版本，如果上传本地目录 `localdir` 到远端目录 `remotedir`，BaiduPCS-Py 是将 `localdir` 这个目录上传到远端目录 `remotedir` 下。
+
+  比如，`localdir` 下有 2 个文件 `a`，`b` 和一个下级目录 `sub/`，如果运行 `BaiduPCS-Py upload localdir remotedir`，结果是远端目录 `remotedir` 下增加了 1 个下级目录和它的所有文件 `localdir/a`，`localdir/b` 和一个下级目录 `localdir/sub/`。
+
+  如果要将 `localdir` 下的所有文件（包括下级目录）上传到远端目录 `remotedir`，用 `BaiduPCS-Py upload localdir/* remotedir`
+
 ### 选项
 
 | Option                                                     | Description                                                                                |
