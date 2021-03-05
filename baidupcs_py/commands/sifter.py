@@ -87,7 +87,21 @@ class IsDirSifter(Sifter):
 T = TypeVar("T", PcsFile, str)
 
 
-def sift(objs: List[T], sifters: List[Sifter]) -> List[T]:
+def sift(objs: List[T], sifters: List[Sifter], recursive: bool = False) -> List[T]:
     if sifters:
-        objs = [obj for obj in objs if all([sifter(obj) for sifter in sifters])]
+
+        if recursive:
+            # If it is recursive, we ignore to sift dirs.
+            obj_dirs = [o for o in objs if isinstance(o, PcsFile) and o.is_dir]
+            objs = [
+                o
+                for o in objs
+                if not isinstance(o, PcsFile) or isinstance(o, PcsFile) and o.is_file
+            ]
+        else:
+            obj_dirs = []
+
+        objs = obj_dirs + [
+            obj for obj in objs if all([sifter(obj) for sifter in sifters])
+        ]
     return objs
