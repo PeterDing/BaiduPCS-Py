@@ -391,6 +391,7 @@ def upload_file(
                         "`upload`: `upload_slice`: error: %s, fail_count: %s",
                         err,
                         fail_count,
+                        exc_info=err,
                     ),
                     _wait_start(),
                 ),
@@ -406,6 +407,7 @@ def upload_file(
                 "`upload`: `combine_slices`: error: %s, fail_count: %s",
                 err,
                 fail_count,
+                exc_info=err,
             ),
         )(api.combine_slices)(
             slice_md5s,
