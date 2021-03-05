@@ -378,7 +378,13 @@ class BaiduPCS:
         m = MultipartEncoder(fields={"file": ("file", io, "")})
         monitor = MultipartEncoderMonitor(m, callback=callback)
 
-        resp = self._request(Method.Post, url, params=params, data=monitor)
+        resp = self._request(
+            Method.Post,
+            url,
+            params=params,
+            data=monitor,
+            timeout=(3, 9),  # (connect timeout, read timeout)
+        )
         return resp.json()
 
     @assert_ok
@@ -564,11 +570,16 @@ class BaiduPCS:
             "app_id": "250528",
             "save_path": remotedir,
             "source_url": task_url,
+            "timeout": "2147483647",
         }
         return self.cloud_operate(params, data=data)
 
     def add_magnet_task(self, task_url: str, remotedir: str, selected_idx: List[int]):
         """Add cloud task for magnet
+
+        Args:
+            selected_idx (List[int]): indexes of `BaiduPCS.magnet_info` list,
+                starting from 1
 
         Warning: `STOKEN` must be in `cookies`
         """
@@ -588,7 +599,7 @@ class BaiduPCS:
             "app_id": "250528",
             "save_path": remotedir,
             "source_url": task_url,
-            # "timeout": "2147483647",
+            "timeout": "2147483647",
             "type": "4",
             "t": str(int(time.time() * 1000)),
             "file_sha1": "",
