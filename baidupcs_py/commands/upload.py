@@ -80,7 +80,7 @@ def from_tos(localpaths: List[str], remotedir: str) -> List[FromTo]:
             remotepath = to_remotepath(os.path.basename(localpath), remotedir)
             ft.append(FromTo(localpath, remotepath))
         else:
-            n = len(str(Path(localpath)))
+            n = len(str(Path(localpath).parent))
             for sub_path in walk(localpath):
                 remotepath = to_remotepath(sub_path[n + 1 :], remotedir)
                 ft.append(FromTo(sub_path, remotepath))
