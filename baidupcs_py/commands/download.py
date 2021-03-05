@@ -325,7 +325,7 @@ def download_dir(
     encrypt_password: bytes = b"",
 ):
     remotepaths = api.list(remotedir)
-    remotepaths = sift(remotepaths, sifters)
+    remotepaths = sift(remotepaths, sifters, recursive=recursive)
     for rp in remotepaths[from_index:]:
         if rp.is_file:
             download_file(
@@ -338,19 +338,20 @@ def download_dir(
                 encrypt_password=encrypt_password,
             )
         else:  # is_dir
-            _localdir = Path(localdir) / os.path.basename(rp.path)
-            download_dir(
-                api,
-                rp.path,
-                str(_localdir),
-                sifters=sifters,
-                recursive=recursive,
-                from_index=from_index,
-                downloader=downloader,
-                downloadparams=downloadparams,
-                out_cmd=out_cmd,
-                encrypt_password=encrypt_password,
-            )
+            if recursive:
+                _localdir = Path(localdir) / os.path.basename(rp.path)
+                download_dir(
+                    api,
+                    rp.path,
+                    str(_localdir),
+                    sifters=sifters,
+                    recursive=recursive,
+                    from_index=from_index,
+                    downloader=downloader,
+                    downloadparams=downloadparams,
+                    out_cmd=out_cmd,
+                    encrypt_password=encrypt_password,
+                )
 
 
 def download(
@@ -388,7 +389,6 @@ def download(
         len(set(remotepaths)),
     )
 
-    remotepaths = sift(remotepaths, sifters)
     for rp in remotepaths:
         if not api.exists(rp):
             print(f"[yellow]WARNING[/yellow]: `{rp}` does not exist.")

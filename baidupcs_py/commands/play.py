@@ -194,7 +194,7 @@ def play_dir(
     local_server: str = "",
 ):
     remotepaths = api.list(remotedir)
-    remotepaths = sift(remotepaths, sifters)
+    remotepaths = sift(remotepaths, sifters, recursive=recursive)
 
     if shuffle:
         rg = random.Random(time.time())
@@ -214,21 +214,22 @@ def play_dir(
                 local_server=local_server,
             )
         else:  # is_dir
-            play_dir(
-                api,
-                rp.path,
-                sifters=sifters,
-                recursive=recursive,
-                from_index=from_index,
-                player=player,
-                player_params=player_params,
-                m3u8=m3u8,
-                quiet=quiet,
-                shuffle=shuffle,
-                ignore_ext=ignore_ext,
-                out_cmd=out_cmd,
-                local_server=local_server,
-            )
+            if recursive:
+                play_dir(
+                    api,
+                    rp.path,
+                    sifters=sifters,
+                    recursive=recursive,
+                    from_index=from_index,
+                    player=player,
+                    player_params=player_params,
+                    m3u8=m3u8,
+                    quiet=quiet,
+                    shuffle=shuffle,
+                    ignore_ext=ignore_ext,
+                    out_cmd=out_cmd,
+                    local_server=local_server,
+                )
 
 
 def play(
