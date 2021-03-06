@@ -43,6 +43,14 @@ UPLOAD_STOP = False
 _rapiduploadinfo_file: Optional[str] = None
 
 
+def _wait_start():
+    while True:
+        if UPLOAD_STOP:
+            time.sleep(1)
+        else:
+            break
+
+
 def _toggle_stop(*args, **kwargs):
     global UPLOAD_STOP
     UPLOAD_STOP = not UPLOAD_STOP
@@ -54,14 +62,6 @@ def _toggle_stop(*args, **kwargs):
 
 # Pass "p" to toggle uploading start/stop
 KeyboardMonitor.register(KeyHandler("p", callback=_toggle_stop))
-
-
-def _wait_start():
-    while True:
-        if UPLOAD_STOP:
-            time.sleep(1)
-        else:
-            break
 
 
 def to_remotepath(sub_path: str, remotedir: str) -> str:
@@ -118,6 +118,11 @@ def upload(
             e.g. it takes 5 minutes about 2GB.
     """
 
+    logger.debug(
+        "======== Uploading start ========\n-> Size of from_to_list: %s",
+        len(from_to_list),
+    )
+
     global _rapiduploadinfo_file
     if _rapiduploadinfo_file is None:
         _rapiduploadinfo_file = rapiduploadinfo_file
@@ -127,13 +132,15 @@ def upload(
     with _progress:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futs = {}
-            for from_to in from_to_list:
+            for idx, from_to in enumerate(from_to_list):
                 semaphore.acquire()
                 task_id = None
                 if show_progress:
                     task_id = _progress.add_task(
                         "upload", start=False, title=from_to.from_
                     )
+
+                logger.debug("-> Upload: index: %s, task_id: %s", idx, task_id)
 
                 fut = executor.submit(
                     sure_release,
@@ -158,6 +165,8 @@ def upload(
                 if e is not None:
                     from_to = futs[fut]
                     excepts[from_to] = e
+
+    logger.debug("======== Uploading end ========")
 
     # Summary
     if excepts:
@@ -236,7 +245,15 @@ def _check_md5(
             continue
 
 
-@retry(-1)
+@retry(
+    -1,
+    except_callback=lambda err, fail_count: logger.warning(
+        "`upload_file`: fails: error: %s, fail_count: %s",
+        err,
+        fail_count,
+        exc_info=err,
+    ),
+)
 def upload_file(
     api: BaiduPCSApi,
     from_to: FromTo,
@@ -342,10 +359,10 @@ def upload_file(
                 _progress.update(task_id, completed=encrypt_io_len)
                 _progress.remove_task(task_id)
 
-                logger.debug("`upload`: rapid_upload success")
-                return
+            logger.debug("`upload`: rapid_upload success, task_id: %s", task_id)
+            return
         except BaiduPCSError as err:
-            logger.debug("`upload`: rapid_upload fails")
+            logger.warning("`upload`: rapid_upload fails")
 
             if err.error_code != 31079:  # 31079: '未找到文件MD5，请使用上传API上传整个文件。'
                 if task_id is not None and progress_task_exists(task_id):
@@ -354,7 +371,7 @@ def upload_file(
                 logger.warning("`rapid_upload`: unknown error: %s", err)
                 raise err
             else:
-                logger.info("`rapid_upload`: %s, no exist in remote", localpath)
+                logger.debug("`rapid_upload`: %s, no exist in remote", localpath)
 
                 if task_id is not None and progress_task_exists(task_id):
                     _progress.reset(task_id)
@@ -401,15 +418,23 @@ def upload_file(
             slice_completed += size
 
         # Combine slices
-        retry(
-            30,
-            except_callback=lambda err, fail_count: logger.warning(
+        def _handle_combin_slices_error(err, fail_count):
+            logger.warning(
                 "`upload`: `combine_slices`: error: %s, fail_count: %s",
                 err,
                 fail_count,
                 exc_info=err,
-            ),
-        )(api.combine_slices)(
+            )
+
+            # If following errors occur, we need to re-upload
+            if (
+                isinstance(err, BaiduPCSError)
+                and err.error_code == 31352  # commit superfile2 failed
+                or err.error_code == 31363  # block miss in superfile2
+            ):
+                raise err
+
+        retry(20, except_callback=_handle_combin_slices_error)(api.combine_slices)(
             slice_md5s,
             remotepath,
             local_ctime=local_ctime,
@@ -417,7 +442,9 @@ def upload_file(
             ondup=ondup,
         )
 
-        logger.debug("`upload`: upload_slice and combine_slices success")
+        logger.debug(
+            "`upload`: upload_slice and combine_slices success, task_id: %s", task_id
+        )
 
         # `combine_slices` can not get right content md5.
         # We need to check whether server updates by hand.
