@@ -318,15 +318,20 @@ _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
 
 @click.group(cls=AliasedGroup, help=_APP_DOC, epilog=_ALIAS_DOC)
 @click.option(
-    "--account-data", type=str, default=ACCOUNT_DATA_PATH, help="Account data file"
+    "--account-data",
+    "-ad",
+    type=str,
+    default=ACCOUNT_DATA_PATH,
+    help="Account data file",
 )
 @click.option(
     "--rapiduploadinfo-file",
+    "--rf",
     type=str,
     default=RAPIDUPLOADINFO_PATH,
     help="秒传 sqlite3 文件",
 )
-@click.option("--users", type=str, default=None, help="用户名片段，用“,”分割")
+@click.option("--users", "-u", type=str, default=None, help="用户名片段，用“,”分割")
 @click.pass_context
 def app(ctx, account_data, rapiduploadinfo_file, users):
     ctx.obj.account_manager = AccountManager.load_data(account_data)
