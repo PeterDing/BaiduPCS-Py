@@ -10,6 +10,8 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 
 > 也是 https://github.com/PeterDing/iScript/blob/master/pan.baidu.com.py 的重构版。
 
+**BaiduPCS-Py 旨在为个人用户提供操作自己用户网盘文件的 api 和简易命令行工具，不提供任何下载加速破解的服务。普通用户下载是限速的。想要下载不限速，请购买 SVIP。**
+
 - [安装](#安装)
 - [更新](#更新)
 - [API](#API)
