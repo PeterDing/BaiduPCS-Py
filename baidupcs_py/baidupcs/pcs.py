@@ -743,6 +743,7 @@ class BaiduPCS:
         err = parse_errno(info.get("errno", 0), str(info))
         if err:
             raise err
+        return info
 
     @assert_ok
     def getcaptcha(self, shared_url: str) -> str:

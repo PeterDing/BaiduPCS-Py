@@ -21,6 +21,7 @@ from baidupcs_py.baidupcs.inner import (
 )
 
 from requests_toolbelt import MultipartEncoderMonitor
+from requests import cookies
 from PIL import Image
 
 from rich import print
@@ -275,7 +276,10 @@ class BaiduPCSApi:
     ):
         while True:
             try:
-                self._baidupcs.access_shared(shared_url, password, vcode_str, vcode)
+                info = self._baidupcs.access_shared(shared_url, password, vcode_str, vcode)
+                cookie_randsk = cookies.RequestsCookieJar()
+                cookie_randsk.set("BDCLND", info['randsk'])
+                self._baidupcs._cookies_update(cookie_randsk)
                 return
             except BaiduPCSError as err:
                 if err.error_code not in (-9, -62):
