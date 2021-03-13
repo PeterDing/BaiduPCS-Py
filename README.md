@@ -108,6 +108,13 @@ from baidupcs_py.baidupcs import BaiduPCSApi
 api = BaiduPCSApi(bduss=bduss, cookies=cookies)
 ```
 
+注意，下面几个 api 不是线程安全的：
+
+- `BaiduPCSApi.access_shared`
+- `BaiduPCS.access_shared`
+- `BaiduPCSApi.shared_paths`
+- `BaiduPCS.shared_paths`
+
 ## 用法
 
 ```
