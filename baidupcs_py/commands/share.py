@@ -75,7 +75,6 @@ def save_shared(
             api.makedir(rd)
             _dir_exists.add(rd)
 
-        # rd = (Path(_remotedirs[shared_path]) / os.path.basename(shared_path.path)).as_posix()
         try:
             api.transfer_shared_paths(
                 rd, [shared_path.fs_id], uk, share_id, bdstoken, shared_url
