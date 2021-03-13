@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.6.11 - 2021-03-13
+
+### Fixed
+
+- 修复保存部分分享连接时出错。
+
+### Changed
+
+注意，下面几个 api 不是线程安全的：
+
+- `BaiduPCSApi.access_shared`
+- `BaiduPCS.access_shared`
+- `BaiduPCSApi.shared_paths`
+- `BaiduPCS.shared_paths`
+
 ## v0.6.10 - 2021-03-13
 
 ### Fixed
