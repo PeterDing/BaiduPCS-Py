@@ -718,6 +718,7 @@ class BaiduPCS:
         surl = u.path.split("/s/1")[-1]
         return f"https://pan.baidu.com/share/init?surl={surl}"
 
+    @assert_ok
     def access_shared(self, shared_url: str, password: str, vcode_str: str, vcode: str):
         """Pass password to the session"""
 
@@ -739,10 +740,7 @@ class BaiduPCS:
         hdrs = dict(PAN_HEADERS)
         hdrs["Referer"] = init_url
         resp = self._request(Method.Post, url, headers=hdrs, params=params, data=data)
-        info = resp.json()
-        err = parse_errno(info.get("errno", 0), str(info))
-        if err:
-            raise err
+        return resp.json()
 
     @assert_ok
     def getcaptcha(self, shared_url: str) -> str:
@@ -780,8 +778,10 @@ class BaiduPCS:
         resp = self._request(Method.Get, shared_url, params=None)
         html = resp.text
 
-        m = re.search(r"yunData.setData\((.+?)\);", html)
-        assert m
+        m = re.search(r"(?:yunData.setData|locals.mset)\((.+?)\);", html)
+
+        assert m, "`BaiduPCS.shared_paths`: Don't get shared info"
+
         shared_data = m.group(1)
         return json.loads(shared_data)
 

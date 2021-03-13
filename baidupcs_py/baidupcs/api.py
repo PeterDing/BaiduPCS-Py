@@ -306,16 +306,27 @@ class BaiduPCSApi:
 
     def shared_paths(self, shared_url: str) -> List[PcsSharedPath]:
         info = self._baidupcs.shared_paths(shared_url)
-        uk = info["uk"]
+        uk = info.get("share_uk") or info.get("uk")
+        uk = int(uk)
+
+        assert uk, "`BaiduPCSApi.shared_paths`: Don't get `uk`"
+
         share_id = info["shareid"]
         bdstoken = info["bdstoken"]
 
         if not info.get("file_list"):
             return []
 
+        if isinstance(info["file_list"], list):
+            file_list = info["file_list"]
+        elif isinstance(info["file_list"].get("list"), list):
+            file_list = info["file_list"]["list"]
+        else:
+            raise ValueError("`shared_paths`: Parsing shared info fails")
+
         return [
             PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken)
-            for v in info["file_list"]["list"]
+            for v in file_list
         ]
 
     def list_shared_paths(

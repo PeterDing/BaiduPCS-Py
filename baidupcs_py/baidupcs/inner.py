@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, NamedTuple
 from collections import namedtuple
+from urllib.parse import unquote
 
 from base64 import standard_b64encode
 
@@ -202,9 +203,10 @@ class PcsSharedPath(NamedTuple):
 
     @staticmethod
     def from_(info) -> "PcsSharedPath":
+        path = unquote(info["parent_path"]) + "/" + info["server_filename"]
         return PcsSharedPath(
             fs_id=info.get("fs_id"),
-            path=info.get("path"),
+            path=path,
             size=info.get("size"),
             is_dir=info.get("isdir") == 1,
             is_file=info.get("isdir") == 0,
