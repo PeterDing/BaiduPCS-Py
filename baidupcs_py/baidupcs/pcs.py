@@ -720,7 +720,10 @@ class BaiduPCS:
 
     @assert_ok
     def access_shared(self, shared_url: str, password: str, vcode_str: str, vcode: str):
-        """Pass password to the session"""
+        """Pass password to the session
+
+        WARNING: this method is not threadsafe.
+        """
 
         url = "https://pan.baidu.com/share/verify"
         init_url = self.shared_init_url(shared_url)
@@ -740,6 +743,10 @@ class BaiduPCS:
         hdrs = dict(PAN_HEADERS)
         hdrs["Referer"] = init_url
         resp = self._request(Method.Post, url, headers=hdrs, params=params, data=data)
+
+        # These cookies must be included through all sub-processes
+        self._cookies_update(resp.cookies.get_dict())
+
         return resp.json()
 
     @assert_ok
@@ -771,6 +778,8 @@ class BaiduPCS:
         """Get shared paths
 
         Call `BaiduPCS.access_share` before calling the function
+
+        WARNING: this method is not threadsafe.
         """
 
         assert self._stoken, "`STOKEN` is not in `cookies`"
@@ -778,8 +787,10 @@ class BaiduPCS:
         resp = self._request(Method.Get, shared_url, params=None)
         html = resp.text
 
-        m = re.search(r"(?:yunData.setData|locals.mset)\((.+?)\);", html)
+        # These cookies must be included through all sub-processes
+        self._cookies_update(resp.cookies.get_dict())
 
+        m = re.search(r"(?:yunData.setData|locals.mset)\((.+?)\);", html)
         assert m, "`BaiduPCS.shared_paths`: Don't get shared info"
 
         shared_data = m.group(1)
