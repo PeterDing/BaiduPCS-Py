@@ -25,7 +25,7 @@ Steps to reproduce the behavior:
 3. ...
 4. See error
 
-安装下面的步骤看复现问题：
+按照下面的步骤可以复现问题：
 1. 做 '...'
 2. 做 '...'
 3. ...
