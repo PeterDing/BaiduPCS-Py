@@ -12,7 +12,10 @@ assignees: ''
 
 **Prerequisites / 报告前提**
 Before you report a bug, please let the bug to be reproduced at the latest verion of BaiduPCS-Py.
-在你提交报告前，请先将在 BaiduPCS-Py 的最新版本上复现问题。
+在你提交报告前，请在 BaiduPCS-Py 的最新版本上复现问题。
+
+At sometimes, there are errors occured by an expired cookie. Before you commit the report, please to check whether cookies are expired.
+有时一些错误是由于某个 cookie 超期导致的。在你提交报告前，请先检查你的 cookies 是否超期。
 
 **Describe the bug / 描述 bug**
 A clear and concise description of what the bug is.
