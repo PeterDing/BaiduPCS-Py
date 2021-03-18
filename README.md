@@ -296,6 +296,12 @@ BaiduPCS-Py userlist
 BaiduPCS-Py su
 ```
 
+或者指定用户列表中用户所在的位置：
+
+```
+BaiduPCS-Py su 2
+```
+
 ## 删除一个用户
 
 ```
