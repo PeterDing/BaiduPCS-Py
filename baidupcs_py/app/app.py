@@ -389,9 +389,10 @@ def updateuser(ctx, user_ids):
 
 
 @app.command()
+@click.argument("user_index", type=int, default=None, required=False)
 @click.pass_context
 @handle_error
-def su(ctx):
+def su(ctx, user_index):
     """切换当前用户"""
 
     am = ctx.obj.account_manager
@@ -399,9 +400,16 @@ def su(ctx):
     display_user_infos(*ls, recent_user_id=am._who)
 
     indexes = list(str(idx) for idx in range(1, len(ls) + 1))
-    i = Prompt.ask("Select an user index", choices=indexes, default="")
+    if user_index:
+        i = user_index
+        print(f"Select the user index: {i}")
+    else:
+        i = Prompt.ask("Select an user index", choices=indexes, default="")
+
     if not i:
         return
+
+    assert 0 < user_index < len(ls) + 1, f"Out range index {i}"
 
     user_id = ls[int(i) - 1][0].user_id
     am.su(user_id)
