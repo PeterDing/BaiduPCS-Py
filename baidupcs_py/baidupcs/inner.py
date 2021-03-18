@@ -203,8 +203,8 @@ class PcsSharedPath(NamedTuple):
 
     @staticmethod
     def from_(info) -> "PcsSharedPath":
-        if info.get("parent_path"):
-            path = unquote(info["parent_path"]) + "/" + info["server_filename"]
+        if "parent_path" in info:
+            path = unquote(info["parent_path"] or "") + "/" + info["server_filename"]
         else:
             path = info["path"]
         return PcsSharedPath(
