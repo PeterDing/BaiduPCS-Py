@@ -399,17 +399,17 @@ def su(ctx, user_index):
     ls = sorted([(a.user, a.pwd) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
-    indexes = list(str(idx) for idx in range(1, len(ls) + 1))
     if user_index:
+        assert 0 < user_index < len(ls) + 1, f"Out range index {user_index}"
+
         i = user_index
         print(f"Select the user index: {i}")
     else:
+        indexes = list(str(idx) for idx in range(1, len(ls) + 1))
         i = Prompt.ask("Select an user index", choices=indexes, default="")
 
-    if not i:
-        return
-
-    assert 0 < user_index < len(ls) + 1, f"Out range index {i}"
+        if not i:
+            return
 
     user_id = ls[int(i) - 1][0].user_id
     am.su(user_id)
