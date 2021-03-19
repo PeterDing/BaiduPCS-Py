@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.14 - 2021-03-19
+
+### Fixed
+
+- 修复 `su` 命令出错。
+- 修复 `userlist` 命令出错。（确保 `PcsUserProduct.name` 不为空）(#30)
+
 ## v0.6.13 - 2021-03-18
 
 ### Fixed
