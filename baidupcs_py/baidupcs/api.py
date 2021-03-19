@@ -400,6 +400,10 @@ class BaiduPCSApi:
         info = self._baidupcs.user_products()
         pds = []
         for p in info["product_infos"]:
+            # `product_name` of some entries are None (issue #30)
+            if not p.get("product_name"):
+                continue
+
             pds.append(
                 PcsUserProduct(
                     name=p["product_name"],
