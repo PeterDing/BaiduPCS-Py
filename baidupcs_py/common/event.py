@@ -26,7 +26,11 @@ class KeyboardMonitor:
             handler.handle(key)
 
 
+global _KEYBOARD_LISTENER_STARTED
 _KEYBOARD_LISTENER_STARTED = False
+
+global _KEYBOARD_LISTENER
+_KEYBOARD_LISTENER = None
 
 
 def keyboard_listener_start():
@@ -36,5 +40,8 @@ def keyboard_listener_start():
 
     listener = KeyboardListener(on=KeyboardMonitor.on)
     listener.start()
+
+    global _KEYBOARD_LISTENER
+    _KEYBOARD_LISTENER = listener
 
     _KEYBOARD_LISTENER_STARTED = True
