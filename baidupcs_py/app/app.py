@@ -1,5 +1,6 @@
 from typing import Optional, List, Tuple
 import os
+import sys
 
 # Enable UTF-8 Mode for Windows
 # https://www.python.org/dev/peps/pep-0540/
@@ -73,8 +74,25 @@ logger = get_logger(__name__)
 DEBUG = logger.level == logging.DEBUG
 
 
+def _teardown():
+    logger.debug("`app`: _teardown: start")
+
+    from baidupcs_py.common.event import _KEYBOARD_LISTENER
+
+    if _KEYBOARD_LISTENER is not None:
+        logger.debug("`app`: _teardown: reset old terminal")
+        _KEYBOARD_LISTENER.set_normal_term()
+
+    logger.debug("`app`: _teardown: end")
+
+    # No use sys.exit() which only exits the main thread
+    os._exit(1)
+
+
 def _exit_progress_bar():
     if _progress.live._started:
+        logger.debug("`app`: _exit_progress_bar: stop progress bar")
+
         print()
         # Stop _progress, otherwise terminal stdout will be contaminated
         _progress.stop()
@@ -84,9 +102,7 @@ def handle_signal(sign_num, frame):
     logger.debug("`app`: handle_signal: %s", sign_num)
 
     _exit_progress_bar()
-
-    # No use sys.exit() which only exits the main thread
-    os._exit(1)
+    _teardown()
 
 
 signal.signal(signal.SIGINT, handle_signal)
@@ -109,7 +125,7 @@ def handle_error(func):
                 console = Console()
                 console.print_exception()
 
-            os._exit(1)
+            _teardown()
         except Exception as err:
             _exit_progress_bar()
 
@@ -120,7 +136,7 @@ def handle_error(func):
                 console = Console()
                 console.print_exception()
 
-            os._exit(1)
+            _teardown()
 
     return wrap
 
