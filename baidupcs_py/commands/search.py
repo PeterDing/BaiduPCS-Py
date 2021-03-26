@@ -15,6 +15,7 @@ def search(
     show_size: bool = False,
     show_date: bool = False,
     show_md5: bool = False,
+    csv: bool = False,
 ):
     pcs_files = api.search(keyword, remotedir, recursive=recursive)
 
@@ -28,4 +29,5 @@ def search(
         show_date=show_date,
         show_md5=show_md5,
         show_absolute_path=True,
+        csv=csv,
     )

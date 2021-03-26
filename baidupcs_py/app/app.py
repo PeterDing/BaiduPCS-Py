@@ -673,6 +673,7 @@ def ls(
 @click.option("--show-size", "-S", is_flag=True, help="显示文件大小")
 @click.option("--show-date", "-D", is_flag=True, help="显示文件创建时间")
 @click.option("--show-md5", "-M", is_flag=True, help="显示文件md5")
+@click.option("--csv", is_flag=True, help="用 csv 格式显示")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -691,6 +692,7 @@ def search(
     show_size,
     show_date,
     show_md5,
+    csv,
 ):
     """搜索包含 `keyword` 的文件"""
 
@@ -725,6 +727,7 @@ def search(
         show_size=show_size,
         show_date=show_date,
         show_md5=show_md5,
+        csv=csv,
     )
 
 
