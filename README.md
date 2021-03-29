@@ -489,6 +489,7 @@ BaiduPCS-Py search keyword relative/path
 | -S, --show-size            | 显示文件大小                         |
 | -D, --show-date            | 显示文件创建时间                     |
 | -M, --show-md5             | 显示文件 md5                         |
+| --csv                      | 用 csv 格式显示                      |
 
 ## 显示文件内容
 
