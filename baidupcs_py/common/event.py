@@ -1,4 +1,5 @@
 from typing import List, Callable, Any
+import sys
 
 from baidupcs_py.common.keyboard import KeyboardListener
 
@@ -38,10 +39,12 @@ def keyboard_listener_start():
     if _KEYBOARD_LISTENER_STARTED:
         return
 
-    listener = KeyboardListener(on=KeyboardMonitor.on)
-    listener.start()
+    # KeyboardListener is only available in a terminal
+    if sys.stdin.isatty():
+        listener = KeyboardListener(on=KeyboardMonitor.on)
+        listener.start()
 
-    global _KEYBOARD_LISTENER
-    _KEYBOARD_LISTENER = listener
+        global _KEYBOARD_LISTENER
+        _KEYBOARD_LISTENER = listener
 
     _KEYBOARD_LISTENER_STARTED = True
