@@ -5,6 +5,7 @@ import mimetypes
 import asyncio
 import secrets
 import copy
+from urllib.parse import quote
 
 import uvicorn
 
@@ -82,7 +83,15 @@ async def handle_request(
         entries = []
         for f in pcs_files:
             p = Path(f.path)
-            entries.append((f.is_dir, p.name, f.size, format_date(f.local_mtime or 0)))
+            entries.append(
+                (
+                    f.is_dir,
+                    p.name,
+                    quote(p.name),
+                    f.size,
+                    format_date(f.local_mtime or 0),
+                )
+            )
         cn = _html_tempt.render(
             root_dir=remotepath, navigation=navigation, entries=entries
         )

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import random
 import time
+from urllib.parse import quote
 
 from baidupcs_py.baidupcs import BaiduPCSApi
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -159,7 +160,7 @@ def play_file(
     use_local_server = bool(local_server)
 
     if use_local_server:
-        url = f"{local_server}{remotepath}"
+        url = f"{local_server}{quote(remotepath)}"
         print("url:", url)
     else:
         url = api.download_link(remotepath)
