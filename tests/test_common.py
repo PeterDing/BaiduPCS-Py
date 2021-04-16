@@ -37,6 +37,8 @@ from baidupcs_py.common.crypto import (
 )
 from baidupcs_py.common.localstorage import RapidUploadInfo
 
+from baidupcs_py.utils import human_size, human_size_to_int
+
 
 def test_join_path():
     a = "/foo"
@@ -492,3 +494,12 @@ def test_localstorage():
     r = db.list()
     for i in r:
         print(i)
+
+
+def test_human_size():
+    s = constant.OneM * 10
+
+    s_str = human_size(s)
+    s_int = human_size_to_int(s_str)
+
+    assert s == s_int
