@@ -8,6 +8,7 @@ import subprocess
 from concurrent.futures import Future
 
 from baidupcs_py.baidupcs import BaiduPCSApi
+from baidupcs_py.utils import human_size, human_size_to_int
 from baidupcs_py.common import constant
 from baidupcs_py.common.io import to_decryptio, DecryptIO, READ_SIZE
 from baidupcs_py.common.downloader import MeDownloader
@@ -27,6 +28,9 @@ USER_AGENT = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
 
 DEFAULT_CONCURRENCY = 5
 DEFAULT_CHUNK_SIZE = str(1 * constant.OneM)
+
+# This is the threshold of range request setted by Baidu server
+MAX_CHUNK_SIZE = 50 * constant.OneM
 
 
 class DownloadParams(SimpleNamespace):
@@ -162,11 +166,13 @@ class Downloader(Enum):
             if task_id is not None and progress_task_exists(task_id):
                 _progress.reset(task_id)
 
+        chunk_size_int = human_size_to_int(downloadparams.chunk_size)
         meDownloader = MeDownloader(
             "GET",
             url,
             headers=headers,
             max_workers=downloadparams.concurrency,
+            max_chunk_size=chunk_size_int,
             callback=monit_callback,
             encrypt_password=encrypt_password,
         )
@@ -388,6 +394,10 @@ def download(
         len(remotepaths),
         len(set(remotepaths)),
     )
+
+    assert (
+        human_size_to_int(downloadparams.chunk_size) < MAX_CHUNK_SIZE
+    ), f"`chunk_size` must be less then {human_size(MAX_CHUNK_SIZE)}"
 
     for rp in remotepaths:
         if not api.exists(rp):
