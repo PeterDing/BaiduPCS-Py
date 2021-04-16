@@ -569,7 +569,7 @@ BaiduPCS-Py remove [OPTIONS] [REMOTEPATHS]...
 BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 ```
 
-> **注意**: 请用 `me`, `aget_py` 或 `aget_rs` 下载大于 100MB 的文件。用 aria2 下载大于 100MB 的文件会失败。 ([#27](https://github.com/PeterDing/BaiduPCS-Py/issues/27))
+> **注意**: 请用 `me`, `aget_py` 或 `aget_rs` 下载大于 50MB 的文件。用 aria2 下载大于 50MB 的文件会失败。 ([#27](https://github.com/PeterDing/BaiduPCS-Py/issues/27))
 
 ### 选项
 
@@ -583,7 +583,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 | -E, --exclude TEXT                                     | 筛选 不 包含这个字符串的文件                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | --exclude-regex, --ER TEXT                             | 筛选 不 包含这个正则表达式的文件                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | -s, --concurrency INTEGER                              | 下载同步链接数，默认为 5。数子越大下载速度越快，但是容易被百度封锁                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| -k, --chunk-size TEXT                                  | 同步链接分块大小                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -k, --chunk-size TEXT                                  | 同步链接分块大小，最大不能超过 50MB                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | -q, --quiet                                            | 取消第三方下载应用输出                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | --out-cmd, --OC                                        | 输出第三方下载应用命令                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | -d, --downloader [ me \| aget_py \| aget_rs \| aria2 ] | 指定下载应用<br> <br> 默认为 me (BaiduPCS-Py 自己的下载器，支持断续下载)<br> me 使用多文件并发下载。<br> <br> 除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。<br> 如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。对于 SVIP 用户，用哪个下载器都很快。<br> <br> aget_py (https://github.com/PeterDing/aget) 默认安装<br> aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)<br> aria2 (下载 https://github.com/aria2/aria2/releases)<br> |
@@ -595,7 +595,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 ```
 
-**注意**: 大于 **100MB** 的媒体文件无法直接播放，需要加 `-s` 使用本地服务器播放。
+**注意**: 大于 **50MB** 的媒体文件无法直接播放，需要加 `-s` 使用本地服务器播放。
 
 `play` 命令默认播放带有媒体后缀的文件，如 `abc.mp4`, `abc.mp3`。如果需要播放的媒体文件没有用常规的媒体文件后缀，则需要加选项 `--ignore-ext`。
 
@@ -616,7 +616,7 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 | --ignore-ext, --IE            | 不用文件名后缀名来判断媒体文件                                                |
 | --out-cmd, --OC               | 输出第三方播放器命令                                                          |
 | -p, --player [mpv]            | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
-| -s, --use-local-server        | 使用本地服务器播放。大于 100MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
+| -s, --use-local-server        | 使用本地服务器播放。大于 50MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
 | --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的                                                  |
 
 ## 上传文件
