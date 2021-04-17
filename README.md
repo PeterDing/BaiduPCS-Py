@@ -83,6 +83,7 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 需要 Python 版本大于或等于 3.7
 
 ```
+pip3 install Cython
 pip3 install BaiduPCS-Py
 ```
 
