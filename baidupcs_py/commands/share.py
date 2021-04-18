@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Set
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from collections import deque
 
 from baidupcs_py.baidupcs import BaiduPCSApi, PcsSharedPath, BaiduPCSError
@@ -61,6 +61,14 @@ def save_shared(
 
     while shared_paths:
         shared_path = shared_paths.popleft()
+        rd = _remotedirs[shared_path]
+
+        if shared_path.is_file and remotepath_exists(
+            api, PurePosixPath(shared_path.path).name, rd
+        ):
+            print(f"[yellow]WARNING[/]: {shared_path.path} has be in {rd}")
+            continue
+
         uk, share_id, bdstoken = (
             shared_path.uk,
             shared_path.share_id,
@@ -70,7 +78,6 @@ def save_shared(
         assert share_id
         assert bdstoken
 
-        rd = _remotedirs[shared_path]
         if rd not in _dir_exists and not api.exists(rd):
             api.makedir(rd)
             _dir_exists.add(rd)
@@ -162,3 +169,13 @@ def list_shared_paths(
             shared_paths.extendleft(sub_paths[::-1])
 
     display_shared_paths(*all_shared_paths)
+
+
+def remotepath_exists(
+    api: BaiduPCSApi, name: str, rd: str, _cache: Dict[str, Set[str]] = {}
+) -> bool:
+    names = _cache.get(rd)
+    if not names:
+        names = set([PurePosixPath(sp.path).name for sp in api.list(rd)])
+        _cache[rd] = names
+    return name in names
