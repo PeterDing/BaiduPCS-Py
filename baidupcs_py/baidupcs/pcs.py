@@ -640,7 +640,7 @@ class BaiduPCS:
 
     @assert_ok
     def share(self, *remotepaths: str, password: Optional[str] = None):
-        """Share some paths to public"""
+        """Share `remotepaths` to public"""
 
         assert self._stoken, "`STOKEN` is not in `cookies`"
 
