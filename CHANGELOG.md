@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.17 - 2021-04-18
+
+### Fixed
+
+- 修复 http server 中 url 出错
+- 修复 `play -s` 时 url 出错
+
+### Changed
+
+- 下载 `--chunk-size` 选项不能大于 50M
+- 过滤已经存在的文件，加快保存速度。
+
 ## v0.6.16 - 2021-03-29
 
 ### Fixed
