@@ -1458,7 +1458,7 @@ def rp(
 # {{{
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
-@click.option("--password", "-p", type=str, help="设置秘密，4个字符。默认没有秘密")
+@click.option("--password", "-p", type=str, help="设置提取码，4个字符。默认没有提取码")
 @click.pass_context
 @handle_error
 @multi_user_do
