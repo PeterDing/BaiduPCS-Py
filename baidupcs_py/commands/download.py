@@ -396,8 +396,8 @@ def download(
     )
 
     assert (
-        human_size_to_int(downloadparams.chunk_size) < MAX_CHUNK_SIZE
-    ), f"`chunk_size` must be less then {human_size(MAX_CHUNK_SIZE)}"
+        human_size_to_int(downloadparams.chunk_size) <= MAX_CHUNK_SIZE
+    ), f"`chunk_size` must be less or equal then {human_size(MAX_CHUNK_SIZE)}"
 
     for rp in remotepaths:
         if not api.exists(rp):
