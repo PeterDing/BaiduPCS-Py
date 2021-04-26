@@ -53,24 +53,10 @@ class MeDownloader(RangeRequestIO):
             the size of `localpath`
         """
 
+        self._localpath = localpath
         self._task_id = task_id
         self._except_callback = except_callback
-
-        if continue_:
-            _path = Path(localpath)
-            if self.seekable():
-                _offset = _path.stat().st_size if _path.exists() else 0
-                _fd = _path.open("ab")
-                _fd.seek(_offset, 0)
-            else:
-                _offset = 0
-                _fd = _path.open("wb")
-        else:
-            _offset = 0
-            _fd = open(localpath, "wb")
-
-        self._offset = _offset
-        self._fd = _fd
+        self.continue_ = continue_
 
         cls = self.__class__
         cls._semaphore.acquire()
@@ -84,8 +70,27 @@ class MeDownloader(RangeRequestIO):
             fut.add_done_callback(done_callback)
         cls._futures.append(fut)
 
+    def _init_fd(self):
+        if self.continue_:
+            _path = Path(self._localpath)
+            if self.seekable():
+                _offset = _path.stat().st_size if _path.exists() else 0
+                _fd = _path.open("ab")
+                _fd.seek(_offset, 0)
+            else:
+                _offset = 0
+                _fd = _path.open("wb")
+        else:
+            _offset = 0
+            _fd = open(self._localpath, "wb")
+
+        self._offset = _offset
+        self._fd = _fd
+
     @retry(30)
     def work(self):
+        self._init_fd()
+
         try:
             start, end = self._offset, len(self)
 
@@ -99,3 +104,5 @@ class MeDownloader(RangeRequestIO):
             self._except_callback(self._task_id)
             self.reset()
             raise err
+        finally:
+            self._fd.close()
