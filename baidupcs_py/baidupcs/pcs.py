@@ -639,8 +639,11 @@ class BaiduPCS:
         return self.cloud_operate(params)
 
     @assert_ok
-    def share(self, *remotepaths: str, password: Optional[str] = None):
-        """Share `remotepaths` to public"""
+    def share(self, *remotepaths: str, password: Optional[str] = None, period: int = 0):
+        """Share `remotepaths` to public
+
+        period (int): The days for expiring. `0` means no expiring
+        """
 
         assert self._stoken, "`STOKEN` is not in `cookies`"
 
@@ -658,6 +661,7 @@ class BaiduPCS:
             "fid_list": dump_json(fs_ids),
             "schannel": "0",
             "channel_list": "[]",
+            "period": str(int(period)),
         }
         if password:
             data["pwd"] = password

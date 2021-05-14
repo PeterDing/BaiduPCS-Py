@@ -316,13 +316,17 @@ class BaiduPCSApi:
 
         self._baidupcs.cancel_task(task_id)
 
-    def share(self, *remotepaths: str, password: Optional[str] = None) -> PcsSharedLink:
+    def share(
+        self, *remotepaths: str, password: Optional[str] = None, period: int = 0
+    ) -> PcsSharedLink:
         """Share `remotepaths` to public with a optional password
 
         To use api, `STOKEN` must be in `cookies`
+
+        period (int): The days for expiring. `0` means no expiring
         """
 
-        info = self._baidupcs.share(*remotepaths, password=password)
+        info = self._baidupcs.share(*remotepaths, password=password, period=period)
         link = PcsSharedLink.from_(info)._replace(
             paths=list(remotepaths), password=password
         )
@@ -335,6 +339,7 @@ class BaiduPCSApi:
         """
 
         info = self._baidupcs.list_shared(page)
+        print(info)
         return [PcsSharedLink.from_(v) for v in info["list"]]
 
     def shared_password(self, share_id: int) -> Optional[str]:

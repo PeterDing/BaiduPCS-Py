@@ -144,6 +144,10 @@ class PcsSharedLink(NamedTuple):
     fs_ids: Optional[List[int]] = None
     password: Optional[str] = None
 
+    # The remained second before expiring.
+    # -1 means being expired
+    expired: Optional[int] = None
+
     # channel == 4, has password
     channel: Optional[bool] = None
 
@@ -157,6 +161,7 @@ class PcsSharedLink(NamedTuple):
             paths=info.get("paths") or [info.get("typicalPath")],
             fs_ids=info.get("fsIds"),
             password=info.get("password"),
+            expired=info.get("expiredTime") if info.get("expiredType") != -1 else -1,
             channel=info.get("channel"),
             share_id=info.get("share_id") or info.get("shareId") or info.get("shareid"),
             ctime=info.get("ctime"),
