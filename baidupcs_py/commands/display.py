@@ -15,7 +15,7 @@ from baidupcs_py.baidupcs import (
     PcsRapidUploadInfo,
 )
 from baidupcs_py.commands.sifter import Sifter
-from baidupcs_py.utils import format_date, human_size
+from baidupcs_py.utils import format_date, format_time, human_size
 
 _print = print
 
@@ -283,6 +283,7 @@ def display_tasks(*tasks: CloudTask):
 _SHARED_LINK_FORMAT = (
     "share id: {share_id}\n"
     "shared url: [bold]{url}[/bold]\n"
+    "valid period: [i yellow]{expired_time}[/i yellow]\n"
     "password: [bold red]{password}[/bold red]\n"
     "paths: {paths}"
 )
@@ -293,12 +294,24 @@ def display_shared_links(*shared_links: PcsSharedLink):
     for shared_link in shared_links:
         share_id = shared_link.share_id
         url = shared_link.url
+
+        if shared_link.expired == -1:
+            expired_time = "已经超期"
+        elif shared_link.expired == None or shared_link.expired == 0:
+            expired_time = "永久"
+        else:
+            expired_time = format_time(shared_link.expired or 0)
+
         password = shared_link.password or ""
         paths = "\n       ".join(shared_link.paths or [])
 
         panel = Panel(
             _SHARED_LINK_FORMAT.format(
-                share_id=share_id, url=url, password=password, paths=paths
+                share_id=share_id,
+                url=url,
+                expired_time=expired_time,
+                password=password,
+                paths=paths,
             ),
             highlight=True,
         )
