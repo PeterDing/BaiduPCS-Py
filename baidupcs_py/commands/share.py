@@ -9,8 +9,10 @@ from baidupcs_py.commands.display import display_shared_links, display_shared_pa
 from rich import print
 
 
-def share_files(api: BaiduPCSApi, *remotepaths: str, password: Optional[str] = None):
-    shared_link = api.share(*remotepaths, password=password)
+def share_files(
+    api: BaiduPCSApi, *remotepaths: str, password: Optional[str] = None, period: int = 0
+):
+    shared_link = api.share(*remotepaths, password=password, period=period)
     display_shared_links(shared_link)
 
 

@@ -1459,10 +1459,11 @@ def rp(
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.option("--password", "-p", type=str, help="设置秘密，4个字符。默认没有秘密")
+@click.option("--period-time", "--pt", type=int, help="设置分享有效期，单位为天")
 @click.pass_context
 @handle_error
 @multi_user_do
-def share(ctx, remotepaths, password):
+def share(ctx, remotepaths, password, period_time):
     """分享文件
 
     \b
@@ -1478,7 +1479,7 @@ def share(ctx, remotepaths, password):
     pwd = _pwd(ctx)
     remotepaths = (join_path(pwd, r) for r in remotepaths)
 
-    _share.share_files(api, *remotepaths, password=password)
+    _share.share_files(api, *remotepaths, password=password, period=period_time or 0)
 
 
 @app.command()
