@@ -12,6 +12,19 @@ def format_date(timestramp: int) -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestramp))
 
 
+def format_time(seconds: int) -> str:
+    tm = seconds
+    ft = ""
+    for unit in [60, 60, 24]:
+        ft = f"{tm % unit:0>2}" + ft
+        if unit != 24:
+            ft = ":" + ft
+        tm //= unit
+
+    ft = f"{tm}days {ft}"
+    return ft
+
+
 def human_size(size: int) -> str:
     s = float(size)
     v = ""
