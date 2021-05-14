@@ -602,23 +602,23 @@ BaiduPCS-Py play [OPTIONS] [REMOTEPATHS]...
 
 ### 选项
 
-| Option                        | Description                                                                   |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| -R, --recursive               | 递归播放                                                                      |
-| -f, --from-index INTEGER      | 从所有目录中的第几个文件开始播放，默认为 0（第一个）                          |
-| -I, --include TEXT            | 筛选包含这个字符串的文件                                                      |
-| --include-regex, --IR TEXT    | 筛选包含这个正则表达式的文件                                                  |
-| -E, --exclude TEXT            | 筛选 不 包含这个字符串的文件                                                  |
-| --exclude-regex, --ER TEXT    | 筛选 不 包含这个正则表达式的文件                                              |
-| --player-params, --PP TEXT    | 第三方播放器参数                                                              |
-| -m, --m3u8                    | 获取 m3u8 文件并播放                                                          |
-| -q, --quiet                   | 取消第三方播放器输出                                                          |
-| --shuffle, --sf               | 随机播放                                                                      |
-| --ignore-ext, --IE            | 不用文件名后缀名来判断媒体文件                                                |
-| --out-cmd, --OC               | 输出第三方播放器命令                                                          |
-| -p, --player [mpv]            | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                           |
+| Option                        | Description                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| -R, --recursive               | 递归播放                                                                     |
+| -f, --from-index INTEGER      | 从所有目录中的第几个文件开始播放，默认为 0（第一个）                         |
+| -I, --include TEXT            | 筛选包含这个字符串的文件                                                     |
+| --include-regex, --IR TEXT    | 筛选包含这个正则表达式的文件                                                 |
+| -E, --exclude TEXT            | 筛选 不 包含这个字符串的文件                                                 |
+| --exclude-regex, --ER TEXT    | 筛选 不 包含这个正则表达式的文件                                             |
+| --player-params, --PP TEXT    | 第三方播放器参数                                                             |
+| -m, --m3u8                    | 获取 m3u8 文件并播放                                                         |
+| -q, --quiet                   | 取消第三方播放器输出                                                         |
+| --shuffle, --sf               | 随机播放                                                                     |
+| --ignore-ext, --IE            | 不用文件名后缀名来判断媒体文件                                               |
+| --out-cmd, --OC               | 输出第三方播放器命令                                                         |
+| -p, --player [mpv]            | 指定第三方播放器<br><br>默认为 mpv (https://mpv.io)                          |
 | -s, --use-local-server        | 使用本地服务器播放。大于 50MB 的媒体文件无法直接播放，需要使用本地服务器播放 |
-| --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的                                                  |
+| --encrypt-password, --ep TEXT | 加密密码，默认使用用户设置的                                                 |
 
 ## 上传文件
 
@@ -847,9 +847,10 @@ BaiduPCS-Py share [OPTIONS] [REMOTEPATHS]...
 
 ### 选项
 
-| Option              | Description                      |
-| ------------------- | -------------------------------- |
-| -p, --password TEXT | 设置秘密，4 个字符。默认没有秘密 |
+| Option                      | Description                      |
+| --------------------------- | -------------------------------- |
+| -p, --password TEXT         | 设置秘密，4 个字符。默认没有秘密 |
+| --period-time, --pt INTEGER | 设置分享有效期，单位为天         |
 
 ## 列出分享链接
 
