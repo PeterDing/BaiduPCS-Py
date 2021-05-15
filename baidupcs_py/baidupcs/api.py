@@ -339,7 +339,6 @@ class BaiduPCSApi:
         """
 
         info = self._baidupcs.list_shared(page)
-        print(info)
         return [PcsSharedLink.from_(v) for v in info["list"]]
 
     def shared_password(self, share_id: int) -> Optional[str]:
