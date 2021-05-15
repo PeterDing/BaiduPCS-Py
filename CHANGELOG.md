@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.20 - 2021-05-15
+
+### Fixed
+
+- 移除debug print。
+
 ## v0.6.19 - 2021-05-14
 
 ### Added
