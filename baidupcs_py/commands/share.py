@@ -65,6 +65,12 @@ def save_shared(
         shared_path = shared_paths.popleft()
         rd = _remotedirs[shared_path]
 
+        # Make sure remote dir exists
+        if rd not in _dir_exists and not api.exists(rd):
+            api.makedir(rd)
+            _dir_exists.add(rd)
+
+        # Ignore existed file
         if shared_path.is_file and remotepath_exists(
             api, PurePosixPath(shared_path.path).name, rd
         ):
@@ -79,10 +85,6 @@ def save_shared(
         assert uk
         assert share_id
         assert bdstoken
-
-        if rd not in _dir_exists and not api.exists(rd):
-            api.makedir(rd)
-            _dir_exists.add(rd)
 
         try:
             api.transfer_shared_paths(
