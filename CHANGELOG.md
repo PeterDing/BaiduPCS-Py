@@ -1,10 +1,22 @@
 # Changelog
 
+## v0.6.21 - 2021-06-21
+
+### Changed
+
+- 设置 HTML 页面宽度为 80%。
+- 设置 IO `READ_SIZE` 为 65535，减少下载时的 CPU 使用。
+- 下载 url 移除 `&htype=`。
+
+### Fixed
+
+- 修复保存分享连接时出错。(`error_code: 31066, message: 文件不存在`)
+
 ## v0.6.20 - 2021-05-15
 
 ### Fixed
 
-- 移除debug print。
+- 移除 debug print。
 
 ## v0.6.19 - 2021-05-14
 
