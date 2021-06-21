@@ -983,7 +983,7 @@ class BaiduPCS:
             if not info.get("urls"):
                 return None
             else:
-                return info["urls"][0]["url"]
+                return info["urls"][0]["url"].replace("&htype=", "")
 
     def file_stream(
         self,
