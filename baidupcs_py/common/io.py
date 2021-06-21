@@ -39,7 +39,7 @@ if _LOG_LEVEL not in LogLevels:
     _LOG_LEVEL = "CRITICAL"
 logger = get_logger(__name__, level=_LOG_LEVEL)
 
-READ_SIZE = 1 * constant.OneK
+READ_SIZE = 65535
 DEFAULT_MAX_CHUNK_SIZE = 10 * constant.OneM
 
 BAIDUPCS_PY_CRYPTO_MAGIC_CODE = b"\x00@@#__BAIDUPCS_PY__CRYPTO__#@@\x00\xff"
