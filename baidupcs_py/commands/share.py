@@ -66,8 +66,9 @@ def save_shared(
         rd = _remotedirs[shared_path]
 
         # Make sure remote dir exists
-        if rd not in _dir_exists and not api.exists(rd):
-            api.makedir(rd)
+        if rd not in _dir_exists:
+            if not api.exists(rd):
+                api.makedir(rd)
             _dir_exists.add(rd)
 
         # Ignore existed file
