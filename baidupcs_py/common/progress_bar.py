@@ -17,7 +17,7 @@ _progress = Progress(
     BarColumn(bar_width=40),
     "[progress.percentage]{task.percentage:>3.1f}%",
     "•",
-    DownloadColumn(),
+    DownloadColumn(binary_units=True),
     "•",
     TransferSpeedColumn(),
     "•",
