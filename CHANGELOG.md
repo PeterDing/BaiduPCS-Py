@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.6.24 - 2021-07-10
+
+### Added
+
+增加 `upload` 命令选项 `--upload-type`。
+
+指定上传方式：
+
+`--upload-type Many`: 同时上传多个文件。
+
+适合大多数文件长度小于 100M 以下的情况。
+
+```
+BaiduPCS-Py upload --upload-type Many [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
+`--upload-type One`: 一次只上传一个文件，但同时上传文件的多个分片。
+
+适合大多数文件长度大于 1G 以上的情况。
+
+```
+BaiduPCS-Py upload --upload-type One [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
 ## v0.6.23 - 2021-07-08
 
 ### Fixed
