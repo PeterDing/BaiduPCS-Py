@@ -57,7 +57,7 @@ from baidupcs_py.commands.download import (
     DEFAULT_CHUNK_SIZE,
 )
 from baidupcs_py.commands.play import play as _play, Player, DEFAULT_PLAYER
-from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM
+from baidupcs_py.commands.upload import upload as _upload, from_tos, CPU_NUM, UploadType
 from baidupcs_py.commands.sync import sync as _sync
 from baidupcs_py.commands import share as _share
 from baidupcs_py.commands.server import start_server
@@ -1112,6 +1112,13 @@ def play(
 @click.argument("localpaths", nargs=-1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
 @click.option(
+    "--upload-type",
+    "-t",
+    type=click.Choice([t.name for t in UploadType]),
+    default=UploadType.Many.name,
+    help="上传方式，Many: 同时上传多个文件，One: 一次只上传一个文件，但同时上传文件的多个分片",
+)
+@click.option(
     "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
 )
 @click.option(
@@ -1121,7 +1128,9 @@ def play(
     default=EncryptType.No.name,
     help="文件加密方法，默认为 No 不加密",
 )
-@click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传文件数")
+@click.option(
+    "--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传连接数量，默认为 CPU 核数"
+)
 @click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传已经存在的文件")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.option(
@@ -1137,6 +1146,7 @@ def upload(
     ctx,
     localpaths,
     remotedir,
+    upload_type,
     encrypt_password,
     encrypt_type,
     max_workers,
@@ -1168,6 +1178,7 @@ def upload(
     _upload(
         api,
         from_to_list,
+        upload_type=getattr(UploadType, upload_type),
         encrypt_password=encrypt_password,
         encrypt_type=getattr(EncryptType, encrypt_type),
         max_workers=max_workers,
