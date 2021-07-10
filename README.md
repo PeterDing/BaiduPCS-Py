@@ -632,6 +632,32 @@ BaiduPCS-Py 首先会尝试秒传。如果秒传失败，会使用分片上传�
 BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 ```
 
+指定上传方式：
+
+`--upload-type Many`: 同时上传多个文件。
+
+适合大多数文件长度小于 100M 以下的情况。
+
+```
+BaiduPCS-Py upload --upload-type Many [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
+`--upload-type One`: 一次只上传一个文件，但同时上传文件的多个分片。
+
+适合大多数文件长度大于 1G 以上的情况。
+
+```
+BaiduPCS-Py upload --upload-type One [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
+指定同时上传连接数量:
+
+`--max-workers` 默认为 CPU 核数。
+
+```
+BaiduPCS-Py upload --max-workers 4 [OPTIONS] [LOCALPATHS]... REMOTEDIR
+```
+
 ### 注意：upload 上传本地目录有改变
 
 - 小于 v0.6.8 的版本，如果上传本地目录 `localdir` 到远端目录 `remotedir`，BaiduPCS-Py 是将 `localdir` 下的所有文件（包括下级目录）上传到远端目录 `remotedir` 下。
@@ -648,9 +674,10 @@ BaiduPCS-Py upload [OPTIONS] [LOCALPATHS]... REMOTEDIR
 
 | Option                                                     | Description                                                                                |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| -t, --upload-type [One \| Many]                            | 上传方式，Many (默认): 同时上传多个文件，One: 一次只上传一个文件，但同时上传文件的多个分片 |
 | --encrypt-password, --ep TEXT                              | 加密密码，默认使用用户设置的                                                               |
 | -e, --encrypt-type [No \| Simple \| ChaCha20 \| AES256CBC] | 文件加密方法，默认为 No 不加密                                                             |
-| -w, --max-workers INTEGER                                  | 同时上传文件数                                                                             |
+| -w, --max-workers INTEGER                                  | 同时上传文件连接数量，默认为 CPU 核数                                                      |
 | --no-ignore-existing, --NI                                 | 上传已经存在的文件                                                                         |
 | --no-show-progress, --NP                                   | 不显示上传进度                                                                             |
 | --check-md5, --CM                                          | 分段上传后检查 md5。注意检查上传后大文件的 md5，可能会花数分中（2G 的文件需要大约 5 分钟） |
