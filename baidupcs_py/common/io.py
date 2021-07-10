@@ -1099,7 +1099,7 @@ class EncryptType(Enum):
     ChaCha20 = "ChaCha20"
     AES256CBC = "AES256CBC"
 
-    def encrypt_io(self, io: IO, encrypt_password: bytes):
+    def encrypt_io(self, io: IO, encrypt_password: bytes) -> IO:
         io_len = total_len(io)
         if self == EncryptType.No:
             return io
