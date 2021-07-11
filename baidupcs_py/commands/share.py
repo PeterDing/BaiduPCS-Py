@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict, Set
+import re
 import os
 from pathlib import Path, PurePosixPath
 from collections import deque
@@ -7,6 +8,27 @@ from baidupcs_py.baidupcs import BaiduPCSApi, PcsSharedPath, BaiduPCSError
 from baidupcs_py.commands.display import display_shared_links, display_shared_paths
 
 from rich import print
+
+
+SHARED_URL_PREFIX = "https://pan.baidu.com/s/"
+
+
+def _unify_shared_url(url: str) -> str:
+    """Unify input shared url"""
+
+    # For Standard url
+    temp = r"pan\.baidu\.com/s/(.+?)(\?|$)"
+    m = re.search(temp, url)
+    if m:
+        return SHARED_URL_PREFIX + m.group(1)
+
+    # For surl url
+    temp = r"baidu\.com.+?\?surl=(.+?)(\?|$)"
+    m = re.search(temp, url)
+    if m:
+        return SHARED_URL_PREFIX + "1" + m.group(1)
+
+    raise ValueError(f"The shared url is not a valid url. {url}")
 
 
 def share_files(
@@ -47,6 +69,8 @@ def save_shared(
     show_vcode: bool = True,
 ):
     assert remotedir.startswith("/"), "`remotedir` must be an absolute path"
+
+    shared_url = _unify_shared_url(shared_url)
 
     # Vertify with password
     if password:
@@ -144,6 +168,8 @@ def list_shared_paths(
     password: Optional[str] = None,
     show_vcode: bool = True,
 ):
+    shared_url = _unify_shared_url(shared_url)
+
     # Vertify with password
     if password:
         api.access_shared(shared_url, password, show_vcode=show_vcode)
