@@ -280,7 +280,7 @@ def display_tasks(*tasks: CloudTask):
     console.print(*panels)
 
 
-_SHARED_LINK_FORMAT = (
+_SHARED_LINK_INFO_FORMAT = (
     "share id: {share_id}\n"
     "shared url: [bold]{url}[/bold]\n"
     "valid period: [i yellow]{expired_time}[/i yellow]\n"
@@ -306,7 +306,7 @@ def display_shared_links(*shared_links: PcsSharedLink):
         paths = "\n       ".join(shared_link.paths or [])
 
         panel = Panel(
-            _SHARED_LINK_FORMAT.format(
+            _SHARED_LINK_INFO_FORMAT.format(
                 share_id=share_id,
                 url=url,
                 expired_time=expired_time,
