@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.6.25 - 2021-07-11
+
+### Added
+
+- 支持多种分享连接。
+
+  如：
+
+  - https://pan.baidu.com/s/...
+  - https://pan.baidu.com/wap/init?surl=...
+  - https://pan.baidu.com/share/init?surl=...
+
+### Changed
+
+- 上传块默认大小调整为 30M。
+
 ## v0.6.24 - 2021-07-10
 
 ### Added
