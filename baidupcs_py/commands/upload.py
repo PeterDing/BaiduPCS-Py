@@ -37,7 +37,7 @@ from rich import print
 logger = get_logger(__name__)
 
 # If slice size >= 100M, the rate of uploading will be much lower.
-DEFAULT_SLICE_SIZE = 5 * constant.OneM
+DEFAULT_SLICE_SIZE = 30 * constant.OneM
 
 
 UPLOAD_STOP = False
