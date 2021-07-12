@@ -5,4 +5,4 @@
 import setuptools
 
 if __name__ == "__main__":
-    setuptools.setup(name="baidupcs_py")
+    setuptools.setup(name="baidupcs-py")
