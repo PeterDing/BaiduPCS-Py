@@ -32,7 +32,12 @@ Modifications:  Adapted to rclone markup -->
             font-family: sans-serif;
             text-rendering: optimizespeed;
             background-color: #ffffff;
-            margin: 0 20%;
+        }
+
+        @media screen and (min-width: 1000px) {
+            body {
+                margin: 0 20%;
+            }
         }
 
         a {
@@ -410,8 +415,8 @@ Modifications:  Adapted to rclone markup -->
                 second: "2-digit"
             });
         }
-        <!-- var timeList = Array.prototype.slice.call(document.getElementsByTagName("time")); -->
-        <!-- timeList.forEach(localizeDatetime); -->
+        // <!-- var timeList = Array.prototype.slice.call(document.getElementsByTagName("time")); -->
+        // <!-- timeList.forEach(localizeDatetime); -->
 
         var getUrlParameter = function getUrlParameter(sParam) {
             var sPageURL = window.location.search.substring(1),
