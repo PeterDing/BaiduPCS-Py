@@ -1,7 +1,7 @@
 from typing import Optional
 
 from baidupcs_py.baidupcs import BaiduPCSApi
-from baidupcs_py.common.io import DEFAULT_MAX_CHUNK_SIZE
+from baidupcs_py.common.io import MAX_CHUNK_SIZE
 from baidupcs_py.commands.display import display_blocked_remotepath
 
 import chardet
@@ -10,7 +10,7 @@ import chardet
 def cat(
     api: BaiduPCSApi,
     remotepath: str,
-    max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+    max_chunk_size: int = MAX_CHUNK_SIZE,
     encoding: Optional[str] = None,
     encrypt_password: bytes = b"",
 ):

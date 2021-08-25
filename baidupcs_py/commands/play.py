@@ -8,9 +8,8 @@ import random
 import time
 from urllib.parse import quote
 
-from baidupcs_py.baidupcs import BaiduPCSApi
+from baidupcs_py.baidupcs import BaiduPCSApi, PCS_UA
 from baidupcs_py.commands.sifter import Sifter, sift
-from baidupcs_py.commands.download import USER_AGENT
 from baidupcs_py.commands.errors import CommandError
 from baidupcs_py.commands.display import display_blocked_remotepath
 from baidupcs_py.common.file_type import MEDIA_EXTS
@@ -115,7 +114,7 @@ class Player(Enum):
                 url,
                 "--no-ytdl",
                 "--http-header-fields="
-                f'"User-Agent: {USER_AGENT}","{_ck}","Connection: Keep-Alive"',
+                f'"User-Agent: {PCS_UA}","{_ck}","Connection: Keep-Alive"',
                 *player_params,
             ]
         if not use_local_server and m3u8:
