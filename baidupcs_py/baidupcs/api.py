@@ -4,7 +4,7 @@ from io import BytesIO
 
 from baidupcs_py.common import constant
 from baidupcs_py.common.crypto import calu_md5
-from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
+from baidupcs_py.common.io import RangeRequestIO, MAX_CHUNK_SIZE
 from baidupcs_py.baidupcs.pcs import BaiduPCS, BaiduPCSError, M3u8Type
 from baidupcs_py.baidupcs.inner import (
     PcsFile,
@@ -547,7 +547,7 @@ class BaiduPCSApi:
     def file_stream(
         self,
         remotepath: str,
-        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+        max_chunk_size: int = MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
         pcs: bool = False,

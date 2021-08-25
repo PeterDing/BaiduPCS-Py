@@ -40,7 +40,9 @@ if _LOG_LEVEL not in LogLevels:
 logger = get_logger(__name__, level=_LOG_LEVEL)
 
 READ_SIZE = 65535
-DEFAULT_MAX_CHUNK_SIZE = 10 * constant.OneM
+
+# This is the threshold of range request setted by Baidu server
+MAX_CHUNK_SIZE = 5 * constant.OneM
 
 BAIDUPCS_PY_CRYPTO_MAGIC_CODE = b"\x00@@#__BAIDUPCS_PY__CRYPTO__#@@\x00\xff"
 ENCRYPT_HEAD_LEN = len(BAIDUPCS_PY_CRYPTO_MAGIC_CODE) + 1 + 16 + 8
@@ -817,7 +819,7 @@ class AutoDecryptRequest:
         method: str,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+        max_chunk_size: int = MAX_CHUNK_SIZE,
         encrypt_password: bytes = b"",
         **kwargs,
     ):
@@ -1019,7 +1021,7 @@ class RangeRequestIO(IO):
         method: str,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+        max_chunk_size: int = MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
         **kwargs,
