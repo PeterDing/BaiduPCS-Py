@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.27 - 2021-08-25
+
+### Changed
+
+- 更新 `PCS_UA`，解决 SVIP 下载限速的问题。 (#66)
+- `download` 命令的 `--chunk-size` 选项最大为 `5M`。这是百度服务端的限制。
+
 ## v0.6.26 - 2021-07-29
 
 ### Changed
