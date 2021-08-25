@@ -101,7 +101,8 @@ class MeDownloader(RangeRequestIO):
                 if self._callback:
                     self._callback(self._task_id, self._offset)
         except Exception as err:
-            self._except_callback(self._task_id)
+            if self._except_callback is not None:
+                self._except_callback(self._task_id)
             self.reset()
             raise err
         finally:
