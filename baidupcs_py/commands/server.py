@@ -2,7 +2,6 @@ from typing import Optional, Dict
 from pathlib import Path
 import os
 import mimetypes
-import asyncio
 import secrets
 import copy
 from urllib.parse import quote
@@ -135,6 +134,7 @@ async def handle_request(
             status_code = 200
             _iter_io = fake_io(fs)
             headers["content-length"] = str(length)
+
         return StreamingResponse(_iter_io, status_code=status_code, headers=headers)
 
 
