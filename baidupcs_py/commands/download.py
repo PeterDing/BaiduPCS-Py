@@ -1,16 +1,17 @@
-from typing import Optional, List, Dict, Any, Callable, TypeVar
+from typing import Optional, List, Dict, Any, Callable
 from types import SimpleNamespace
 from enum import Enum
 from pathlib import Path
 import os
 import shutil
 import subprocess
+import time
 from concurrent.futures import Future
 
-from baidupcs_py.baidupcs import BaiduPCSApi
+from baidupcs_py.baidupcs import BaiduPCSApi, PCS_UA
 from baidupcs_py.utils import human_size, human_size_to_int
 from baidupcs_py.common import constant
-from baidupcs_py.common.io import to_decryptio, DecryptIO, READ_SIZE
+from baidupcs_py.common.io import to_decryptio, DecryptIO, READ_SIZE, MAX_CHUNK_SIZE
 from baidupcs_py.common.downloader import MeDownloader
 from baidupcs_py.common.progress_bar import _progress, progress_task_exists
 from baidupcs_py.commands.sifter import Sifter, sift
@@ -24,13 +25,9 @@ from rich.progress import TaskID
 
 logger = get_logger(__name__)
 
-USER_AGENT = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
 
 DEFAULT_CONCURRENCY = 5
-DEFAULT_CHUNK_SIZE = str(1 * constant.OneM)
-
-# This is the threshold of range request setted by Baidu server
-MAX_CHUNK_SIZE = 50 * constant.OneM
+DEFAULT_CHUNK_SIZE = str(MAX_CHUNK_SIZE)
 
 
 class DownloadParams(SimpleNamespace):
@@ -139,10 +136,8 @@ class Downloader(Enum):
         encrypt_password: bytes = b"",
     ):
         headers = {
-            "Cookie ": "; ".join(
-                [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-            ),
-            "User-Agent": USER_AGENT,
+            "Cookie": f"BDUSS={cookies['BDUSS']};",
+            "User-Agent": PCS_UA,
             "Connection": "Keep-Alive",
         }
 
@@ -197,16 +192,20 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = "Cookie: " + "; ".join(
-            [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-        )
+        _ck = f"Cookie: BDUSS={cookies['BDUSS']};"
+
+        # This is an error of aget-py
+        chunk_size = human_size_to_int(downloadparams.chunk_size)
+        if chunk_size == MAX_CHUNK_SIZE:
+            chunk_size -= constant.OneM
+
         cmd = [
             self.which(),
             url,
             "-o",
             localpath,
             "-H",
-            f"User-Agent: {USER_AGENT}",
+            f"User-Agent: {PCS_UA}",
             "-H",
             "Connection: Keep-Alive",
             "-H",
@@ -214,7 +213,7 @@ class Downloader(Enum):
             "-s",
             str(downloadparams.concurrency),
             "-k",
-            downloadparams.chunk_size,
+            str(chunk_size),
         ]
         return cmd
 
@@ -225,16 +224,14 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = "Cookie: " + "; ".join(
-            [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-        )
+        _ck = f"Cookie: BDUSS={cookies['BDUSS']};"
         cmd = [
             self.which(),
             url,
             "-o",
             localpath,
             "-H",
-            f"User-Agent: {USER_AGENT}",
+            f"User-Agent: {PCS_UA}",
             "-H",
             "Connection: Keep-Alive",
             "-H",
@@ -253,9 +250,7 @@ class Downloader(Enum):
         cookies: Dict[str, Optional[str]],
         downloadparams: DownloadParams = DEFAULT_DOWNLOADPARAMS,
     ):
-        _ck = "Cookie: " + "; ".join(
-            [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-        )
+        _ck = f"Cookie: BDUSS={cookies['BDUSS']};"
         directory, filename = os.path.split(localpath)
         cmd = [
             self.which(),
@@ -265,7 +260,7 @@ class Downloader(Enum):
             "-o",
             filename,
             "--header",
-            f"User-Agent: {USER_AGENT}",
+            f"User-Agent: {PCS_UA}",
             "--header",
             "Connection: Keep-Alive",
             "--header",

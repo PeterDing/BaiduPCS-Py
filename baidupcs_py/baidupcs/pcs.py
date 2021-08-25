@@ -14,7 +14,7 @@ import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from baidupcs_py.common.date import now_timestamp
-from baidupcs_py.common.io import RangeRequestIO, DEFAULT_MAX_CHUNK_SIZE
+from baidupcs_py.common.io import RangeRequestIO, MAX_CHUNK_SIZE
 from baidupcs_py.common.cache import timeout_cache
 from baidupcs_py.common.crypto import calu_md5, calu_sha1
 from baidupcs_py.common.url import is_magnet
@@ -29,7 +29,9 @@ PCS_BAIDU_COM = "https://pcs.baidu.com"
 PAN_BAIDU_COM = "https://pan.baidu.com"
 # PAN_BAIDU_COM = 'http://127.0.0.1:8888'
 
-PCS_UA = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android"
+# PCS_UA = "netdisk;P2SP;2.2.90.43;WindowsBaiduYunGuanJia;netdisk;11.4.5;android-android;11.0;JSbridge4.4.0;LogStatistic"
+# PCS_UA = "netdisk;P2SP;2.2.91.26;netdisk;11.6.3;GALAXY_S8;android-android;7.0;JSbridge4.4.0;jointBridge;1.1.0;"
+PCS_UA = "netdisk;P2SP;3.0.0.3;netdisk;11.5.3;PC;PC-Windows;android-android;11.0;JSbridge4.4.0"
 PAN_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36"
 
 PCS_HEADERS = {"User-Agent": PCS_UA}
@@ -988,7 +990,7 @@ class BaiduPCS:
     def file_stream(
         self,
         remotepath: str,
-        max_chunk_size: int = DEFAULT_MAX_CHUNK_SIZE,
+        max_chunk_size: int = MAX_CHUNK_SIZE,
         callback: Callable[..., None] = None,
         encrypt_password: bytes = b"",
         pcs: bool = False,
@@ -998,9 +1000,7 @@ class BaiduPCS:
             return None
 
         headers = {
-            "Cookie": "; ".join(
-                [f"{k}={v if v is not None else ''}" for k, v in self._cookies.items()]
-            ),
+            "Cookie": f"BDUSS={self._bduss};",
             "User-Agent": PCS_UA,
             "Connection": "Keep-Alive",
         }
