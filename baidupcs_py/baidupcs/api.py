@@ -316,9 +316,7 @@ class BaiduPCSApi:
 
         self._baidupcs.cancel_task(task_id)
 
-    def share(
-        self, *remotepaths: str, password: Optional[str] = None, period: int = 0
-    ) -> PcsSharedLink:
+    def share(self, *remotepaths: str, password: str, period: int = 0) -> PcsSharedLink:
         """Share `remotepaths` to public with a optional password
 
         To use api, `STOKEN` must be in `cookies`
@@ -583,7 +581,7 @@ class BaiduPCSApi:
         """
 
         pcs_file = self.meta(remotepath)[0]
-        content_length = pcs_file.size
+        content_length = pcs_file.size or 0
 
         if content_length < 256 * constant.OneK:
             return None
