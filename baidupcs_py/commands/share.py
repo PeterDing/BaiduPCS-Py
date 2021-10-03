@@ -31,9 +31,7 @@ def _unify_shared_url(url: str) -> str:
     raise ValueError(f"The shared url is not a valid url. {url}")
 
 
-def share_files(
-    api: BaiduPCSApi, *remotepaths: str, password: Optional[str] = None, period: int = 0
-):
+def share_files(api: BaiduPCSApi, *remotepaths: str, password: str, period: int = 0):
     shared_link = api.share(*remotepaths, password=password, period=period)
     display_shared_links(shared_link)
 
