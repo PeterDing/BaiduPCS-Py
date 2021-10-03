@@ -9,6 +9,7 @@ import re
 import json
 import time
 import random
+import urllib
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
@@ -31,7 +32,9 @@ PAN_BAIDU_COM = "https://pan.baidu.com"
 
 # PCS_UA = "netdisk;P2SP;2.2.90.43;WindowsBaiduYunGuanJia;netdisk;11.4.5;android-android;11.0;JSbridge4.4.0;LogStatistic"
 # PCS_UA = "netdisk;P2SP;2.2.91.26;netdisk;11.6.3;GALAXY_S8;android-android;7.0;JSbridge4.4.0;jointBridge;1.1.0;"
-PCS_UA = "netdisk;P2SP;3.0.0.3;netdisk;11.5.3;PC;PC-Windows;android-android;11.0;JSbridge4.4.0"
+# PCS_UA = "netdisk;P2SP;3.0.0.3;netdisk;11.5.3;PC;PC-Windows;android-android;11.0;JSbridge4.4.0"
+# PCS_UA = "netdisk;P2SP;3.0.0.8;netdisk;11.12.3;GM1910;android-android;11.0;JSbridge4.4.0;jointBridge;1.1.0;"
+PCS_UA = "softxm;netdisk"
 PAN_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36"
 
 PCS_HEADERS = {"User-Agent": PCS_UA}
@@ -173,13 +176,13 @@ class BaiduPCS:
         self,
         method: Method,
         url: str,
-        params: Optional[Dict[str, str]] = {},
+        params: Union[Dict[str, str], str] = {},
         headers: Optional[Dict[str, str]] = None,
         data: Union[str, bytes, Dict[str, str], Any] = None,
         files: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> requests.Response:
-        if params is not None:
+        if params and isinstance(params, dict):
             app_id = self._app_id(url)
             params["app_id"] = app_id
 
@@ -641,13 +644,14 @@ class BaiduPCS:
         return self.cloud_operate(params)
 
     @assert_ok
-    def share(self, *remotepaths: str, password: Optional[str] = None, period: int = 0):
+    def share(self, *remotepaths: str, password: str, period: int = 0):
         """Share `remotepaths` to public
 
         period (int): The days for expiring. `0` means no expiring
         """
 
         assert self._stoken, "`STOKEN` is not in `cookies`"
+        assert len(password) == 4, "`password` MUST be set"
 
         meta = self.meta(*remotepaths)
         fs_ids = [i["fs_id"] for i in meta["list"]]
@@ -670,12 +674,7 @@ class BaiduPCS:
             data["schannel"] = "4"
 
         resp = self._request(Method.Post, url, params=params, data=data)
-        info = resp.json()
-
-        # errno: 115, '该文件禁止分享'. 但也能分享出去。。。
-        if info.get("errno") == 115:
-            info["errno"] = 0  # assign 0 to avoid capture error
-        return info
+        return resp.json()
 
     @assert_ok
     def list_shared(self, page: int = 1):
@@ -947,12 +946,12 @@ class BaiduPCS:
             )
 
         bduss = self._bduss
-        uid = str(self._user_id) or ""
-        devuid = "0|" + calu_md5(bduss).upper()
+        uid = str(self._user_id or "")
+        devuid = calu_md5(bduss).upper() + "|0"
         enc = calu_sha1(bduss)
 
         while True:
-            timestamp = str(now_timestamp() * 1000)
+            timestamp = str(now_timestamp())
 
             rand = calu_sha1(
                 enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid
@@ -960,23 +959,41 @@ class BaiduPCS:
 
             url = PcsNode.File.url()
             params = {
+                "apn_id": "1_0",
+                "app_id": PAN_APP_ID,
+                "channel": "0",
+                "check_blue": "1",
+                "clienttype": "17",
+                "es": "1",
+                "esl": "1",
+                "freeisp": "0",
                 "method": "locatedownload",
-                "ver": "2",
-                "path": remotepath,
+                "path": quote_plus(remotepath),
+                "queryfree": "0",
+                "use": "0",
+                "ver": "4.0",
                 "time": timestamp,
                 "rand": rand,
                 "devuid": devuid,
+                "cuid": devuid,
             }
 
-            resp = self._request(Method.Get, url, params=params)
+            params = "&".join([f"{k}={v}" for k, v in params.items()])
+
+            headers = dict(PCS_HEADERS)
+            headers["Cookie"] = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
+            req = urllib.request.Request(
+                url + "?" + params, headers=headers, method="GET"
+            )
+            resp = urllib.request.urlopen(req)
 
             # Error: "user is not authorized"
             # This error occurs when the method is called by too many times
-            if not resp.ok:
+            if resp.status != 200:
                 time.sleep(2)
                 continue
 
-            info = resp.json()
+            info = json.loads(resp.read())
 
             # This error is gotten when remote path is blocked
             if info.get("host") == "issuecdn.baidupcs.com":
@@ -985,7 +1002,8 @@ class BaiduPCS:
             if not info.get("urls"):
                 return None
             else:
-                return info["urls"][0]["url"].replace("&htype=", "")
+                # return info["urls"][0]["url"].replace("&htype=", "")
+                return info["urls"][0]["url"]
 
     def file_stream(
         self,
