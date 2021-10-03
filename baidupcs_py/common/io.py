@@ -42,7 +42,7 @@ logger = get_logger(__name__, level=_LOG_LEVEL)
 READ_SIZE = 65535
 
 # This is the threshold of range request setted by Baidu server
-MAX_CHUNK_SIZE = 5 * constant.OneM
+MAX_CHUNK_SIZE = 50 * constant.OneM
 
 BAIDUPCS_PY_CRYPTO_MAGIC_CODE = b"\x00@@#__BAIDUPCS_PY__CRYPTO__#@@\x00\xff"
 ENCRYPT_HEAD_LEN = len(BAIDUPCS_PY_CRYPTO_MAGIC_CODE) + 1 + 16 + 8
