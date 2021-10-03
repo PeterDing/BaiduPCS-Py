@@ -176,7 +176,7 @@ class BaiduPCS:
         self,
         method: Method,
         url: str,
-        params: Union[Dict[str, str], str] = {},
+        params: Optional[Dict[str, str]] = {},
         headers: Optional[Dict[str, str]] = None,
         data: Union[str, bytes, Dict[str, str], Any] = None,
         files: Optional[Dict[str, Any]] = None,
@@ -978,12 +978,12 @@ class BaiduPCS:
                 "cuid": devuid,
             }
 
-            params = "&".join([f"{k}={v}" for k, v in params.items()])
+            params_str = "&".join([f"{k}={v}" for k, v in params.items()])
 
             headers = dict(PCS_HEADERS)
             headers["Cookie"] = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
             req = urllib.request.Request(
-                url + "?" + params, headers=headers, method="GET"
+                url + "?" + params_str, headers=headers, method="GET"
             )
             resp = urllib.request.urlopen(req)
 
