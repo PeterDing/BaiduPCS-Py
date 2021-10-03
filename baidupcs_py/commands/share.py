@@ -122,10 +122,12 @@ def save_shared(
                 raise err
 
             if err.error_code == 12:  # 12: "文件已经存在"
-                print(f"[yellow]WARNING[/]: {shared_path.path} has be in {rd}")
+                print(
+                    f"[yellow]WARNING[/]: error_code: 12, {shared_path.path} has be in {rd}"
+                )
             if err.error_code == -33:  # -33: '一次支持操作999个，减点试试吧'
                 print(
-                    f"[yellow]WARNING[/]: {shared_path.path} "
+                    f"[yellow]WARNING[/]: error_code: -33, {shared_path.path} "
                     "has more items and need to transfer one by one"
                 )
 
