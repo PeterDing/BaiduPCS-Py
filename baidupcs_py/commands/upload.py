@@ -449,7 +449,7 @@ def upload_file_concurrently(
 
         reset_encrypt_io(encrypt_io)
 
-        slice_md5s = []
+        completed_slice_md5s = []
 
         def upload_slice(item: Tuple[int, IO]):
             idx, io = item
@@ -470,7 +470,7 @@ def upload_file_concurrently(
             )(api.upload_slice)(io, callback=functools.partial(callback_for_slice, idx))
 
             slice_completeds.pop(idx)
-            slice_md5s.append((idx, slice_md5))
+            completed_slice_md5s.append((idx, slice_md5))
 
             nonlocal slice_completed
             slice_completed += total_len(io)
@@ -498,8 +498,8 @@ def upload_file_concurrently(
 
             as_completed(futs)
 
-        slice_md5s.sort()
-        slice_md5s = [md5 for _, md5 in slice_md5s]
+        completed_slice_md5s.sort()
+        slice_md5s = [md5 for _, md5 in completed_slice_md5s]
 
         # Combine slices
         _combine_slices(
