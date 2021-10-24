@@ -4,7 +4,6 @@ from pathlib import Path
 import os
 import shutil
 import subprocess
-import random
 import time
 from urllib.parse import quote
 
@@ -13,6 +12,7 @@ from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.errors import CommandError
 from baidupcs_py.commands.display import display_blocked_remotepath
 from baidupcs_py.common.file_type import MEDIA_EXTS
+from baidupcs_py.common import random
 
 _print = print
 
@@ -197,8 +197,7 @@ def play_dir(
     remotepaths = sift(remotepaths, sifters, recursive=recursive)
 
     if shuffle:
-        rg = random.Random(time.time())
-        rg.shuffle(remotepaths)
+        random.shuffle(remotepaths)
 
     for rp in remotepaths[from_index:]:
         if rp.is_file:
@@ -254,8 +253,7 @@ def play(
     """
 
     if shuffle:
-        rg = random.Random(time.time())
-        rg.shuffle(remotepaths)
+        random.shuffle(remotepaths)
 
     for rp in remotepaths:
 
