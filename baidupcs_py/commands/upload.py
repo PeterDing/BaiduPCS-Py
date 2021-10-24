@@ -451,10 +451,7 @@ def upload_file_concurrently(
 
         slice_md5s = []
 
-        def upload_slice(item):
-            if not item:
-                return
-
+        def upload_slice(item: Tuple[int, IO]):
             idx, io = item
 
             # Retry upload until success
@@ -481,13 +478,13 @@ def upload_file_concurrently(
         semaphore = Semaphore(max_workers)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futs = []
-            i = 0
+            offset = 0
             idx = 0
-            while i < encrypt_io_len:
+            while True:
                 semaphore.acquire()
 
-                size = min(slice_size, encrypt_io_len - i)
-                if size == 0:
+                size = min(slice_size, encrypt_io_len - offset)
+                if idx != 0 and size == 0:
                     break
 
                 data = encrypt_io.read(size)
@@ -497,7 +494,7 @@ def upload_file_concurrently(
                 futs.append(fut)
 
                 idx += 1
-                i += size
+                offset += size
 
             as_completed(futs)
 
@@ -709,6 +706,7 @@ def upload_file(
         slice_md5s = []
         reset_encrypt_io(encrypt_io)
 
+        idx = 0
         while True:
             _wait_start()
 
@@ -717,7 +715,7 @@ def upload_file(
             )
 
             size = min(slice_size, encrypt_io_len - slice_completed)
-            if size == 0:
+            if idx != 0 and size == 0:
                 break
 
             data = encrypt_io.read(size) or b""
@@ -744,6 +742,7 @@ def upload_file(
 
             slice_md5s.append(slice_md5)
             slice_completed += size
+            idx += 1
 
         # Combine slices
         _combine_slices(
