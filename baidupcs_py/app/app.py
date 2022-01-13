@@ -374,10 +374,8 @@ def who(ctx, user_id, show_encrypt_password):
         display_user_info(account.user)
         if show_encrypt_password:
             encrypt_password = _encrypt_password(ctx)
-            salt = _salt(ctx)
 
             print(f"[red]encrypt password[/red]: {encrypt_password}")
-            # print(f"[red]salt[/red]: {salt}")
     else:
         print("[italic red]No recent user, please adding or selecting one[/]")
 
@@ -615,7 +613,7 @@ def ls(
     if include:
         sifters.append(IncludeSifter(include, regex=False))
     if include_regex:
-        sifters.append(IncludeSifter(include, regex=True))
+        sifters.append(IncludeSifter(include_regex, regex=True))
     if exclude:
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
@@ -704,7 +702,7 @@ def search(
     if include:
         sifters.append(IncludeSifter(include, regex=False))
     if include_regex:
-        sifters.append(IncludeSifter(include, regex=True))
+        sifters.append(IncludeSifter(include_regex, regex=True))
     if exclude:
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
@@ -955,7 +953,7 @@ def download(
     if include:
         sifters.append(IncludeSifter(include, regex=False))
     if include_regex:
-        sifters.append(IncludeSifter(include, regex=True))
+        sifters.append(IncludeSifter(include_regex, regex=True))
     if exclude:
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
@@ -1053,7 +1051,7 @@ def play(
     if include:
         sifters.append(IncludeSifter(include, regex=False))
     if include_regex:
-        sifters.append(IncludeSifter(include, regex=True))
+        sifters.append(IncludeSifter(include_regex, regex=True))
     if exclude:
         sifters.append(ExcludeSifter(exclude, regex=False))
     if exclude_regex:
