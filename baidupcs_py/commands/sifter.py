@@ -52,8 +52,8 @@ class Sifter(ABC):
 
 class IncludeSifter(Sifter):
     def __init__(self, needle: Optional[str], regex: bool = False):
-        _pattern: Union[Pattern, str, None] = None
-        self._pattern = _pattern
+        self._pattern: Union[Pattern, str, None] = None
+
         if needle:
             if regex:
                 self._pattern = re.compile(needle)
@@ -104,4 +104,5 @@ def sift(objs: List[T], sifters: List[Sifter], recursive: bool = False) -> List[
         objs = obj_dirs + [
             obj for obj in objs if all([sifter(obj) for sifter in sifters])
         ]
+
     return objs
