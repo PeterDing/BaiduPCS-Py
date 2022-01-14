@@ -101,6 +101,23 @@ class UploadType(Enum):
     Many = 2
 
 
+def _handle_deadly_error(err, fail_count):
+
+    # If following errors occur, we need to re-upload
+    if isinstance(err, BaiduPCSError) and (
+        err.error_code == 31352  # commit superfile2 failed
+        or err.error_code == 31363  # block miss in superfile2
+        or err.error_code == 31062  # 文件名非法
+    ):
+        logger.warning(
+            "Deadly error: %s, fail_count: %s",
+            err,
+            fail_count,
+            exc_info=err,
+        )
+        raise err
+
+
 # remotedir must be a directory
 def upload(
     api: BaiduPCSApi,
@@ -287,6 +304,7 @@ def _rapid_upload(
         return False
 
 
+@retry(20, except_callback=_handle_deadly_error)
 def _combine_slices(
     api: BaiduPCSApi,
     remotepath: str,
@@ -295,23 +313,7 @@ def _combine_slices(
     local_mtime: int,
     ondup: str,
 ):
-    def _handle_combin_slices_error(err, fail_count):
-        logger.warning(
-            "`_combine_slices`: error: %s, fail_count: %s",
-            err,
-            fail_count,
-            exc_info=err,
-        )
-
-        # If following errors occur, we need to re-upload
-        if (
-            isinstance(err, BaiduPCSError)
-            and err.error_code == 31352  # commit superfile2 failed
-            or err.error_code == 31363  # block miss in superfile2
-        ):
-            raise err
-
-    retry(20, except_callback=_handle_combin_slices_error)(api.combine_slices)(
+    api.combine_slices(
         slice_md5s,
         remotepath,
         local_ctime=local_ctime,
@@ -361,11 +363,14 @@ def upload_one_by_one(
 
 @retry(
     -1,
-    except_callback=lambda err, fail_count: logger.warning(
-        "`upload_file_concurrently`: fails: error: %s, fail_count: %s",
-        err,
-        fail_count,
-        exc_info=err,
+    except_callback=lambda err, fail_count: (
+        _handle_deadly_error(err, fail_count),
+        logger.warning(
+            "`upload_file_concurrently`: fails: error: %s, fail_count: %s",
+            err,
+            fail_count,
+            exc_info=err,
+        ),
     ),
 )
 def upload_file_concurrently(
@@ -458,6 +463,7 @@ def upload_file_concurrently(
             slice_md5 = retry(
                 -1,
                 except_callback=lambda err, fail_count: (
+                    _handle_deadly_error(err, fail_count),
                     io.seek(0, 0),
                     logger.warning(
                         "`upload_file_concurrently`: error: %s, fail_count: %s",
@@ -619,11 +625,14 @@ def upload_many(
 
 @retry(
     -1,
-    except_callback=lambda err, fail_count: logger.warning(
-        "`upload_file`: fails: error: %s, fail_count: %s",
-        err,
-        fail_count,
-        exc_info=err,
+    except_callback=lambda err, fail_count: (
+        _handle_deadly_error(err, fail_count),
+        logger.warning(
+            "`upload_file`: fails: error: %s, fail_count: %s",
+            err,
+            fail_count,
+            exc_info=err,
+        ),
     ),
 )
 def upload_file(
@@ -729,6 +738,7 @@ def upload_file(
             slice_md5 = retry(
                 -1,
                 except_callback=lambda err, fail_count: (
+                    _handle_deadly_error(err, fail_count),
                     io.seek(0, 0),
                     logger.warning(
                         "`upload_file`: `upload_slice`: error: %s, fail_count: %s",
