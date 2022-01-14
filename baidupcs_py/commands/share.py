@@ -123,7 +123,9 @@ def save_shared(
                 print(
                     f"[yellow]WARNING[/]: error_code: 12, {shared_path.path} has be in {rd}"
                 )
-            if err.error_code == -33:  # -33: '一次支持操作999个，减点试试吧'
+            elif err.error_code == -32:  # -32: "剩余空间不足，无法转存",
+                raise err
+            elif err.error_code == -33:  # -33: "一次支持操作999个，减点试试吧"
                 print(
                     f"[yellow]WARNING[/]: error_code: -33, {shared_path.path} "
                     "has more items and need to transfer one by one"
