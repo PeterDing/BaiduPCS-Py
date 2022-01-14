@@ -11,7 +11,7 @@ import time
 import random
 import urllib
 
-import requests
+import requests  # type: ignore
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from baidupcs_py.common.date import now_timestamp
@@ -858,7 +858,10 @@ class BaiduPCS:
         hdrs["Referer"] = shared_url  # WARNING: Referer must be set to shared_url
 
         resp = self._request(Method.Post, url, headers=hdrs, params=params, data=data)
-        return resp.json()
+        info = resp.json()
+        if info.get("info") and info["info"][0]["errno"]:
+            info["errno"] = info["info"][0]["errno"]
+        return info
 
     @assert_ok
     def user_info(self):
@@ -982,10 +985,8 @@ class BaiduPCS:
 
             headers = dict(PCS_HEADERS)
             headers["Cookie"] = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
-            req = urllib.request.Request(
-                url + "?" + params_str, headers=headers, method="GET"
-            )
-            resp = urllib.request.urlopen(req)
+            req = urllib.request.Request(url + "?" + params_str, headers=headers, method="GET")  # type: ignore
+            resp = urllib.request.urlopen(req)  # type: ignore
 
             # Error: "user is not authorized"
             # This error occurs when the method is called by too many times
