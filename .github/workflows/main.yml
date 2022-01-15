@@ -25,9 +25,7 @@ jobs:
           version: 1.1.10
           virtualenvs-create: false
       - name: Install dependencies
-        run: |
-          poetry install
-          poetry add -D Cython
+        run: poetry install
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Format check with black
         run: poetry run black --check .
@@ -35,5 +33,5 @@ jobs:
         run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable
       - name: Test with pytest
         run: |
-          make build-pyx
+          poetry run python build.py build_ext --inplace
           poetry run pytest -s tests/test_common.py
