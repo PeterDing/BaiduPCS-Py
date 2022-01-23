@@ -37,6 +37,7 @@ from baidupcs_py.commands.display import (
     display_user_infos,
 )
 from baidupcs_py.commands.list_files import list_files
+from baidupcs_py.commands.disk_usage import disk_usage
 from baidupcs_py.commands.rapid_upload import (
     rapid_upload_list,
     rapid_upload_search,
@@ -654,6 +655,44 @@ def ls(
         csv=csv,
         only_dl_link=only_dl_link,
         only_hash_link=only_hash_link,
+    )
+
+
+@app.command()
+@click.argument("remotepaths", nargs=-1, type=str)
+@click.option("--recursive", "-R", is_flag=True, help="递归计算所有文件")
+@click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
+@click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
+@click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
+@click.option("--exclude-regex", "--ER", type=str, help="筛选 不 包含这个正则表达式的文件")
+@click.pass_context
+@handle_error
+@multi_user_do
+def du(ctx, remotepaths, recursive, include, include_regex, exclude, exclude_regex):
+    """统计网盘路径下的文件所占用的空间"""
+
+    api = _recent_api(ctx)
+    if not api:
+        return
+
+    sifters = []
+    if include:
+        sifters.append(IncludeSifter(include, regex=False))
+    if include_regex:
+        sifters.append(IncludeSifter(include_regex, regex=True))
+    if exclude:
+        sifters.append(ExcludeSifter(exclude, regex=False))
+    if exclude_regex:
+        sifters.append(ExcludeSifter(exclude_regex, regex=True))
+
+    pwd = _pwd(ctx)
+    remotepaths = (join_path(pwd, r) for r in list(remotepaths) or (pwd,))
+
+    disk_usage(
+        api,
+        *remotepaths,
+        recursive=recursive,
+        sifters=sifters,
     )
 
 
