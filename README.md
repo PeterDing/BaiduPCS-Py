@@ -12,9 +12,11 @@ BaiduPCS-Py 是百度网盘 pcs 的非官方 api 和一个命令行运用程序�
 
 **BaiduPCS-Py 旨在为个人用户提供操作自己用户网盘文件的 api 和简易命令行工具，不提供任何下载加速破解的服务。普通用户下载是限速的。想要下载不限速，请购买 SVIP。**
 
--------
+---
+
 ## 阿里云盘 api 和 命令行客户端在 https://github.com/PeterDing/AliPCS-Py
--------
+
+---
 
 - [安装](#安装)
 - [更新](#更新)
@@ -462,6 +464,25 @@ BaiduPCS-Py ls relative/path
 | --only-dl-link, --ODL                                | 只显示文件下载连接                                    |
 | --only-hash-link, --OHL                              | 只显示文件秒传连接                                    |
 
+## 统计路径下文件所占用空间
+
+统计网盘路径下的文件所占用的空间
+
+```
+BaiduPCS-Py du [OPTIONS] [REMOTEPATHS]...
+
+# 统计特定文件
+BaiduPCS-Py du /some/path --include .mp4
+```
+
+| Option                     | Description                      |
+| -------------------------- | -------------------------------- |
+| -R, --recursive            | 递归计算所有文件                 |
+| -I, --include TEXT         | 筛选包含这个字符串的文件         |
+| --include-regex, --IR TEXT | 筛选包含这个正则表达式的文件     |
+| -E, --exclude TEXT         | 筛选 不 包含这个字符串的文件     |
+| --exclude-regex, --ER TEXT | 筛选 不 包含这个正则表达式的文件 |
+
 ## 搜索文件
 
 搜索包含 `keyword` 的文件
@@ -590,7 +611,7 @@ BaiduPCS-Py download [OPTIONS] [REMOTEPATHS]...
 | -E, --exclude TEXT                                     | 筛选 不 包含这个字符串的文件                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | --exclude-regex, --ER TEXT                             | 筛选 不 包含这个正则表达式的文件                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | -s, --concurrency INTEGER                              | 下载同步链接数，默认为 5。数子越大下载速度越快，但是容易被百度封锁                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| -k, --chunk-size TEXT                                  | 同步链接分块大小，最大不能超过 5M                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -k, --chunk-size TEXT                                  | 同步链接分块大小，最大不能超过 5M                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | -q, --quiet                                            | 取消第三方下载应用输出                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | --out-cmd, --OC                                        | 输出第三方下载应用命令                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | -d, --downloader [ me \| aget_py \| aget_rs \| aria2 ] | 指定下载应用<br> <br> 默认为 me (BaiduPCS-Py 自己的下载器，支持断续下载)<br> me 使用多文件并发下载。<br> <br> 除 me 外，其他下载器，不使用多文件并发下载，使用一个文件多链接下载。<br> 如果需要下载多个小文件推荐使用 me，如果需要下载少量大文件推荐使用其他下载器。对于 SVIP 用户，用哪个下载器都很快。<br> <br> aget_py (https://github.com/PeterDing/aget) 默认安装<br> aget_rs (下载 https://github.com/PeterDing/aget-rs/releases)<br> aria2 (下载 https://github.com/aria2/aria2/releases)<br> |
