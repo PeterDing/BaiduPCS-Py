@@ -116,20 +116,23 @@ def save_shared(
             print(f"save: {shared_path.path} to {rd}")
             continue
         except BaiduPCSError as err:
-            if err.error_code not in (12, -33):
-                raise err
-
             if err.error_code == 12:  # 12: "文件已经存在"
                 print(
-                    f"[yellow]WARNING[/]: error_code: 12, {shared_path.path} has be in {rd}"
+                    f"[yellow]WARNING[/]: error_code: {err.error_code}, {shared_path.path} has be in {rd}"
                 )
             elif err.error_code == -32:  # -32: "剩余空间不足，无法转存",
                 raise err
-            elif err.error_code == -33:  # -33: "一次支持操作999个，减点试试吧"
+            elif err.error_code in (
+                -33,  # -33: "一次支持操作999个，减点试试吧"
+                4,  # 4: "share transfer pcs error"
+                130,  # "转存文件数超限"
+            ):
                 print(
-                    f"[yellow]WARNING[/]: error_code: -33, {shared_path.path} "
+                    f"[yellow]WARNING[/]: error_code: {err.error_code}, {shared_path.path} "
                     "has more items and need to transfer one by one"
                 )
+            else:
+                raise err
 
         if shared_path.is_dir:
             # Take all sub paths
