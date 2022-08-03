@@ -21,6 +21,9 @@ class Account(NamedTuple):
     # Here it useless.
     salt: Optional[str] = None
 
+    # Account Name which can be set by hand
+    account_name: str = ""
+
     def pcsapi(self) -> BaiduPCSApi:
         auth = self.user.auth
         assert auth, f"{self}.user.auth is None"
@@ -33,10 +36,14 @@ class Account(NamedTuple):
         )
 
     @staticmethod
-    def from_bduss(bduss: str, cookies: Dict[str, Optional[str]] = {}) -> "Account":
+    def from_bduss(
+        bduss: str,
+        cookies: Dict[str, Optional[str]] = {},
+        account_name: str = "",
+    ) -> "Account":
         api = BaiduPCSApi(bduss=bduss, cookies=cookies)
         user = api.user_info()
-        return Account(user=user)
+        return Account(user=user, account_name=account_name or user.user_name or "")
 
 
 class AccountManager:
@@ -65,6 +72,20 @@ class AccountManager:
         """All accounts"""
 
         return list(self._accounts.values())
+
+    def set_account_name(self, account_name: str, user_id: int = None):
+        """Set account name"""
+
+        user_id = user_id or self._who
+
+        assert user_id, "No recent user"
+
+        account = self._accounts.get(user_id)
+
+        assert account
+
+        account = account._replace(account_name=account_name)
+        self._accounts[user_id] = account
 
     def set_encrypt_password(
         self, encrypt_password: Optional[str] = None, salt: Optional[str] = None
@@ -139,12 +160,12 @@ class AccountManager:
 
         self._who = user_id
 
-    def useradd(self, user: PcsUser):
-        """Add an user to data"""
+    def add_account(self, account: Account):
+        """Add an account to the manager"""
 
-        self._accounts[user.user_id] = Account(user=user)
+        self._accounts[account.user.user_id] = account
 
-    def userdel(self, user_id: int):
+    def delete_account(self, user_id: int):
         """Delete a user
 
         Args:
@@ -172,6 +193,7 @@ class AccountManager:
 def _compat_account_manager(am: AccountManager):
     """Update stored account manager to compat current version"""
     _compat_v0_5_9(am)
+    _set_account_names(am)
 
 
 def _compat_v0_5_9(am: AccountManager):
@@ -189,3 +211,13 @@ def _compat_v0_5_9(am: AccountManager):
         am._data_path = ACCOUNT_DATA_PATH
 
     am.save()
+
+
+def _set_account_names(am: AccountManager):
+    """Set account's name with its user's name if that is empty"""
+
+    for user_id, account in am._accounts.items():
+        if not account.account_name:
+            am._accounts[user_id] = account._replace(
+                account_name=account.user.user_name or ""
+            )
