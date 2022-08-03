@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "BaiduPCS-Py"
 homepage = "https://github.com/PeterDing/BaiduPCS-Py"
-version = "0.6.32"
+version = "0.7.0"
 description = "Baidu Pcs Api and App"
 authors = ["PeterDing <dfhayst@gmail.com>"]
 license = "MIT"
@@ -20,32 +20,30 @@ build = "build.py"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-requests = "^2.27.1"
-rich = "^11.0.0"
+requests = "^2.28.1"
+rich = "^12.5.1"
 requests-toolbelt = "^0.9.1"
-Pillow = "^9.0.0"
-click = "^8.0.3"
-typing-extensions = "^4.0.1"
+Pillow = "^9.2.0"
+click = "^8.1.3"
+typing-extensions = "^4.3.0"
 aget = "^0.1.17"
-chardet = "^4.0.0"
-fastapi = "^0.71.0"
-uvicorn = "^0.16.0"
-Jinja2 = "^3.0.3"
-cryptography = "^36.0.1"
-filelock = "^3.4.2"
-Cython = "^0.29.26"
+chardet = "^5.0.0"
+fastapi = "^0.79.0"
+uvicorn = "^0.18.2"
+Jinja2 = "^3.1.2"
+cryptography = "^37.0.4"
+Cython = "^0.29.32"
 passlib = "^1.7.4"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-mypy = "^0.931"
-black = "^21.12b0"
-setuptools = "^60.5.0"
-Cython = "^0.29.26"
 
 [tool.poetry.scripts]
 BaiduPCS-Py = 'baidupcs_py.app:main'
 
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+mypy = "^0.971"
+black = "^22.6.0"
+setuptools = "^63.4.0"
+Cython = "^0.29.32"
 [build-system]
 requires = ["poetry-core>=1.0.0", "cython", "wheel", "setuptools"]
 build-backend = "poetry.core.masonry.api"

@@ -392,7 +392,7 @@ def test_chunkio():
 
 
 def test_u64_u8x8():
-    i = 2 ** 32
+    i = 2**32
     b = u64_to_u8x8(i)
     x = u8x8_to_u64(b)
     assert i == x
