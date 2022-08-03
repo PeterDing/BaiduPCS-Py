@@ -146,13 +146,13 @@ def _user_ids(ctx) -> Optional[List[int]]:
     """Select use_ids by their name probes"""
 
     am = ctx.obj.account_manager
-    user_name_probes = ctx.obj.users
+    account_name_probes = ctx.obj.accounts
 
     user_ids = []
     for user_id, account in am._accounts.items():
-        user_name = account.user.user_name
-        for probe in user_name_probes:
-            if probe in user_name:
+        account_name = account.account_name
+        for probe in account_name_probes:
+            if probe in account_name:
                 user_ids.append(user_id)
                 break
     return user_ids
@@ -166,7 +166,7 @@ def _change_account(ctx, user_id: int):
 
 
 def multi_user_do(func):
-    """Run command on multi users"""
+    """Run command on multi accounts"""
 
     @wraps(func)
     def wrap(*args, **kwargs):
@@ -181,10 +181,10 @@ def multi_user_do(func):
             if not accout:
                 continue
 
-            user_name = accout.user.user_name
+            account_name = accout.account_name
             print(
                 "[i yellow]@Do[/i yellow]: "
-                f"user_name: [b]{user_name}[/b], "
+                f"account_name: [b]{account_name}[/b], "
                 f"user_id: [b]{user_id}[/b]"
             )
             _change_account(ctx, user_id)
@@ -270,6 +270,7 @@ ALIAS = OrderedDict(
         "ua": "useradd",
         "ud": "userdel",
         "ep": "encryptpwd",
+        "an": "accountname",
         # File Operations
         "l": "ls",
         "f": "search",
@@ -348,12 +349,12 @@ _ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
     default=RAPIDUPLOADINFO_PATH,
     help="秒传 sqlite3 文件",
 )
-@click.option("--users", "-u", type=str, default=None, help="用户名片段，用“,”分割")
+@click.option("--accounts", "-u", type=str, default=None, help="帐号名片段，用“,”分割")
 @click.pass_context
-def app(ctx, account_data, rapiduploadinfo_file, users):
+def app(ctx, account_data, rapiduploadinfo_file, accounts):
     ctx.obj.account_manager = AccountManager.load_data(account_data)
     ctx.obj.rapiduploadinfo_file = str(Path(rapiduploadinfo_file).expanduser())
-    ctx.obj.users = [] if users is None else users.split(",")
+    ctx.obj.accounts = [] if accounts is None else accounts.split(",")
 
 
 # Account
@@ -411,7 +412,7 @@ def su(ctx, user_index):
     """切换当前用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([(a.user, a.pwd) for a in am.accounts])
+    ls = sorted([(a.user, a.pwd, a.account_name) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
     if user_index:
@@ -438,18 +439,21 @@ def userlist(ctx):
     """显示所有用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([(a.user, a.pwd) for a in am.accounts])
+    ls = sorted([(a.user, a.pwd, a.account_name) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
 
 @app.command()
-@click.option("--bduss", prompt="bduss", hide_input=True, default="", help="用户 bduss")
 @click.option(
-    "--cookies", prompt="cookies", hide_input=True, default="", help="用户 cookies"
+    "--account_name", prompt="Account Name", hide_input=False, default="", help="账号名"
+)
+@click.option("--bduss", prompt="BDUSS", hide_input=True, default="", help="用户 BDUSS")
+@click.option(
+    "--cookies", prompt="Cookies", hide_input=True, default="", help="用户 Cookies"
 )
 @click.pass_context
 @handle_error
-def useradd(ctx, bduss, cookies):
+def useradd(ctx, account_name, bduss, cookies):
     """添加一个用户并设置为当前用户"""
 
     if cookies:
@@ -459,9 +463,9 @@ def useradd(ctx, bduss, cookies):
         cookies = {}
     if not bduss:
         raise ValueError("bduss must be specified or be included in cookie")
-    account = Account.from_bduss(bduss, cookies=cookies)
+    account = Account.from_bduss(bduss, cookies=cookies, account_name=account_name)
     am = ctx.obj.account_manager
-    am.useradd(account.user)
+    am.add_account(account)
     am.su(account.user.user_id)
     am.save()
 
@@ -473,7 +477,7 @@ def userdel(ctx):
     """删除一个用户"""
 
     am = ctx.obj.account_manager
-    ls = sorted([(a.user, a.pwd) for a in am.accounts])
+    ls = sorted([(a.user, a.pwd, a.account_name) for a in am.accounts])
     display_user_infos(*ls, recent_user_id=am._who)
 
     indexes = list(str(idx) for idx in range(1, len(ls) + 1))
@@ -482,7 +486,7 @@ def userdel(ctx):
         return
 
     user_id = ls[int(i) - 1][0].user_id
-    am.userdel(user_id)
+    am.delete_account(user_id)
     am.save()
 
     print(f"Delete user {user_id}")
@@ -508,6 +512,25 @@ def encryptpwd(ctx, encrypt_password, salt):
 
     am = ctx.obj.account_manager
     am.set_encrypt_password(encrypt_password, salt)
+    am.save()
+
+
+@app.command()
+@click.option(
+    "--account-name",
+    "--an",
+    prompt="Account Name",
+    hide_input=False,
+    help="设置账号名，用于指定运行帐号和显示",
+)
+@click.option("--user-id", "-i", type=int, help="指定用户id")
+@click.pass_context
+@handle_error
+def accountname(ctx, account_name, user_id):
+    """设置账号名"""
+
+    am = ctx.obj.account_manager
+    am.set_account_name(account_name, user_id)
     am.save()
 
 
