@@ -1127,7 +1127,7 @@ def play(
         encrypt_password = encrypt_password or _encrypt_password(ctx)
 
         host = "localhost"
-        port = random_avail_port(49152, 65535)
+        port = random_avail_port()
 
         local_server = f"http://{host}:{port}"
 
