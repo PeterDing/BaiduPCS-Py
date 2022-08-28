@@ -986,25 +986,29 @@ class BaiduPCS:
             headers = dict(PCS_HEADERS)
             headers["Cookie"] = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
             req = urllib.request.Request(url + "?" + params_str, headers=headers, method="GET")  # type: ignore
-            resp = urllib.request.urlopen(req)  # type: ignore
+            try:
+                resp = urllib.request.urlopen(req)  # type: ignore
 
-            # Error: "user is not authorized"
-            # This error occurs when the method is called by too many times
-            if resp.status != 200:
-                time.sleep(2)
-                continue
+                # Error: "user is not authorized"
+                # This error occurs when the method is called by too many times
+                if resp.status != 200:
+                    time.sleep(2)
+                    continue
 
-            info = json.loads(resp.read())
+                info = json.loads(resp.read())
 
-            # This error is gotten when remote path is blocked
-            if info.get("host") == "issuecdn.baidupcs.com":
+                # This error is gotten when remote path is blocked
+                if info.get("host") == "issuecdn.baidupcs.com":
+                    return None
+
+                if not info.get("urls"):
+                    return None
+                else:
+                    # return info["urls"][0]["url"].replace("&htype=", "")
+                    return info["urls"][0]["url"]
+            exception urllib.error.HTTPError as e:
+                print(f"Error Code:{e.code}")
                 return None
-
-            if not info.get("urls"):
-                return None
-            else:
-                # return info["urls"][0]["url"].replace("&htype=", "")
-                return info["urls"][0]["url"]
 
     def file_stream(
         self,
