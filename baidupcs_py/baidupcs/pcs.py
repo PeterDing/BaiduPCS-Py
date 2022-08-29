@@ -4,6 +4,7 @@ from enum import Enum
 
 from pathlib import Path
 from urllib.parse import urlparse, quote_plus
+from urllib.error import URLError, HTTPError
 from base64 import standard_b64encode
 import re
 import json
