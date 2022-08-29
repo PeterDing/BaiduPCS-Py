@@ -1006,7 +1006,7 @@ class BaiduPCS:
                 else:
                     # return info["urls"][0]["url"].replace("&htype=", "")
                     return info["urls"][0]["url"]
-            exception urllib.error.HTTPError as e:
+            except urllib.error.HTTPError as e:
                 print(f"Error Code:{e.code}")
                 return None
 
