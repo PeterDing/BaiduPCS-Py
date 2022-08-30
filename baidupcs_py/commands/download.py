@@ -187,7 +187,6 @@ class Downloader(Enum):
             )
         except IOError as e:
             #catch 104 connection reset issue 59
-            logger.error(f"IOError:{e}")
             _progress.remove_task(task_id)
             _progress.stop()
 
