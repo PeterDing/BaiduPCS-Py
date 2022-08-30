@@ -4,7 +4,8 @@ from enum import Enum
 
 from pathlib import Path
 from urllib.parse import urlparse, quote_plus
-from urllib.error import URLError, HTTPError
+
+from urllib.error import HTTPError
 from base64 import standard_b64encode
 import re
 import json
@@ -1007,8 +1008,8 @@ class BaiduPCS:
                 else:
                     # return info["urls"][0]["url"].replace("&htype=", "")
                     return info["urls"][0]["url"]
-            except urllib.error.HTTPError as e:
-                print(f"Error Code:{e.code}")
+           except HTTPError:
+                # 403 code could occor at unavailable downloading url, #97
                 return None
 
     def file_stream(
