@@ -172,18 +172,23 @@ class Downloader(Enum):
             encrypt_password=encrypt_password,
         )
 
-        if task_id is not None:
-            length = len(meDownloader)
-            _progress.update(task_id, total=length)
-            _progress.start_task(task_id)
+        try:
+            if task_id is not None:
+                length = len(meDownloader)
+                _progress.update(task_id, total=length)
+                _progress.start_task(task_id)
 
-        meDownloader.download(
-            Path(localpath),
-            task_id=task_id,
-            continue_=True,
-            done_callback=_wrap_done_callback,
-            except_callback=except_callback,
-        )
+            meDownloader.download(
+                    Path(localpath),
+                    task_id=task_id,
+                    continue_=True,
+                    done_callback=_wrap_done_callback,
+                    except_callback=except_callback,
+                    )
+        except IOError as e:
+            logger.error(f"IOError:{e}")
+            _progress.remove_task(task_id)
+            _progress.stop()
 
     def _aget_py_cmd(
         self,
