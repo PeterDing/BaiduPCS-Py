@@ -179,14 +179,14 @@ class Downloader(Enum):
                 _progress.start_task(task_id)
 
             meDownloader.download(
-                    Path(localpath),
-                    task_id=task_id,
-                    continue_=True,
-                    done_callback=_wrap_done_callback,
-                    except_callback=except_callback,
+                Path(localpath),
+                task_id=task_id,
+                continue_=True,
+                done_callback=_wrap_done_callback,
+                except_callback=except_callback,
             )
         except IOError:
-            #catch 104 connection reset issue 59
+            # catch 104 connection reset issue 59
             _progress.remove_task(task_id)
             _progress.stop()
 
