@@ -185,7 +185,7 @@ class Downloader(Enum):
                     done_callback=_wrap_done_callback,
                     except_callback=except_callback,
             )
-        except IOError as e:
+        except IOError:
             #catch 104 connection reset issue 59
             _progress.remove_task(task_id)
             _progress.stop()
