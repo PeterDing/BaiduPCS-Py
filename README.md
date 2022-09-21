@@ -1054,19 +1054,19 @@ BaiduPCS-Py purgetasks
 `ROOT_DIR` 默认为 `/`
 
 ```
-BaiduPCS-Py BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
+BaiduPCS-Py server [OPTIONS] [ROOT_DIR]
 ```
 
 如果需要设置认证，使用下面的选项设置用户名和密钥：
 
 ```
-BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --username 'foo' --password 'bar'
+BaiduPCS-Py server [ROOT_DIR] --username 'foo' --password 'bar'
 ```
 
 也可以指定服务路径：
 
 ```
-BaiduPCS-Py BaiduPCS-Py server [ROOT_DIR] --path '/my/pan'
+BaiduPCS-Py server [ROOT_DIR] --path '/my/pan'
 
 # 访问 http://localhost:8000/my/pan/
 ```
