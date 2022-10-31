@@ -320,6 +320,10 @@ BaiduPCS-Py updateuser
 BaiduPCS-Py updateuser user_id
 ```
 
+| Option | Description      |
+| ------ | ---------------- |
+| --all  | 更新所有用户信息 |
+
 ## 显示所有用户
 
 ```
