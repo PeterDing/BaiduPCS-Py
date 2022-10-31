@@ -108,6 +108,7 @@ def _handle_deadly_error(err, fail_count):
         err.error_code == 31352  # commit superfile2 failed
         or err.error_code == 31363  # block miss in superfile2
         or err.error_code == 31062  # 文件名非法
+        or err.error_code == 31112  # 超出配额
     ):
         logger.warning(
             "Deadly error: %s, fail_count: %s",
