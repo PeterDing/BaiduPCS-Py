@@ -384,22 +384,27 @@ def who(ctx, user_id, show_encrypt_password):
 
 @app.command()
 @click.argument("user_ids", type=int, nargs=-1, default=None, required=False)
+@click.option("--all", is_flag=True, help="更新所有用户信息")
 @click.pass_context
 @handle_error
-def updateuser(ctx, user_ids):
+def updateuser(ctx, user_ids, all):
     """更新用户信息 （默认更新当前用户信息）
 
     也可指定多个 `user_id`
     """
 
-    am = ctx.obj.account_manager
+    am: AccountManager = ctx.obj.account_manager
     if not user_ids:
-        user_ids = [am._who]
+        if all:
+            user_ids = [a.user.user_id for a in am.accounts]
+        else:
+            user_ids = [am._who]
 
     for user_id in user_ids:
         am.update(user_id)
         account = am.who(user_id)
-        display_user_info(account.user)
+        if account:
+            display_user_info(account.user)
 
     am.save()
 
