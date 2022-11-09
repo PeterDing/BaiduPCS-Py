@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.3 - 2022-10-31
+
+### Updated
+
+- `BaiduPCSApi.list` 支持 `recursive` 参数，递归遍历目录。
+
 ## v0.7.2 - 2022-10-31
 
 ### Added
