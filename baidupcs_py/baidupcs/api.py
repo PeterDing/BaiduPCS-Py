@@ -112,13 +112,22 @@ class BaiduPCSApi:
         name: bool = False,
         time: bool = False,
         size: bool = False,
+        recursive: bool = False,
     ) -> List[PcsFile]:
         """List directory contents"""
 
         info = self._baidupcs.list(
             remotepath, desc=desc, name=name, time=time, size=size
         )
-        return [PcsFile.from_(v) for v in info.get("list", [])]
+        pcs_files = [PcsFile.from_(v) for v in info.get("list", [])]
+        if recursive:
+            for pcs_file in pcs_files:
+                if pcs_file.is_dir:
+                    sub_pcs_files = self.list(
+                        pcs_file.path, desc=desc, name=name, time=time, size=size
+                    )
+                    pcs_files.extend(sub_pcs_files)
+        return pcs_files
 
     def upload_file(
         self,
