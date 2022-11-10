@@ -25,6 +25,16 @@ _progress = Progress(
 )
 
 
+def init_progress_bar():
+    if not _progress.live._started:
+        _progress.start()
+
+
+def exit_progress_bar():
+    if _progress.live._started:
+        _progress.stop()
+
+
 def progress_task_exists(task_id: Optional[TaskID]) -> bool:
     if task_id is None:
         return False
