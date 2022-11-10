@@ -13,7 +13,11 @@ from baidupcs_py.utils import human_size, human_size_to_int
 from baidupcs_py.common import constant
 from baidupcs_py.common.io import to_decryptio, DecryptIO, READ_SIZE, MAX_CHUNK_SIZE
 from baidupcs_py.common.downloader import MeDownloader
-from baidupcs_py.common.progress_bar import _progress, progress_task_exists
+from baidupcs_py.common.progress_bar import (
+    _progress,
+    init_progress_bar,
+    progress_task_exists,
+)
 from baidupcs_py.commands.sifter import Sifter, sift
 from baidupcs_py.commands.log import get_logger
 from baidupcs_py.commands.display import display_blocked_remotepath
@@ -143,8 +147,7 @@ class Downloader(Enum):
 
         task_id: Optional[TaskID] = None
         if not downloadparams.quiet:
-            if not _progress.live._started:
-                _progress.start()
+            init_progress_bar()
             task_id = _progress.add_task("MeDownloader", start=False, title=localpath)
 
         def _wrap_done_callback(fut: Future):

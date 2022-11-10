@@ -339,25 +339,24 @@ def upload_one_by_one(
 ):
     """Upload files one by one with uploading the slices concurrently"""
 
-    with _progress:
-        for from_to in from_to_list:
-            task_id = None
-            if show_progress:
-                task_id = _progress.add_task("upload", start=False, title=from_to.from_)
-            upload_file_concurrently(
-                api,
-                from_to,
-                ondup,
-                max_workers=max_workers,
-                encrypt_password=encrypt_password,
-                encrypt_type=encrypt_type,
-                slice_size=slice_size,
-                ignore_existing=ignore_existing,
-                task_id=task_id,
-                user_id=user_id,
-                user_name=user_name,
-                check_md5=check_md5,
-            )
+    for from_to in from_to_list:
+        task_id = None
+        if show_progress:
+            task_id = _progress.add_task("upload", start=False, title=from_to.from_)
+        upload_file_concurrently(
+            api,
+            from_to,
+            ondup,
+            max_workers=max_workers,
+            encrypt_password=encrypt_password,
+            encrypt_type=encrypt_type,
+            slice_size=slice_size,
+            ignore_existing=ignore_existing,
+            task_id=task_id,
+            user_id=user_id,
+            user_name=user_name,
+            check_md5=check_md5,
+        )
 
     logger.debug("======== Uploading end ========")
 
@@ -570,44 +569,39 @@ def upload_many(
 
     excepts = {}
     semaphore = Semaphore(max_workers)
-    with _progress:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futs = {}
-            for idx, from_to in enumerate(from_to_list):
-                semaphore.acquire()
-                task_id = None
-                if show_progress:
-                    task_id = _progress.add_task(
-                        "upload", start=False, title=from_to.from_
-                    )
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futs = {}
+        for idx, from_to in enumerate(from_to_list):
+            semaphore.acquire()
+            task_id = None
+            if show_progress:
+                task_id = _progress.add_task("upload", start=False, title=from_to.from_)
 
-                logger.debug(
-                    "`upload_many`: Upload: index: %s, task_id: %s", idx, task_id
-                )
+            logger.debug("`upload_many`: Upload: index: %s, task_id: %s", idx, task_id)
 
-                fut = executor.submit(
-                    sure_release,
-                    semaphore,
-                    upload_file,
-                    api,
-                    from_to,
-                    ondup,
-                    encrypt_password=encrypt_password,
-                    encrypt_type=encrypt_type,
-                    slice_size=slice_size,
-                    ignore_existing=ignore_existing,
-                    task_id=task_id,
-                    user_id=user_id,
-                    user_name=user_name,
-                    check_md5=check_md5,
-                )
-                futs[fut] = from_to
+            fut = executor.submit(
+                sure_release,
+                semaphore,
+                upload_file,
+                api,
+                from_to,
+                ondup,
+                encrypt_password=encrypt_password,
+                encrypt_type=encrypt_type,
+                slice_size=slice_size,
+                ignore_existing=ignore_existing,
+                task_id=task_id,
+                user_id=user_id,
+                user_name=user_name,
+                check_md5=check_md5,
+            )
+            futs[fut] = from_to
 
-            for fut in as_completed(futs):
-                e = fut.exception()
-                if e is not None:
-                    from_to = futs[fut]
-                    excepts[from_to] = e
+        for fut in as_completed(futs):
+            e = fut.exception()
+            if e is not None:
+                from_to = futs[fut]
+                excepts[from_to] = e
 
     logger.debug("======== Uploading end ========")
 
