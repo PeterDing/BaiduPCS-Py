@@ -21,7 +21,7 @@ from baidupcs_py.baidupcs import BaiduPCSApi, BaiduPCSError
 from baidupcs_py.baidupcs.inner import PcsRapidUploadInfo
 from baidupcs_py.app.account import Account, AccountManager
 from baidupcs_py.commands.env import ACCOUNT_DATA_PATH, RAPIDUPLOADINFO_PATH
-from baidupcs_py.common.progress_bar import _progress
+from baidupcs_py.common.progress_bar import _progress, init_progress_bar
 from baidupcs_py.common.path import join_path
 from baidupcs_py.common.net import random_avail_port
 from baidupcs_py.common.io import EncryptType
@@ -126,7 +126,6 @@ def handle_error(func):
                 console = Console()
                 console.print_exception()
 
-            _teardown()
         except Exception as err:
             _exit_progress_bar()
 
@@ -137,6 +136,8 @@ def handle_error(func):
                 console = Console()
                 console.print_exception()
 
+        finally:
+            _exit_progress_bar()
             _teardown()
 
     return wrap
@@ -1034,6 +1035,9 @@ def download(
     else:
         encrypt_password = encrypt_password or _encrypt_password(ctx)
 
+    if not quiet:
+        init_progress_bar()
+
     _download(
         api,
         remotepaths,
@@ -1240,6 +1244,10 @@ def upload(
     user_id, user_name = _recent_user_id_and_name(ctx)
 
     from_to_list = from_tos(localpaths, remotedir)
+
+    if not no_show_progress:
+        init_progress_bar()
+
     _upload(
         api,
         from_to_list,
