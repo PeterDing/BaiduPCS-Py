@@ -75,15 +75,15 @@ def from_tos(localpaths: List[str], remotedir: str) -> List[FromTo]:
 
     ft: List[FromTo] = []
     for localpath in localpaths:
-        if not exists(localpath):
+        if not exists(Path(localpath)):
             continue
 
-        if is_file(localpath):
+        if is_file(Path(localpath)):
             remotepath = to_remotepath(os.path.basename(localpath), remotedir)
             ft.append(FromTo(localpath, remotepath))
         else:
             parents_num = max(len(Path(localpath).parts) - 1, 0)
-            for sub_path in walk(localpath):
+            for sub_path in walk(Path(localpath)):
                 relative_path = Path(*Path(sub_path).parts[parents_num:]).as_posix()
                 remotepath = to_remotepath(relative_path, remotedir)
                 ft.append(FromTo(sub_path, remotepath))

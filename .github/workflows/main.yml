@@ -24,12 +24,18 @@ jobs:
         with:
           virtualenvs-create: true
       - name: Install dependencies
-        run: poetry install --no-root
+        run: |
+          poetry run pip3 install setuptools
+          poetry install --no-root
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Format check with black
         run: poetry run black --check .
-      - name: Typecheck with mypy
-        run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable
+      - name: Typecheck with mypy at Windows
+        run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract --disable-error-code attr-defined
+        if: matrix.os == 'windows-latest'
+      - name: Typecheck with mypy at Linux
+        run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract
+        if: matrix.os == 'ubuntu-latest'
       - name: Test with pytest
         run: |
           poetry run python build.py build_ext --inplace

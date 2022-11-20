@@ -61,7 +61,7 @@ async def handle_request(
 
     remotepath = remotepath.strip("/")
 
-    _rp = join_path(_root_dir, remotepath)
+    _rp = join_path(Path(_root_dir), Path(remotepath))
 
     # Anti path traversal attack
     if not _rp.startswith(_root_dir):

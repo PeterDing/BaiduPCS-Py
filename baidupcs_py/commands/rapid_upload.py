@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Any
 
+from pathlib import Path
 from threading import Semaphore
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -176,7 +177,7 @@ def rapid_upload(
         content_crc32 = content_crc32 or 0
         filename = filename or _filename
 
-    remotepath = join_path(remotedir, filename)
+    remotepath = join_path(Path(remotedir), Path(filename))
 
     assert all(
         [slice_md5, content_md5, content_length]

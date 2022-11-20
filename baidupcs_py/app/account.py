@@ -110,7 +110,7 @@ class AccountManager:
 
         assert account
 
-        pwd = join_path(account.pwd, remotedir)
+        pwd = join_path(Path(account.pwd), Path(remotedir))
         account = account._replace(pwd=pwd)
         self._accounts[self._who] = account
 

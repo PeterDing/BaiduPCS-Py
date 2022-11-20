@@ -66,12 +66,12 @@ def sync(
     fts: List[FromTo] = []
     check_list: List[Tuple[str, PcsFile]] = []
     all_localpaths = set()
-    for localpath in walk(localdir):
+    for localpath in walk(Path(localdir)):
         path = localpath[len(localdir) + 1 :]
         all_localpaths.add(path)
 
         if path not in all_pcs_files:
-            fts.append(FromTo(localpath, join_path(remotedir, path)))
+            fts.append(FromTo(localpath, join_path(Path(remotedir), Path(path))))
         else:
             check_list.append((localpath, all_pcs_files[path]))
 

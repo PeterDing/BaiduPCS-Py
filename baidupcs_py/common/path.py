@@ -22,7 +22,7 @@ def is_dir(localpath: PathLike) -> bool:
 
 
 def walk(localpath: PathLike) -> Iterator[str]:
-    for root, _, files in os.walk(localpath):
+    for root, _, files in os.walk(Path(localpath)):
         r = Path(root)
         for fl in files:
             yield (r / fl).as_posix()

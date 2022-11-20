@@ -1,4 +1,4 @@
-from typing import Optional, Any, Callable
+from typing import Optional, List, Any, Callable
 from os import PathLike
 from pathlib import Path
 from threading import Semaphore
@@ -14,6 +14,10 @@ DEFAULT_MAX_WORKERS = 5
 
 
 class MeDownloader(RangeRequestIO):
+    _executor: ThreadPoolExecutor
+    _semaphore: Semaphore
+    _futures: List[Future]
+
     @classmethod
     def _set_executor(
         cls,
