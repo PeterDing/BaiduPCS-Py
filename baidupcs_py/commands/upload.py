@@ -421,13 +421,10 @@ def upload_file_concurrently(
     slice256k_md5 = ""
     content_md5 = ""
     content_crc32 = 0
-    io_len = 0
 
     if encrypt_type == EncryptType.No and encrypt_io_len > 256 * constant.OneK:
         # Rapid Upload
-        slice256k_md5, content_md5, content_crc32, io_len = rapid_upload_params(
-            encrypt_io
-        )
+        slice256k_md5, content_md5, content_crc32, _ = rapid_upload_params(encrypt_io)
         ok = _rapid_upload(
             api,
             localpath,
@@ -435,7 +432,7 @@ def upload_file_concurrently(
             slice256k_md5,
             content_md5,
             content_crc32,
-            io_len,
+            encrypt_io_len,
             local_ctime,
             local_mtime,
             ondup,
@@ -532,7 +529,7 @@ def upload_file_concurrently(
                 slice256k_md5,
                 content_md5,
                 content_crc32,
-                io_len,
+                encrypt_io_len,
                 encrypt_password=encrypt_password,
                 encrypt_type=encrypt_type.value,
                 user_id=user_id,
@@ -676,13 +673,10 @@ def upload_file(
     slice256k_md5 = ""
     content_md5 = ""
     content_crc32 = 0
-    io_len = 0
 
     if encrypt_type == EncryptType.No and encrypt_io_len > 256 * constant.OneK:
         # Rapid Upload
-        slice256k_md5, content_md5, content_crc32, io_len = rapid_upload_params(
-            encrypt_io
-        )
+        slice256k_md5, content_md5, content_crc32, _ = rapid_upload_params(encrypt_io)
         ok = _rapid_upload(
             api,
             localpath,
@@ -690,7 +684,7 @@ def upload_file(
             slice256k_md5,
             content_md5,
             content_crc32,
-            io_len,
+            encrypt_io_len,
             local_ctime,
             local_mtime,
             ondup,
@@ -774,7 +768,7 @@ def upload_file(
                 slice256k_md5,
                 content_md5,
                 content_crc32,
-                io_len,
+                encrypt_io_len,
                 encrypt_password=encrypt_password,
                 encrypt_type=encrypt_type.value,
                 user_id=user_id,
