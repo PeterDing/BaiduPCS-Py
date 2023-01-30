@@ -26,6 +26,6 @@ def cat(
         else:
             r = chardet.detect(cn)
             if r["confidence"] > 0.5:
-                print(cn.decode(r["encoding"]))
+                print(cn.decode(r["encoding"]))  # type: ignore
             else:
                 print(cn)
