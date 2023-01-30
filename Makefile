@@ -13,7 +13,7 @@ format:
 	black .
 
 build-pyx:
-	python build.py build_ext --inplace
+	python3 build.py build_ext --inplace
 
 test: build-pyx
 	pytest -s tests/test_common.py
