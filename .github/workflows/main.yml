@@ -40,3 +40,7 @@ jobs:
         run: |
           poetry run python build.py build_ext --inplace
           poetry run pytest -s tests/test_common.py
+      - name: Test package
+        run: |
+          poetry build -f sdist
+          poetry run pip install dist/*
