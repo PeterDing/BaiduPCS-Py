@@ -14,32 +14,44 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
+
       - name: Install dependencies
         run: |
           poetry run pip3 install setuptools
           poetry install --no-root
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+
       - name: Format check with black
         run: poetry run black --check .
-      - name: Typecheck with mypy at Windows
-        run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract --disable-error-code attr-defined
+
+      - name: Typecheck at Windows
+        run: |
+          poetry run ruff check baidupcs_py
+          poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract --disable-error-code attr-defined
         if: matrix.os == 'windows-latest'
-      - name: Typecheck with mypy at Linux
-        run: poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract
+
+      - name: Typecheck at Linux
+        run: |
+          poetry run ruff check baidupcs_py
+          poetry run mypy -p baidupcs_py --ignore-missing-imports --warn-unreachable --implicit-optional --allow-redefinition --disable-error-code abstract
         if: matrix.os == 'ubuntu-latest'
+
       - name: Test with pytest
         run: |
           poetry run python build.py build_ext --inplace
           poetry run pytest -s tests/test_common.py
+
       - name: Test package
         run: |
           poetry build -f sdist

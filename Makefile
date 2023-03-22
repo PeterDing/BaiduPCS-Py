@@ -1,4 +1,5 @@
 typecheck:
+	ruff check baidupcs_py
 	mypy -p baidupcs_py \
 		--ignore-missing-imports \
 		--warn-unreachable \
