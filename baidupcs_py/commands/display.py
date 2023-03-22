@@ -295,7 +295,7 @@ def display_shared_links(*shared_links: PcsSharedLink):
 
         if shared_link.expired == -1:
             expired_time = "已经超期"
-        elif shared_link.expired == None or shared_link.expired == 0:
+        elif shared_link.expired is None or shared_link.expired == 0:
             expired_time = "永久"
         else:
             expired_time = format_time(shared_link.expired or 0)
