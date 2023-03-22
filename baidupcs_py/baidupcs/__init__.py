@@ -1,4 +1,5 @@
 from .api import BaiduPCSApi, BaiduPCS
+from .pcs import PCS_UA
 from .errors import BaiduPCSError
 from .inner import (
     PcsRapidUploadInfo,
@@ -11,6 +12,7 @@ from .inner import (
     PcsUserProduct,
     PcsUser,
     CloudTask,
+    FromTo,
 )
 
 
@@ -28,4 +30,6 @@ __all__ = [
     "PcsUserProduct",
     "PcsUser",
     "CloudTask",
+    "FromTo",
+    "PCS_UA",
 ]
