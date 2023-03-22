@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any, Callable
-from types import SimpleNamespace
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 import os
@@ -34,7 +34,8 @@ DEFAULT_CONCURRENCY = 5
 DEFAULT_CHUNK_SIZE = str(MAX_CHUNK_SIZE)
 
 
-class DownloadParams(SimpleNamespace):
+@dataclass
+class DownloadParams:
     concurrency: int = DEFAULT_CONCURRENCY
     chunk_size: str = DEFAULT_CHUNK_SIZE
     quiet: bool = False
@@ -216,7 +217,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             str(chunk_size),
-            *downloadparams.download_params,
+            *downloadparams.downloader_params,
         ]
         return cmd
 
@@ -243,7 +244,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             downloadparams.chunk_size,
-            *downloadparams.download_params,
+            *downloadparams.downloader_params,
         ]
         return cmd
 
@@ -274,7 +275,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             downloadparams.chunk_size,
-            *downloadparams.download_params,
+            *downloadparams.downloader_params,
         ]
         return cmd
 
