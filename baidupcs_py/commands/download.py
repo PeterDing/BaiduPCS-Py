@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 import os
@@ -39,7 +39,7 @@ class DownloadParams:
     concurrency: int = DEFAULT_CONCURRENCY
     chunk_size: str = DEFAULT_CHUNK_SIZE
     quiet: bool = False
-    downloader_params: List[str] = []
+    downloader_params: List[str] = field(default_factory=list)
 
 
 DEFAULT_DOWNLOADPARAMS = DownloadParams()
