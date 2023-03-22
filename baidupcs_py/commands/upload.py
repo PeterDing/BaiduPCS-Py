@@ -102,7 +102,6 @@ class UploadType(Enum):
 
 
 def _handle_deadly_error(err, fail_count):
-
     # If following errors occur, we need to re-upload
     if isinstance(err, BaiduPCSError) and (
         err.error_code == 31352  # commit superfile2 failed
@@ -708,9 +707,7 @@ def upload_file(
         while True:
             _wait_start()
 
-            logger.debug(
-                "`upload_file`: upload_slice: slice_completed: %s", slice_completed
-            )
+            logger.debug("`upload_file`: upload_slice: slice_completed: %s", slice_completed)
 
             size = min(slice_size, encrypt_io_len - slice_completed)
             if idx != 0 and size == 0:
@@ -719,9 +716,7 @@ def upload_file(
             data = encrypt_io.read(size) or b""
             io = BytesIO(data)
 
-            logger.debug(
-                "`upload_file`: upload_slice: size should be %s == %s", size, len(data)
-            )
+            logger.debug("`upload_file`: upload_slice: size should be %s == %s", size, len(data))
 
             # Retry upload until success
             slice_md5 = retry(

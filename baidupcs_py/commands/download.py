@@ -109,9 +109,7 @@ class Downloader(Enum):
         logger.debug("`download`: cmd returncode: %s", returncode)
 
         if returncode != 0:
-            print(
-                f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
-            )
+            print(f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]")
         else:
             if encrypt_password:
                 dio = to_decryptio(open(localpath_tmp, "rb"), encrypt_password)

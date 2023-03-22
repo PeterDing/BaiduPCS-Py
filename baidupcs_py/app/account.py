@@ -87,9 +87,7 @@ class AccountManager:
         account = account._replace(account_name=account_name)
         self._accounts[user_id] = account
 
-    def set_encrypt_password(
-        self, encrypt_password: Optional[str] = None, salt: Optional[str] = None
-    ):
+    def set_encrypt_password(self, encrypt_password: Optional[str] = None, salt: Optional[str] = None):
         """Set encryption key"""
 
         assert self._who, "No recent user"
@@ -201,8 +199,7 @@ def _compat_v0_5_9(am: AccountManager):
         old_products = account.user.products
         if isinstance(old_products, dict):  # type: ignore
             print(  # type: ignore
-                "[i yellow]Update[/i yellow]: Transfer PcsUser format for ^v0.5.9: "
-                f"user_id: {user_id}"
+                "[i yellow]Update[/i yellow]: Transfer PcsUser format for ^v0.5.9: " f"user_id: {user_id}"
             )
             am.update(user_id)
 
@@ -218,6 +215,4 @@ def _set_account_names(am: AccountManager):
 
     for user_id, account in am._accounts.items():
         if not account.account_name:
-            am._accounts[user_id] = account._replace(
-                account_name=account.user.user_name or ""
-            )
+            am._accounts[user_id] = account._replace(account_name=account.user.user_name or "")

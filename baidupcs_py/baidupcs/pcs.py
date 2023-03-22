@@ -114,9 +114,7 @@ class BaiduPCS:
         self._logid = None
         self._baiduid = cookies.get("BAIDUID")
         if self._baiduid:
-            self._logid = standard_b64encode(self._baiduid.encode("ascii")).decode(
-                "utf-8"
-            )
+            self._logid = standard_b64encode(self._baiduid.encode("ascii")).decode("utf-8")
 
         self._cookies = cookies
         self._session = requests.Session()
@@ -227,9 +225,7 @@ class BaiduPCS:
         return resp.json()
 
     def meta(self, *remotepaths: str):
-        assert all(
-            [p.startswith("/") for p in remotepaths]
-        ), "`remotepaths` must be absolute paths"
+        assert all([p.startswith("/") for p in remotepaths]), "`remotepaths` must be absolute paths"
 
         param = [{"path": p} for p in remotepaths]
         return self.file_operate("meta", param)
@@ -371,9 +367,7 @@ class BaiduPCS:
         return resp.json()
 
     @assert_ok
-    def upload_slice(
-        self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None
-    ):
+    def upload_slice(self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None):
         url = PcsNode.File.url()
         params = {
             "method": "upload",
@@ -481,9 +475,7 @@ class BaiduPCS:
     def rename(self, source: str, dest: str):
         """Rename `source` to `dest`"""
 
-        assert all(
-            [p.startswith("/") for p in [source, dest]]
-        ), "`source`, `dest` must be absolute paths"
+        assert all([p.startswith("/") for p in [source, dest]]), "`source`, `dest` must be absolute paths"
 
         param = [_from_to(source, dest)]
         return self.file_operate("move", param)
@@ -518,17 +510,13 @@ class BaiduPCS:
 
     @assert_ok
     def remove(self, *remotepaths: str):
-        assert all(
-            [p.startswith("/") for p in remotepaths]
-        ), "`sources`, `dest` must be absolute paths"
+        assert all([p.startswith("/") for p in remotepaths]), "`sources`, `dest` must be absolute paths"
 
         param = [{"path": p} for p in remotepaths]
         return self.file_operate("delete", param)
 
     @assert_ok
-    def cloud_operate(
-        self, params: Dict[str, str], data: Optional[Dict[str, str]] = None
-    ):
+    def cloud_operate(self, params: Dict[str, str], data: Optional[Dict[str, str]] = None):
         url = PanNode.Cloud.url()
         if data:
             resp = self._request(Method.Post, url, params=params, data=data)
@@ -803,9 +791,7 @@ class BaiduPCS:
         return json.loads(shared_data)
 
     @assert_ok
-    def list_shared_paths(
-        self, sharedpath: str, uk: int, share_id: int, page: int = 1, size: int = 100
-    ):
+    def list_shared_paths(self, sharedpath: str, uk: int, share_id: int, page: int = 1, size: int = 100):
         assert self._stoken, "`STOKEN` is not in `cookies`"
 
         url = PanNode.SharedPathList.url()
@@ -885,21 +871,11 @@ class BaiduPCS:
         data["from"] = "mini_ad_wandoujia"
         data["model"] = model
         data["cuid"] = (
-            calu_md5(
-                bduss
-                + "_"
-                + data["_client_version"]
-                + "_"
-                + data["_phone_imei"]
-                + "_"
-                + data["from"]
-            ).upper()
+            calu_md5(bduss + "_" + data["_client_version"] + "_" + data["_phone_imei"] + "_" + data["from"]).upper()
             + "|"
             + phoneIMEIStr[::-1]
         )
-        data["sign"] = calu_md5(
-            "".join([k + "=" + data[k] for k in sorted(data.keys())]) + "tiebaclient!!!"
-        ).upper()
+        data["sign"] = calu_md5("".join([k + "=" + data[k] for k in sorted(data.keys())]) + "tiebaclient!!!").upper()
 
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -910,9 +886,7 @@ class BaiduPCS:
             "Connection": "Keep-Alive",
         }
 
-        resp = requests.post(
-            "http://tieba.baidu.com/c/s/login", headers=headers, data=data
-        )
+        resp = requests.post("http://tieba.baidu.com/c/s/login", headers=headers, data=data)
         return resp.json()
 
     @assert_ok
@@ -957,9 +931,7 @@ class BaiduPCS:
         while True:
             timestamp = str(now_timestamp())
 
-            rand = calu_sha1(
-                enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid
-            )
+            rand = calu_sha1(enc + uid + "ebrcUYiuxaZv2XGu7KIYKxUrqfnOfpDF" + timestamp + devuid)
 
             url = PcsNode.File.url()
             params = {

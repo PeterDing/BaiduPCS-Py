@@ -41,9 +41,7 @@ class PcsRapidUploadInfo(NamedTuple):
 
         filename = self._filename()
         return "bdpan://" + standard_b64encode(
-            f"{filename}|{self.content_length}|{self.content_md5}|{self.slice_md5}".encode(
-                "utf-8"
-            )
+            f"{filename}|{self.content_length}|{self.content_md5}|{self.slice_md5}".encode("utf-8")
         ).decode("utf-8")
 
     def all_links(self) -> List[str]:

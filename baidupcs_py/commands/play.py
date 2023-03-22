@@ -45,9 +45,7 @@ class Player(Enum):
     ):
         global DEFAULT_PLAYER
         if not self.which():
-            print(
-                f"[yellow]No player {self.name}[/yellow], using default player: {DEFAULT_PLAYER.name}"
-            )
+            print(f"[yellow]No player {self.name}[/yellow], using default player: {DEFAULT_PLAYER.name}")
             self = DEFAULT_PLAYER
         if not self.which():
             raise CommandError(f"No player: {self.name}")
@@ -78,9 +76,7 @@ class Player(Enum):
 
         returncode = self.spawn(cmd)
         if returncode != 0:
-            print(
-                f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]"
-            )
+            print(f"[italic]{self.value}[/italic] fails. return code: [red]{returncode}[/red]")
 
     def spawn(
         self,
@@ -106,22 +102,16 @@ class Player(Enum):
         if use_local_server:
             cmd = [self.which(), url, *player_params]
         else:
-            _ck = "Cookie: " + "; ".join(
-                [f"{k}={v if v is not None else ''}" for k, v in cookies.items()]
-            )
+            _ck = "Cookie: " + "; ".join([f"{k}={v if v is not None else ''}" for k, v in cookies.items()])
             cmd = [
                 self.which(),
                 url,
                 "--no-ytdl",
-                "--http-header-fields="
-                f'"User-Agent: {PCS_UA}","{_ck}","Connection: Keep-Alive"',
+                "--http-header-fields=" f'"User-Agent: {PCS_UA}","{_ck}","Connection: Keep-Alive"',
                 *player_params,
             ]
         if not use_local_server and m3u8:
-            cmd.append(
-                "--stream-lavf-o-append="
-                "protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp"
-            )
+            cmd.append("--stream-lavf-o-append=" "protocol_whitelist=file,http,https,tcp,tls,crypto,hls,applehttp")
         if quiet:
             cmd.append("--really-quiet")
         return cmd
@@ -256,7 +246,6 @@ def play(
         random.shuffle(remotepaths)
 
     for rp in remotepaths:
-
         if not api.exists(rp):
             print(f"[yellow]WARNING[/yellow]: `{rp}` does not exist.")
             continue

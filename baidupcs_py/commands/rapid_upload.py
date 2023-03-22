@@ -30,9 +30,7 @@ def _display(
     if show_all and not only_hash_link:
         display_rapid_upload_infos(rows)
     else:
-        display_rapid_upload_links(
-            rows, hash_link_protocol=hash_link_protocol, only_hash_link=only_hash_link
-        )
+        display_rapid_upload_links(rows, hash_link_protocol=hash_link_protocol, only_hash_link=only_hash_link)
 
 
 def rapid_upload_list(
@@ -171,17 +169,13 @@ def rapid_upload(
     """
 
     if link:
-        slice_md5, content_md5, content_crc32, content_length, _filename = _parse_link(
-            link
-        )
+        slice_md5, content_md5, content_crc32, content_length, _filename = _parse_link(link)
         content_crc32 = content_crc32 or 0
         filename = filename or _filename
 
     remotepath = join_path(Path(remotedir), Path(filename))
 
-    assert all(
-        [slice_md5, content_md5, content_length]
-    ), f"`rapid_upload`: parsing rapid upload link fails: {link}"
+    assert all([slice_md5, content_md5, content_length]), f"`rapid_upload`: parsing rapid upload link fails: {link}"
 
     if not no_ignore_existing:
         if api.exists(remotepath):

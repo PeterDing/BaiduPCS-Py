@@ -29,9 +29,7 @@ def _md5_cmd(localpath: str) -> List[str]:
 
 
 def calu_file_md5(localpath: str) -> str:
-    cp = subprocess.run(
-        _md5_cmd(localpath), universal_newlines=True, stdout=subprocess.PIPE
-    )
+    cp = subprocess.run(_md5_cmd(localpath), universal_newlines=True, stdout=subprocess.PIPE)
 
     output = cp.stdout.strip()
     if IS_MACOS:
@@ -89,9 +87,7 @@ def random_sys_bytes(size: int) -> bytes:
     return os.urandom(size)
 
 
-def padding_key(
-    key: Union[str, bytes], length: int = 0, value: bytes = b"\xff"
-) -> bytes:
+def padding_key(key: Union[str, bytes], length: int = 0, value: bytes = b"\xff") -> bytes:
     """padding key with `value`"""
 
     assert len(value) < 2

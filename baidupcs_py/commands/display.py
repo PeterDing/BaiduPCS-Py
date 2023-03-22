@@ -132,9 +132,7 @@ def display_files(
 
         if highlight and sifters:
             pats: List[Union[Pattern, str]] = list(
-                filter(
-                    None, [sifter.pattern() for sifter in sifters if sifter.include()]
-                )
+                filter(None, [sifter.pattern() for sifter in sifters if sifter.include()])
             )
             highlighter = Highlighter(pats, "yellow")
             _path = highlighter(path)
@@ -384,9 +382,7 @@ def display_user_info(user_info: PcsUser):
     console.print(_tempt, highlight=True)
 
 
-def display_user_infos(
-    *user_infos: Tuple[PcsUser, str, str], recent_user_id: Optional[int] = None
-):
+def display_user_infos(*user_infos: Tuple[PcsUser, str, str], recent_user_id: Optional[int] = None):
     """
     Args:
         user_infos (*Tuple[PcsUser, pwd: str])

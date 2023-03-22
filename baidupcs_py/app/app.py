@@ -183,11 +183,7 @@ def multi_user_do(func):
                 continue
 
             account_name = accout.account_name
-            print(
-                "[i yellow]@Do[/i yellow]: "
-                f"account_name: [b]{account_name}[/b], "
-                f"user_id: [b]{user_id}[/b]"
-            )
+            print("[i yellow]@Do[/i yellow]: " f"account_name: [b]{account_name}[/b], " f"user_id: [b]{user_id}[/b]")
             _change_account(ctx, user_id)
             func(*args, **kwargs)
             print()
@@ -330,9 +326,7 @@ _APP_DOC = f"""BaiduPCS App v{__version__}
     如何获取 `bduss` 和 `cookies` 见 https://github.com/PeterDing/BaiduPCS-Py#%E6%B7%BB%E5%8A%A0%E7%94%A8%E6%88%B7
     用 `BaiduPCS-Py {{command}} --help` 查看具体的用法。"""
 
-_ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join(
-    [f"{alias: >3} : {cmd}" for alias, cmd in ALIAS.items()]
-)
+_ALIAS_DOC = "Command 别名:\n\n\b\n" + "\n".join([f"{alias: >3} : {cmd}" for alias, cmd in ALIAS.items()])
 
 
 @click.group(cls=AliasedGroup, help=_APP_DOC, epilog=_ALIAS_DOC)
@@ -450,13 +444,9 @@ def userlist(ctx):
 
 
 @app.command()
-@click.option(
-    "--account_name", prompt="Account Name", hide_input=False, default="", help="账号名"
-)
+@click.option("--account_name", prompt="Account Name", hide_input=False, default="", help="账号名")
 @click.option("--bduss", prompt="BDUSS", hide_input=True, default="", help="用户 BDUSS")
-@click.option(
-    "--cookies", prompt="Cookies", hide_input=True, default="", help="用户 Cookies"
-)
+@click.option("--cookies", prompt="Cookies", hide_input=True, default="", help="用户 Cookies")
 @click.pass_context
 @handle_error
 def useradd(ctx, account_name, bduss, cookies):
@@ -506,9 +496,7 @@ def userdel(ctx):
     hide_input=True,
     help="加密密码，任意字符",
 )
-@click.option(
-    "--salt", "-s", type=str, default=None, help="加密salt，不限字符 (^v0.5.17 后不使用)"
-)
+@click.option("--salt", "-s", type=str, default=None, help="加密salt，不限字符 (^v0.5.17 后不使用)")
 @click.pass_context
 @handle_error
 def encryptpwd(ctx, encrypt_password, salt):
@@ -564,6 +552,7 @@ def pwd(ctx):
 
 
 # }}}
+
 
 # File Operations
 # {{{
@@ -801,9 +790,7 @@ def search(
 @click.argument("remotepath", nargs=1, type=str)
 @click.option("--encoding", "-e", type=str, help="文件编码，默认自动解码")
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -944,9 +931,7 @@ def remove(ctx, remotepaths):
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.option("--outdir", "-o", nargs=1, type=str, default=".", help="指定下载本地目录，默认为当前目录")
 @click.option("--recursive", "-R", is_flag=True, help="递归下载")
-@click.option(
-    "--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始下载，默认为0（第一个）"
-)
+@click.option("--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始下载，默认为0（第一个）")
 @click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
 @click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
 @click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
@@ -979,15 +964,11 @@ def remove(ctx, remotepaths):
     default=DEFAULT_CONCURRENCY,
     help="下载同步链接数，默认为5。数子越大下载速度越快，但是容易被百度封锁",
 )
-@click.option(
-    "--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE, help="同步链接分块大小"
-)
+@click.option("--chunk-size", "-k", type=str, default=DEFAULT_CHUNK_SIZE, help="同步链接分块大小")
 @click.option("--no-decrypt", "--ND", is_flag=True, help="不解密")
 @click.option("--quiet", "-q", is_flag=True, help="取消第三方下载应用输出")
 @click.option("--out-cmd", "--OC", is_flag=True, help="输出第三方下载应用命令")
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1059,9 +1040,7 @@ def download(
 @app.command()
 @click.argument("remotepaths", nargs=-1, type=str)
 @click.option("--recursive", "-R", is_flag=True, help="递归播放")
-@click.option(
-    "--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始播放，默认为0（第一个）"
-)
+@click.option("--from-index", "-f", type=int, default=0, help="从所有目录中的第几个文件开始播放，默认为0（第一个）")
 @click.option("--include", "-I", type=str, help="筛选包含这个字符串的文件")
 @click.option("--include-regex", "--IR", type=str, help="筛选包含这个正则表达式的文件")
 @click.option("--exclude", "-E", type=str, help="筛选 不 包含这个字符串的文件")
@@ -1089,9 +1068,7 @@ def download(
     is_flag=True,
     help="使用本地服务器播放。大于100MB的媒体文件无法直接播放，需要使用本地服务器播放",
 )
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.pass_context
 @handle_error
 @multi_user_do
@@ -1189,9 +1166,7 @@ def play(
     default=UploadType.Many.name,
     help="上传方式，Many: 同时上传多个文件，One: 一次只上传一个文件，但同时上传文件的多个分片",
 )
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.option(
     "--encrypt-type",
     "-e",
@@ -1199,9 +1174,7 @@ def play(
     default=EncryptType.No.name,
     help="文件加密方法，默认为 No 不加密",
 )
-@click.option(
-    "--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传连接数量，默认为 CPU 核数"
-)
+@click.option("--max-workers", "-w", type=int, default=CPU_NUM, help="同时上传连接数量，默认为 CPU 核数")
 @click.option("--no-ignore-existing", "--NI", is_flag=True, help="上传已经存在的文件")
 @click.option("--no-show-progress", "--NP", is_flag=True, help="不显示上传进度")
 @click.option(
@@ -1269,9 +1242,7 @@ def upload(
 @app.command()
 @click.argument("localdir", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.option(
     "--encrypt-type",
     "-e",
@@ -1336,6 +1307,7 @@ def sync(
 
 
 # }}}
+
 
 # Rapid Upload
 # {{{
@@ -1497,9 +1469,7 @@ def rp(
     if not api:
         return
 
-    assert (
-        link or input_file or all([slice_md5, content_md5, content_length, filename])
-    ), "No params"
+    assert link or input_file or all([slice_md5, content_md5, content_length, filename]), "No params"
 
     pwd = _pwd(ctx)
     remotedir = join_path(pwd, remotedir)
@@ -1539,6 +1509,7 @@ def rp(
 
 
 # }}}
+
 
 # Share
 # {{{
@@ -1653,6 +1624,7 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
 
 # }}}
 
+
 # Cloud
 # {{{
 @app.command()
@@ -1764,6 +1736,7 @@ def purgetasks(ctx, yes):
 
 # }}}
 
+
 # Server
 # {{{
 @app.command()
@@ -1772,17 +1745,13 @@ def purgetasks(ctx, yes):
 @click.option("--host", "-h", type=str, default="localhost", help="监听 host")
 @click.option("--port", "-p", type=int, default=8000, help="监听 port")
 @click.option("--workers", "-w", type=int, default=CPU_NUM, help="进程数")
-@click.option(
-    "--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的"
-)
+@click.option("--encrypt-password", "--ep", type=str, default=None, help="加密密码，默认使用用户设置的")
 @click.option("--username", type=str, default=None, help="HTTP Basic Auth 用户名")
 @click.option("--password", type=str, default=None, help="HTTP Basic Auth 密钥")
 @click.pass_context
 @handle_error
 @multi_user_do
-def server(
-    ctx, root_dir, path, host, port, workers, encrypt_password, username, password
-):
+def server(ctx, root_dir, path, host, port, workers, encrypt_password, username, password):
     """开启 HTTP 服务"""
 
     api = _recent_api(ctx)

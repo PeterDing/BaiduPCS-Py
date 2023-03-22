@@ -36,9 +36,7 @@ CREATE TABLE IF NOT EXISTS {RAPID_UPLOAD_TABLE}
 """
 
 RAPID_UPLOAD_TABLE_COLS = [
-    c.strip().split(" ", 1)[0]
-    for c in CREATE_RAPID_UPLOAD_TABLE.split("\n")
-    if c.startswith("    ")
+    c.strip().split(" ", 1)[0] for c in CREATE_RAPID_UPLOAD_TABLE.split("\n") if c.startswith("    ")
 ]
 
 INSERT_RAPID_UPLOAD = f"""
@@ -176,7 +174,6 @@ class RapidUploadInfo:
         in_user_name: bool = False,
         in_md5: bool = False,
     ) -> List[Dict[str, Any]]:
-
         keyword = keyword.replace("'", r"\'")
 
         conditions = []

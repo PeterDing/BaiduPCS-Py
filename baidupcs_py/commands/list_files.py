@@ -110,9 +110,7 @@ def list_file(
                             user_id=user_id,
                             user_name=user_name,
                         )
-                    pcs_files[i] = pcs_files[i]._replace(
-                        dl_link=dl_link, rapid_upload_info=rpinfo
-                    )
+                    pcs_files[i] = pcs_files[i]._replace(dl_link=dl_link, rapid_upload_info=rpinfo)
                     if only_dl_link and dl_link:
                         print(dl_link)
                     if only_hash_link and rpinfo:

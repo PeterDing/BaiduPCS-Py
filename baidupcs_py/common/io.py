@@ -238,15 +238,11 @@ class EncryptIO(IO):
         self._encrypt_password = encrypt_password
 
         self._salt_for_head = generate_salt()
-        self._encrypt_key_for_head, self._iv_for_head = generate_key_iv(
-            encrypt_password, self._salt_for_head, 32, 16
-        )
+        self._encrypt_key_for_head, self._iv_for_head = generate_key_iv(encrypt_password, self._salt_for_head, 32, 16)
 
         # `self._encrypt_key`,`self._nonce_or_iv` is for cryptography
         self._salt = generate_salt()
-        self._encrypt_key, self._nonce_or_iv = generate_key_iv(
-            encrypt_password, self._salt, 32, 16
-        )
+        self._encrypt_key, self._nonce_or_iv = generate_key_iv(encrypt_password, self._salt, 32, 16)
 
         # Cryptography
         #
@@ -313,8 +309,7 @@ class EncryptIO(IO):
 
         # AES256CBC Encrypt head
         self._total_head = (
-            aes256cbc_encrypt(ori_head, self._encrypt_key_for_head, self._iv_for_head)
-            + self._salt_for_head
+            aes256cbc_encrypt(ori_head, self._encrypt_key_for_head, self._iv_for_head) + self._salt_for_head
         )
         return self._total_head
 
@@ -342,21 +337,14 @@ class EncryptIO(IO):
         return data
 
     def seek(self, offset: int, whence: int = 0) -> int:
-        if (
-            not self.seekable()
-            and offset == 0
-            and whence == 0
-            and self._total_head_len > 0
-        ):
+        if not self.seekable() and offset == 0 and whence == 0 and self._total_head_len > 0:
             self._crypto.reset()
             self._io.seek(0, 0)
             self._offset = 0
             return self._offset
 
         if not self.seekable():
-            raise ValueError(
-                f"{self._crypto.__class__.__name__} is not support seeking"
-            )
+            raise ValueError(f"{self._crypto.__class__.__name__} is not support seeking")
 
         if whence == 0:
             if offset < 0:
@@ -393,7 +381,6 @@ class EncryptIO(IO):
 
 
 class SimpleEncryptIO(EncryptIO):
-
     MAGIC_CODE = b"\x00"
 
     BLOCK_SIZE = 16  # 16 bytes
@@ -488,9 +475,7 @@ class AES256CBCEncryptIO(EncryptIO):
         self._origin_io_offset += len(data)
         self._origin_cache.extend(data)
 
-        avail_ori_len = padding_size(
-            len(self._origin_cache), self.BLOCK_SIZE, ceil=False
-        )
+        avail_ori_len = padding_size(len(self._origin_cache), self.BLOCK_SIZE, ceil=False)
         if avail_ori_len > 0:
             ori_cn = self._origin_cache[:avail_ori_len]
             self._origin_cache = self._origin_cache[avail_ori_len:]
@@ -499,7 +484,6 @@ class AES256CBCEncryptIO(EncryptIO):
 
         # The end encryption
         if self._origin_io_offset == self._total_origin_len:
-
             # Take all remainder
             if self._origin_cache:
                 ori_cn += bytes(self._origin_cache)
@@ -549,9 +533,7 @@ class AES256CBCEncryptIO(EncryptIO):
 
 
 class DecryptIO(IO):
-    def __init__(
-        self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes, total_origin_len: int
-    ):
+    def __init__(self, io: IO, encrypt_key: bytes, nonce_or_iv: bytes, total_origin_len: int):
         self._io = io
 
         # The offset after ENCRYPT_HEAD_LEN
@@ -687,9 +669,7 @@ class AES256CBCDecryptIO(DecryptIO):
     def __len__(self) -> int:
         """The decrypted content length of `self._io`"""
 
-        avail_enc_len = padding_size(
-            self._io_len - self._io_init_offset, self.BLOCK_SIZE, ceil=False
-        )
+        avail_enc_len = padding_size(self._io_len - self._io_init_offset, self.BLOCK_SIZE, ceil=False)
         return avail_enc_len
 
     def _read_block(self, size: int = -1):
@@ -710,9 +690,7 @@ class AES256CBCDecryptIO(DecryptIO):
         self._encrypted_io_offset += len(data)
         self._encrypted_cache.extend(data)
 
-        avail_enc_len = padding_size(
-            len(self._encrypted_cache), self.BLOCK_SIZE, ceil=False
-        )
+        avail_enc_len = padding_size(len(self._encrypted_cache), self.BLOCK_SIZE, ceil=False)
         if avail_enc_len > 0:
             enc_cn = bytes(self._encrypted_cache[:avail_enc_len])
             self._encrypted_cache = self._encrypted_cache[avail_enc_len:]
@@ -762,9 +740,7 @@ def parse_head(head: bytes) -> Tuple[bytes, bytes, bytes, bytes]:
     )
 
 
-def _decryptio_version1(
-    total_head: bytes, io: IO, encrypt_password: bytes
-) -> Optional[DecryptIO]:
+def _decryptio_version1(total_head: bytes, io: IO, encrypt_password: bytes) -> Optional[DecryptIO]:
     encrypt_password = padding_key(encrypt_password, 32)
 
     if len(total_head) < ENCRYPT_HEAD_LEN:
@@ -789,9 +765,7 @@ def _decryptio_version1(
         return None
 
 
-def _decryptio_version3(
-    total_head: bytes, io: IO, encrypt_password: bytes
-) -> Optional[DecryptIO]:
+def _decryptio_version3(total_head: bytes, io: IO, encrypt_password: bytes) -> Optional[DecryptIO]:
     if len(total_head) < PADDED_ENCRYPT_HEAD_WITH_SALT_LEN:
         return None
 
@@ -800,9 +774,7 @@ def _decryptio_version3(
         total_head[PADDED_ENCRYPT_HEAD_LEN:],
     )
 
-    encrypt_key_for_head, iv_for_head = generate_key_iv(
-        encrypt_password, salt_for_head, 32, 16
-    )
+    encrypt_key_for_head, iv_for_head = generate_key_iv(encrypt_password, salt_for_head, 32, 16)
 
     head = aes256cbc_decrypt(enc_head, encrypt_key_for_head, iv_for_head)
 
@@ -942,11 +914,7 @@ class AutoDecryptRequest:
                 if len(raw_data) == PADDED_ENCRYPT_HEAD_WITH_SALT_LEN:
                     self._dio = to_decryptio(BytesIO(raw_data), self._encrypt_password)
                     self._has_encrypted = isinstance(self._dio, DecryptIO)
-                    self._total_head_len = (
-                        cast(DecryptIO, self._dio)._total_head_len
-                        if self._has_encrypted
-                        else 0
-                    )
+                    self._total_head_len = cast(DecryptIO, self._dio)._total_head_len if self._has_encrypted else 0
         self._parsed = True
 
     def _request(self, _range: Tuple[int, int]) -> Response:
@@ -955,9 +923,7 @@ class AutoDecryptRequest:
 
         while True:
             try:
-                resp = self._session.request(
-                    self._method, self._url, headers=headers, **self._kwargs
-                )
+                resp = self._session.request(self._method, self._url, headers=headers, **self._kwargs)
                 if not resp.ok:
                     logger.warning(
                         "`%s._request` request error: status_code: %s, body: %s",
@@ -1025,9 +991,7 @@ class AutoDecryptRequest:
                 f"start: {start}, decrypted count: {self._decrypted_count}"
             )
 
-        ranges = self._split_chunk(
-            start + self._total_head_len, end + self._total_head_len
-        )
+        ranges = self._split_chunk(start + self._total_head_len, end + self._total_head_len)
         for _rg in ranges:
             with self._request(_rg) as resp:
                 stream = resp.raw

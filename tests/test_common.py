@@ -233,9 +233,7 @@ def test_aes256cbcencryptio():
     bio = io.BytesIO(buf)
     c = AES256CBCEncryptIO(bio, key, len(buf))
 
-    assert (
-        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
-    )
+    assert total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
 
     enc = c.read()
     print("enc", len(enc))
@@ -257,9 +255,7 @@ def test_aes256cbcencryptio():
             break
         assert len(d) == 1
         length += 1
-    assert (
-        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
-    )
+    assert total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
 
     buf = os.urandom(1024 * 50 + 14)
     bio = io.BytesIO(buf)
@@ -271,9 +267,7 @@ def test_aes256cbcencryptio():
             break
         assert len(d) == 1
         length += 1
-    assert (
-        total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
-    )
+    assert total_len(c) == padding_size(len(buf), 16) + PADDED_ENCRYPT_HEAD_WITH_SALT_LEN
 
     # Decrypt
     # Assert length of Read(size), size > 0
@@ -426,10 +420,7 @@ def test_generate_key_iv():
     salt = b"\xf6\x81\x8c\xae\x13\x18r\xbd"
     key, iv = generate_key_iv(pwd, salt, 32, 16)
 
-    assert (
-        key
-        == b"l\x04\xcb\xae\xc4\xd7\xa05^\x04\x93\xa2M\xe5\x0ee\\?\xc1C;\xca\xab|Z\xda\x98\xe8\xdb\x01\xdb\xa0"
-    )
+    assert key == b"l\x04\xcb\xae\xc4\xd7\xa05^\x04\x93\xa2M\xe5\x0ee\\?\xc1C;\xca\xab|Z\xda\x98\xe8\xdb\x01\xdb\xa0"
     assert iv == b"\x8b\xe2\x02\x8e\xee6j\x1cLv\xa2&\xa2\x8a\x1d\xfd"
 
 

@@ -42,9 +42,7 @@ class BaiduPCSApi:
         cookies: Dict[str, Optional[str]] = {},
         user_id: Optional[int] = None,
     ):
-        self._baidupcs = BaiduPCS(
-            bduss, stoken=stoken, ptoken=ptoken, cookies=cookies, user_id=user_id
-        )
+        self._baidupcs = BaiduPCS(bduss, stoken=stoken, ptoken=ptoken, cookies=cookies, user_id=user_id)
 
     @property
     def bduss(self) -> str:
@@ -116,16 +114,12 @@ class BaiduPCSApi:
     ) -> List[PcsFile]:
         """List directory contents"""
 
-        info = self._baidupcs.list(
-            remotepath, desc=desc, name=name, time=time, size=size
-        )
+        info = self._baidupcs.list(remotepath, desc=desc, name=name, time=time, size=size)
         pcs_files = [PcsFile.from_(v) for v in info.get("list", [])]
         if recursive:
             for pcs_file in pcs_files:
                 if pcs_file.is_dir:
-                    sub_pcs_files = self.list(
-                        pcs_file.path, desc=desc, name=name, time=time, size=size
-                    )
+                    sub_pcs_files = self.list(pcs_file.path, desc=desc, name=name, time=time, size=size)
                     pcs_files.extend(sub_pcs_files)
         return pcs_files
 
@@ -144,9 +138,7 @@ class BaiduPCSApi:
         Warning, the api CAN NOT set local_ctime and local_mtime
         """
 
-        info = self._baidupcs.upload_file(
-            io, remotepath, ondup=ondup, callback=callback
-        )
+        info = self._baidupcs.upload_file(io, remotepath, ondup=ondup, callback=callback)
         return PcsFile.from_(info)
 
     def rapid_upload_file(
@@ -185,9 +177,7 @@ class BaiduPCSApi:
         )
         return PcsFile.from_(info)
 
-    def upload_slice(
-        self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None
-    ) -> str:
+    def upload_slice(self, io: IO, callback: Callable[[MultipartEncoderMonitor], None] = None) -> str:
         """Upload an io as a slice
 
         callable: the callback for monitoring uploading progress
@@ -220,9 +210,7 @@ class BaiduPCSApi:
         )
         return PcsFile.from_(info)
 
-    def search(
-        self, keyword: str, remotepath: str, recursive: bool = False
-    ) -> List[PcsFile]:
+    def search(self, keyword: str, remotepath: str, recursive: bool = False) -> List[PcsFile]:
         """Search in `remotepath` with `keyword`"""
 
         info = self._baidupcs.search(keyword, remotepath, recursive=recursive)
@@ -286,9 +274,7 @@ class BaiduPCSApi:
         info = self._baidupcs.add_task(task_url, remotedir)
         return str(info["task_id"])
 
-    def add_magnet_task(
-        self, task_url: str, remotedir: str, selected_idx: List[int]
-    ) -> str:
+    def add_magnet_task(self, task_url: str, remotedir: str, selected_idx: List[int]) -> str:
         """Add a magnet task to save at `remotedir`.
 
         task_url (str): magnet link
@@ -334,9 +320,7 @@ class BaiduPCSApi:
         """
 
         info = self._baidupcs.share(*remotepaths, password=password, period=period)
-        link = PcsSharedLink.from_(info)._replace(
-            paths=list(remotepaths), password=password
-        )
+        link = PcsSharedLink.from_(info)._replace(paths=list(remotepaths), password=password)
         return link
 
     def list_shared(self, page: int = 1) -> List[PcsSharedLink]:
@@ -441,10 +425,7 @@ class BaiduPCSApi:
         else:
             raise ValueError("`shared_paths`: Parsing shared info fails")
 
-        return [
-            PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken)
-            for v in file_list
-        ]
+        return [PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken) for v in file_list]
 
     def list_shared_paths(
         self,
@@ -457,13 +438,8 @@ class BaiduPCSApi:
     ) -> List[PcsSharedPath]:
         """Sub shared paths of the shared directory `sharedpath`"""
 
-        info = self._baidupcs.list_shared_paths(
-            sharedpath, uk, share_id, page=page, size=size
-        )
-        return [
-            PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken)
-            for v in info["list"]
-        ]
+        info = self._baidupcs.list_shared_paths(sharedpath, uk, share_id, page=page, size=size)
+        return [PcsSharedPath.from_(v)._replace(uk=uk, share_id=share_id, bdstoken=bdstoken) for v in info["list"]]
 
     def transfer_shared_paths(
         self,
@@ -476,9 +452,7 @@ class BaiduPCSApi:
     ):
         """Save these `fs_ids` of shared paths to `remotedir`"""
 
-        self._baidupcs.transfer_shared_paths(
-            remotedir, fs_ids, uk, share_id, bdstoken, shared_url
-        )
+        self._baidupcs.transfer_shared_paths(remotedir, fs_ids, uk, share_id, bdstoken, shared_url)
 
     def user_info(self) -> PcsUser:
         """User's information"""
@@ -579,9 +553,7 @@ class BaiduPCSApi:
             # Here should be a error
             return ""
 
-    def rapid_upload_info(
-        self, remotepath: str, check: bool = True
-    ) -> Optional[PcsRapidUploadInfo]:
+    def rapid_upload_info(self, remotepath: str, check: bool = True) -> Optional[PcsRapidUploadInfo]:
         """Rapid upload information
 
         check (bool): If check is True, we need to use the `self.rapid_upload_file` to
@@ -604,9 +576,7 @@ class BaiduPCSApi:
 
         slice_md5 = calu_md5(data)
 
-        assert (
-            content_length and content_length == fs._auto_decrypt_request.content_length
-        )
+        assert content_length and content_length == fs._auto_decrypt_request.content_length
 
         content_md5 = fs._auto_decrypt_request.content_md5
         content_crc32 = fs._auto_decrypt_request.content_crc32 or 0

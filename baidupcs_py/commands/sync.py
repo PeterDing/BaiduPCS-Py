@@ -58,10 +58,7 @@ def sync(
     if not api.exists(remotedir):
         all_pcs_files = {}
     else:
-        all_pcs_files = {
-            pcs_file.path[len(remotedir) + 1 :]: pcs_file
-            for pcs_file in recursive_list(api, remotedir)
-        }
+        all_pcs_files = {pcs_file.path[len(remotedir) + 1 :]: pcs_file for pcs_file in recursive_list(api, remotedir)}
 
     fts: List[FromTo] = []
     check_list: List[Tuple[str, PcsFile]] = []
@@ -86,9 +83,7 @@ def sync(
             to_deletes.append(all_pcs_files[rp].path)
 
     logger.debug(
-        "`sync`: all localpaths: %s, "
-        "localpaths needed to upload: %s, "
-        "remotepaths needed to delete: %s",
+        "`sync`: all localpaths: %s, " "localpaths needed to upload: %s, " "remotepaths needed to delete: %s",
         len(all_localpaths),
         len(fts),
         len(to_deletes),
