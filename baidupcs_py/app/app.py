@@ -971,6 +971,7 @@ def remove(ctx, remotepaths):
     aria2 (下载 https://github.com/aria2/aria2/releases)
     """,
 )
+@click.option("--downloader-params", "--DP", multiple=True, type=str, help="第三方下载器参数")
 @click.option(
     "--concurrency",
     "-s",
@@ -1001,6 +1002,7 @@ def download(
     exclude,
     exclude_regex,
     downloader,
+    downloader_params,
     concurrency,
     chunk_size,
     no_decrypt,
@@ -1047,7 +1049,7 @@ def download(
         from_index=from_index,
         downloader=getattr(Downloader, downloader),
         downloadparams=DownloadParams(
-            concurrency=concurrency, chunk_size=chunk_size, quiet=quiet
+            concurrency=concurrency, chunk_size=chunk_size, quiet=quiet, downloader_params=downloader_params
         ),
         out_cmd=out_cmd,
         encrypt_password=encrypt_password,

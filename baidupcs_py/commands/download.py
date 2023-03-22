@@ -38,6 +38,7 @@ class DownloadParams(SimpleNamespace):
     concurrency: int = DEFAULT_CONCURRENCY
     chunk_size: str = DEFAULT_CHUNK_SIZE
     quiet: bool = False
+    downloader_params: List[str] = []
 
 
 DEFAULT_DOWNLOADPARAMS = DownloadParams()
@@ -217,6 +218,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             str(chunk_size),
+            *downloadparams.download_params,
         ]
         return cmd
 
@@ -243,6 +245,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             downloadparams.chunk_size,
+            *downloadparams.download_params,
         ]
         return cmd
 
@@ -257,6 +260,7 @@ class Downloader(Enum):
         directory, filename = os.path.split(localpath)
         cmd = [
             self.which(),
+            url,
             "-c",
             "--dir",
             directory,
@@ -272,7 +276,7 @@ class Downloader(Enum):
             str(downloadparams.concurrency),
             "-k",
             downloadparams.chunk_size,
-            url,
+            *downloadparams.download_params,
         ]
         return cmd
 
