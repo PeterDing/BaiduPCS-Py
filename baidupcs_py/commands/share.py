@@ -126,6 +126,7 @@ def save_shared(
                 -33,  # -33: "一次支持操作999个，减点试试吧"
                 4,  # 4: "share transfer pcs error"
                 130,  # "转存文件数超限"
+                120,  # "转存文件数超限"
             ):
                 print(
                     f"[yellow]WARNING[/]: error_code: {err.error_code}, {shared_path.path} "
