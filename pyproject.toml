@@ -12,47 +12,50 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
-build = "build.py"
-
-[tool.poetry.dependencies]
-python = ">=3.7, <3.11"
-requests = ">=2.28"
-requests-toolbelt = ">=0.10"
-rich = ">=12.6"
-pillow = ">=9.3"
-click = ">=8.1"
-typing-extensions = ">=4.4"
-aget = ">=0.1"
-chardet = ">=5.0"
-fastapi = ">=0.87"
-uvicorn = ">=0.19"
-jinja2 = ">=3.1"
-cryptography = ">=38.0"
-cython = ">=0.29"
-passlib = ">=1.7"
-
-[tool.poetry.scripts]
-BaiduPCS-Py = 'baidupcs_py.app:main'
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.2"
-mypy = "^1.1.1"
-black = "^23.1.0"
-ruff = "^0.0.257"
-setuptools = "^67.6.0"
-cython = "^0.29.33"
-
-[build-system]
-requires = ["cython", "wheel", "setuptools"]
 
 [tool.black]
 line-length = 119
 
 [tool.ruff]
-ignore = ["E501", "F401", "F841", "E402"]
+lint.ignore = ["E501", "E402", "F401", "F403", "F841"]
 line-length = 119
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = ">=2"
+requests-toolbelt = ">=1.0"
+rich = ">=13.7"
+pillow = ">=10.1"
+click = ">=8.1"
+typing-extensions = ">=4.8"
+aget = ">=0.2"
+chardet = ">=5.2"
+fastapi = ">=0.104"
+uvicorn = ">=0.24"
+jinja2 = ">=3.1"
+cryptography = ">=41.0"
+cython = ">=3.0"
+passlib = ">=1.7"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.4"
+ruff = ">=0.3"
+setuptools = ">=69.0"
+cython = ">=3.0"
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = true
+
+[tool.poetry.scripts]
+BaiduPCS-Py = 'baidupcs_py.app:main'
+
+[build-system]
+requires = ["poetry-core", "cython", "wheel", "setuptools"]

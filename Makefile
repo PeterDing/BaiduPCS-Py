@@ -1,17 +1,11 @@
 typecheck:
 	ruff check baidupcs_py
-	mypy -p baidupcs_py \
-		--ignore-missing-imports \
-		--warn-unreachable \
-		--implicit-optional \
-		--allow-redefinition \
-		--disable-error-code abstract
 
 format-check:
-	black --check .
+	ruff format --check .
 
 format:
-	black .
+	ruff format .
 
 build-pyx:
 	python3 build.py build_ext --inplace
