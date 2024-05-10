@@ -1,4 +1,11 @@
-from typing import Optional, Dict
+import sys
+
+if sys.version_info < (3, 9):
+    from typing_extensions import Annotated
+else:
+    from typing import Annotated
+
+from typing import Optional, Dict, Any
 from pathlib import Path
 import os
 import mimetypes
@@ -147,14 +154,17 @@ def to_auth(credentials: HTTPBasicCredentials = Depends(_security)) -> str:
 
 def make_auth_http_server(path: str = ""):
     @app.get("%s/{remotepath:path}" % path)
-    async def auth_http_server(username: str = Depends(to_auth), response: Response = Depends(handle_request)):
+    async def auth_http_server(
+        username: Annotated[str, Depends(to_auth)], response: Annotated[Any, Depends(handle_request)]
+    ):
+        # async def auth_http_server(username: str = Depends(to_auth), response: Response = Depends(handle_request)):
         if username:
             return response
 
 
 def make_http_server(path: str = ""):
     @app.get("%s/{remotepath:path}" % path)
-    async def http_server(response: Response = Depends(handle_request)):
+    async def http_server(response: Annotated[Any, Depends(handle_request)]):
         return response
 
 
