@@ -1597,11 +1597,12 @@ def listsharedpaths(ctx, shared_url, password, no_show_vcode):
 @click.argument("shared_url", nargs=1, type=str)
 @click.argument("remotedir", nargs=1, type=str)
 @click.option("--password", "-p", type=str, help="链接密码，如果没有不用设置")
+@click.option("--path-prefix", "-pre", type=str, help="需要保存的路径前缀")
 @click.option("--no-show-vcode", "--NV", is_flag=True, help="不显示验证码")
 @click.pass_context
 @handle_error
 @multi_user_do
-def save(ctx, shared_url, remotedir, password, no_show_vcode):
+def save(ctx, shared_url, remotedir, password, path_prefix ,no_show_vcode):
     """保存其他用户分享的链接"""
 
     assert not password or len(password) == 4, "`password` must be 4 letters"
@@ -1618,6 +1619,7 @@ def save(ctx, shared_url, remotedir, password, no_show_vcode):
         shared_url,
         remotedir,
         password=password,
+        path_prefix=path_prefix,
         show_vcode=not no_show_vcode,
     )
 
