@@ -989,6 +989,7 @@ BaiduPCS-Py save [OPTIONS] SHARED_URL REMOTEDIR
 | --------------------- | ---------------------------------- |
 | -p, --password TEXT   | 链接密码，如果没有不用设置         |
 | --no-show-vcode, --NV | 不显示验证码，如果需要验证码则报错 |
+| --path-prefix, -pre TEXT |   需要保存的路径前缀 |
 
 ## 添加离线下载任务
 
