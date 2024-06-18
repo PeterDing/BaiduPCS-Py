@@ -64,7 +64,7 @@ def save_shared(
     shared_url: str,
     remotedir: str,
     password: Optional[str] = None,
-    path_prefix: str|None = None,
+    path_prefix: str | None = None,
     show_vcode: bool = True,
 ):
     assert remotedir.startswith("/"), "`remotedir` must be an absolute path"
@@ -91,12 +91,14 @@ def save_shared(
             real_path = shared_path.path
             if shared_path.path.startswith("/sharelink"):
                 # delete "/sharelinkxxxxxx
-                real_path = shared_path.path[shared_path.path.find("/", 1):]
+                real_path = shared_path.path[shared_path.path.find("/", 1) :]
             if shared_path.is_dir:
                 if real_path.startswith(path_prefix):
                     pass
                 elif path_prefix.startswith(real_path):
-                    sub_paths = list_all_sub_paths(api, shared_path.path, shared_path.uk, shared_path.share_id, shared_path.bdstoken)
+                    sub_paths = list_all_sub_paths(
+                        api, shared_path.path, shared_path.uk, shared_path.share_id, shared_path.bdstoken
+                    )
                     rd = (Path(rd) / os.path.basename(shared_path.path)).as_posix()
                     for sp in sub_paths:
                         _remotedirs[sp] = rd

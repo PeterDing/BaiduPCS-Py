@@ -1602,7 +1602,7 @@ def listsharedpaths(ctx, shared_url, password, no_show_vcode):
 @click.pass_context
 @handle_error
 @multi_user_do
-def save(ctx, shared_url, remotedir, password, path_prefix ,no_show_vcode):
+def save(ctx, shared_url, remotedir, password, path_prefix, no_show_vcode):
     """保存其他用户分享的链接"""
 
     assert not password or len(password) == 4, "`password` must be 4 letters"
